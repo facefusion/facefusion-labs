@@ -1,0 +1,19 @@
+name: ci
+
+on: [ push, pull_request ]
+
+jobs:
+ lint:
+  runs-on: ubuntu-latest
+  steps:
+  - name: Checkout
+    uses: actions/checkout@v4
+  - name: Set up Python 3.10
+    uses: actions/setup-python@v5
+    with:
+     python-version: '3.10'
+  - run: pip install flake8
+  - run: pip install flake8-import-order
+  - run: pip install mypy
+  - run: flake8 arcface_converter face_landmarker_68_5
+  - run: mypy arcface_converter face_landmarker_68_5

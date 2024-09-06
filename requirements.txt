@@ -1,0 +1,4 @@
+lightning==2.4.0
+numpy==2.1.0
+onnxruntime==1.19.0
+opencv-python==4.10.0.84

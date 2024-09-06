@@ -1,0 +1,4 @@
+[flake8]
+select = E3, E4, F, I1, I2
+plugins = flake8-import-order
+import-order-style = pycharm
