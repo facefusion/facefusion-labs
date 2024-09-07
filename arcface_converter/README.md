@@ -1,7 +1,7 @@
 ArcFace Converter
 =================
 
-> Model to convert face embeddings between various ArcFace embeddings.
+> Convert face embeddings between various ArcFace models.
 
 
 Preview
