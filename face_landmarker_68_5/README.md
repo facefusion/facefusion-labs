@@ -1,7 +1,7 @@
 Face Landmarker 68 5
 ====================
 
-> Model to estimate 68-point face landmarks from 5-point landmarks.
+> Estimate 68-point face landmarks from 5-point landmarks.
 
 
 Preview
