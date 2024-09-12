@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import configparser
 import os
-from typing import List, Tuple
+from typing import List
 
 import cv2
 import facer
@@ -18,7 +18,7 @@ CONFIG.read('config.ini')
 
 WARP_TEMPLATE = numpy.array(
 [
-    [ 38.2946, 51.6963 ],
+	[ 38.2946, 51.6963 ],
 	[ 73.5318, 51.5014 ],
 	[ 56.0252, 71.7366 ],
 	[ 41.5493, 92.3655 ],
@@ -33,16 +33,18 @@ def get_vision_frame_paths() -> List[str]:
 
 	for vision_frame_name in vision_frame_names:
 		vision_frame_path = os.path.join(dataset_path, vision_frame_name)
+
 		if os.path.isfile(vision_frame_path):
 			vision_frame_paths.append(vision_frame_path)
+
 	vision_frame_paths.sort()
 	return vision_frame_paths
 
 
 def warp_vision_frame(vision_frame : VisionFrame, face_landmark_5 : FaceLandmark5) -> VisionFrame:
-    matrix = cv2.estimateAffinePartial2D(face_landmark_5, WARP_TEMPLATE, method = cv2.RANSAC, ransacReprojThreshold = 100)[0]
-    crop_vision_frame = cv2.warpAffine(vision_frame, matrix, (112, 112), borderMode = cv2.BORDER_REPLICATE)
-    return crop_vision_frame
+	matrix = cv2.estimateAffinePartial2D(face_landmark_5, WARP_TEMPLATE, method = cv2.RANSAC, ransacReprojThreshold = 100)[0]
+	crop_vision_frame = cv2.warpAffine(vision_frame, matrix, (112, 112), borderMode = cv2.BORDER_REPLICATE)
+	return crop_vision_frame
 
 
 def prepare_crop_vision_frame(vision_frame : VisionFrame, face_landmark_5 : FaceLandmark5) -> VisionFrame:
@@ -64,15 +66,15 @@ def forward(session : InferenceSession, crop_image : VisionFrame) -> Embedding:
 	{
 		'input': crop_image
 	})[0]
+
 	return embedding
 
 
-def prepare(device : str) -> Tuple[Embedding, Embedding]:
-	face_detector = facer.face_detector('retinaface/mobilenet', device = device)
+def prepare() -> None:
+	face_detector = facer.face_detector('retinaface/mobilenet', device = CONFIG['execution']['device'])
 	vision_frame_paths = get_vision_frame_paths()
-	provider = 'CUDAExecutionProvider'
-	source_session = create_inference_session(CONFIG['models']['source_path'], provider)
-	target_session = create_inference_session(CONFIG['models']['target_path'], provider)
+	source_session = create_inference_session(CONFIG['models']['source_path'], CONFIG['execution']['provider'])
+	target_session = create_inference_session(CONFIG['models']['target_path'], CONFIG['execution']['provider'])
 	source_embedding_list = []
 	target_embedding_list = []
 
@@ -80,8 +82,9 @@ def prepare(device : str) -> Tuple[Embedding, Embedding]:
 		with torch.inference_mode():
 			try:
 				vision_frame = cv2.imread(vision_frame_path)[:, :, ::-1]
-				vision_frame_torch = torch.from_numpy(vision_frame).permute(2, 0, 1).unsqueeze(0).to(device = device)
-				face_landmarks_5 = face_detector(vision_frame_torch)['points']
+				vision_frame_torch = torch.from_numpy(vision_frame).permute(2, 0, 1).unsqueeze(0).to(device = CONFIG['execution']['device'])
+				face_landmarks_5 = face_detector(vision_frame_torch).get('points')
+
 				for face_landmark_5 in face_landmarks_5:
 					face_landmark_5 = face_landmark_5.detach().cpu().numpy()
 					crop_vision_frame = prepare_crop_vision_frame(vision_frame, face_landmark_5)
@@ -91,12 +94,12 @@ def prepare(device : str) -> Tuple[Embedding, Embedding]:
 					target_embedding_list.append(target_embedding)
 			except:
 				continue
-	source_embeddings = numpy.concatenate(source_embedding_list, axis=0)
-	target_embeddings = numpy.concatenate(target_embedding_list, axis=0)
-	return source_embeddings, target_embeddings
+
+	source_embeddings = numpy.concatenate(source_embedding_list, axis = 0)
+	target_embeddings = numpy.concatenate(target_embedding_list, axis = 0)
+	numpy.save(CONFIG['embeddings']['source_path'], source_embeddings)
+	numpy.save(CONFIG['embeddings']['target_path'], target_embeddings)
 
 
 if __name__ == '__main__':
-	source_embeddings, target_embeddings = prepare(CONFIG['devices']['device'])
-	numpy.save(CONFIG['embeddings']['source_path'], source_embeddings)
-	numpy.save(CONFIG['embeddings']['target_path'], target_embeddings)
+	prepare()

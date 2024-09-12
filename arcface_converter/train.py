@@ -104,6 +104,5 @@ if __name__ == '__main__':
 	max_epochs = 5000
 	trainer = create_trainer()
 	training_loader, validation_loader = create_data_loaders(batch_size)
-
 	logger = TensorBoardLogger('.logs', name = 'arcface_converter')
 	train(trainer, training_loader, validation_loader)
