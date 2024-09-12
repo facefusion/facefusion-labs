@@ -61,7 +61,7 @@ class ArcFaceConverterTrainer(pytorch_lightning.LightningModule):
 		}
 
 
-def create_data_loaders(batch_size : int, split_ratio : float = 0.8) -> Tuple[Loader, Loader]:
+def create_loaders(batch_size : int, split_ratio : float = 0.8) -> Tuple[Loader, Loader]:
 	source = torch.from_numpy(numpy.load(CONFIG['embeddings']['source_path'])).float()
 	target = torch.from_numpy(numpy.load(CONFIG['embeddings']['target_path'])).float()
 	dataset = TensorDataset(source, target)
@@ -74,6 +74,25 @@ def create_data_loaders(batch_size : int, split_ratio : float = 0.8) -> Tuple[Lo
 	return training_loader, validation_loader
 
 
+def create_trainer() -> Trainer:
+	return Trainer(
+		max_epochs = max_epochs,
+		callbacks =
+		[
+			ModelCheckpoint(
+				monitor = 'train_loss',
+				dirpath = CONFIG['checkpoints']['directory_path'],
+				filename = CONFIG['checkpoints']['file_name'],
+				save_top_k = 3,
+				mode = 'min',
+				every_n_epochs = 10
+			)
+		],
+		enable_progress_bar = True,
+		log_every_n_steps = 2
+	)
+
+
 def train(trainer : Trainer, training_loader : Loader, validation_loader : Loader) -> None:
 	model = ArcFaceConverterTrainer()
 	tuner = Tuner(trainer)
@@ -81,29 +100,10 @@ def train(trainer : Trainer, training_loader : Loader, validation_loader : Loade
 	trainer.fit(model, training_loader, validation_loader)
 
 
-def create_trainer() -> Trainer:
-	checkpoint_callback = ModelCheckpoint(
-		monitor = 'train_loss',
-		dirpath = CONFIG['checkpoints']['directory_path'],
-		filename = CONFIG['checkpoints']['file_name'],
-		save_top_k = 3,
-		mode = 'min',
-		every_n_epochs = 10
-	)
-	trainer = Trainer(
-		max_epochs = max_epochs,
-		callbacks = [ checkpoint_callback ],
-		enable_progress_bar = True,
-		log_every_n_steps = 2
-	)
-
-	return trainer
-
-
 if __name__ == '__main__':
 	batch_size = 50000
 	max_epochs = 5000
 	trainer = create_trainer()
-	training_loader, validation_loader = create_data_loaders(batch_size)
+	training_loader, validation_loader = create_loaders(batch_size)
 	logger = TensorBoardLogger('.logs', name = 'arcface_converter')
 	train(trainer, training_loader, validation_loader)

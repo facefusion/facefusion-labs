@@ -11,8 +11,8 @@ class ArcFaceConverter(nn.Module):
 		self.fc4 = nn.Linear(1024, 512)
 		self.activation = nn.LeakyReLU()
 
-	def forward(self, source_embedding : Tensor) -> Tensor:
-		output_embedding = self.activation(self.fc1(source_embedding))
+	def forward(self, input_embedding : Tensor) -> Tensor:
+		output_embedding = self.activation(self.fc1(input_embedding))
 		output_embedding = self.activation(self.fc2(output_embedding))
 		output_embedding = self.activation(self.fc3(output_embedding))
 		output_embedding = self.fc4(output_embedding)

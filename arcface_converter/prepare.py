@@ -93,7 +93,7 @@ def prepare() -> None:
 					target_embedding = forward(target_session, crop_vision_frame)
 					source_embedding_list.append(source_embedding)
 					target_embedding_list.append(target_embedding)
-			except:
+			except Exception:
 				continue
 
 	source_embeddings = numpy.concatenate(source_embedding_list, axis = 0)
