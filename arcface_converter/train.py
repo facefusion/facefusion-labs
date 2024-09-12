@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-from typing import Any
-import numpy
 import configparser
-import torch
+from typing import Any
+
+import numpy
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.tuner.tuning import Tuner
-from pytorch_lightning.loggers import TensorBoardLogger
-from torch.utils.data import DataLoader, random_split, TensorDataset
+import torch
 from model import ArcFaceConverter
+from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.tuner.tuning import Tuner
+from torch.utils.data import DataLoader, TensorDataset, random_split
+
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
