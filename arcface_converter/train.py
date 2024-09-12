@@ -82,7 +82,6 @@ def train(trainer : Trainer, train_loader : DataLoaderSet, validate_loader : Dat
 
 
 if __name__ == '__main__':
-	accelerator = 'gpu' if torch.cuda.is_available() else 'cpu'
 	batch_size = 50000
 	max_epochs = 5000
 	train_loader, validate_loader = create_data_loaders(batch_size)
@@ -97,7 +96,6 @@ if __name__ == '__main__':
 	)
 	trainer = Trainer(
 		max_epochs = max_epochs,
-		accelerator = accelerator,
 		callbacks = [ checkpoint_callback ],
 		enable_progress_bar = True,
 		log_every_n_steps = 2
