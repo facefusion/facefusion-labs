@@ -39,14 +39,14 @@ def get_vision_frame_paths() -> List[str]:
 	return vision_frame_paths
 
 
-def warp_frame(vision_frame : VisionFrame, face_landmark_5 : FaceLandmark5) -> VisionFrame:
+def warp_vision_frame(vision_frame : VisionFrame, face_landmark_5 : FaceLandmark5) -> VisionFrame:
     matrix = cv2.estimateAffinePartial2D(face_landmark_5, WARP_TEMPLATE, method = cv2.RANSAC, ransacReprojThreshold = 100)[0]
     crop_vision_frame = cv2.warpAffine(vision_frame, matrix, (112, 112), borderMode = cv2.BORDER_REPLICATE)
     return crop_vision_frame
 
 
-def prepare_crop_frame(vision_frame : VisionFrame, face_landmark_5 : FaceLandmark5) -> VisionFrame:
-	crop_vision_frame = warp_frame(vision_frame, face_landmark_5)
+def prepare_crop_vision_frame(vision_frame : VisionFrame, face_landmark_5 : FaceLandmark5) -> VisionFrame:
+	crop_vision_frame = warp_vision_frame(vision_frame, face_landmark_5)
 	crop_vision_frame = crop_vision_frame.astype(numpy.float32) / 255
 	crop_vision_frame = (crop_vision_frame - 0.5) * 2
 	crop_vision_frame = crop_vision_frame.transpose(2, 0, 1)
@@ -84,7 +84,7 @@ def prepare(device : str) -> Tuple[Embedding, Embedding]:
 				face_landmarks_5 = face_detector(vision_frame_torch)['points']
 				for face_landmark_5 in face_landmarks_5:
 					face_landmark_5 = face_landmark_5.detach().cpu().numpy()
-					crop_vision_frame = prepare_crop_frame(vision_frame, face_landmark_5)
+					crop_vision_frame = prepare_crop_vision_frame(vision_frame, face_landmark_5)
 					source_embedding = forward(source_session, crop_vision_frame)
 					target_embedding = forward(target_session, crop_vision_frame)
 					source_embedding_list.append(source_embedding)
