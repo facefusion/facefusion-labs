@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 import configparser
 import os
-from typing import Any, List, Tuple
+from typing import List, Tuple
 
 import cv2
 import facer
 import numpy
 import onnxruntime
 import torch
-from numpy.typing import NDArray
 from onnxruntime import InferenceSession
 from tqdm import tqdm
+
+from arcface_converter.typing import Embedding, FaceLandmark5, VisionFrame
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 
-TEMPLATE_POINTS = numpy.array(
+WARP_TEMPLATE = numpy.array(
 [
     [ 38.2946, 51.6963 ],
 	[ 73.5318, 51.5014 ],
@@ -25,44 +26,40 @@ TEMPLATE_POINTS = numpy.array(
 ], numpy.float32)
 
 
-def get_image_paths() -> List[str]:
+def get_vision_frame_paths() -> List[str]:
 	dataset_path = CONFIG['datasets']['dataset_path']
-	image_names = os.listdir(dataset_path)
-	image_paths = []
+	vision_frame_names = os.listdir(dataset_path)
+	vision_frame_paths = []
 
-	for image_name in image_names:
-		image_path = os.path.join(dataset_path, image_name)
-		if os.path.isfile(image_path):
-			image_paths.append(image_path)
-	image_paths.sort()
-	return image_paths
-
-
-def warp_image(image : NDArray[Any], face_landmark_5 : NDArray[Any]) -> NDArray[Any]:
-    matrix = cv2.estimateAffinePartial2D(face_landmark_5, TEMPLATE_POINTS, method = cv2.RANSAC, ransacReprojThreshold = 100)[0]
-    crop_image = cv2.warpAffine(image, matrix, (112, 112), borderMode = cv2.BORDER_REPLICATE)
-    return crop_image
+	for vision_frame_name in vision_frame_names:
+		vision_frame_path = os.path.join(dataset_path, vision_frame_name)
+		if os.path.isfile(vision_frame_path):
+			vision_frame_paths.append(vision_frame_path)
+	vision_frame_paths.sort()
+	return vision_frame_paths
 
 
-def prepare_crop_image(image : NDArray[Any], face_landmarks_5 : NDArray[Any]) -> NDArray[Any]:
-	crop_image = warp_image(image, face_landmarks_5)
-	crop_image = crop_image.astype(numpy.float32) / 255
-	crop_image = (crop_image - 0.5) * 2
-	crop_image = crop_image.transpose(2, 0, 1)
-	crop_image = crop_image[None]
-	return crop_image
+def warp_frame(vision_frame : VisionFrame, face_landmark_5 : FaceLandmark5) -> VisionFrame:
+    matrix = cv2.estimateAffinePartial2D(face_landmark_5, WARP_TEMPLATE, method = cv2.RANSAC, ransacReprojThreshold = 100)[0]
+    crop_vision_frame = cv2.warpAffine(vision_frame, matrix, (112, 112), borderMode = cv2.BORDER_REPLICATE)
+    return crop_vision_frame
 
 
-def get_arcface_sessions(device : str) -> Tuple[InferenceSession, InferenceSession]:
-	source_path = CONFIG['models']['source_path']
-	target_path = CONFIG['models']['target_path']
-	provider = 'CUDAExecutionProvider' if device == 'cuda' else 'CPUExecutionProvider'
-	source_session = onnxruntime.InferenceSession(source_path, providers = [ provider ])
-	target_session = onnxruntime.InferenceSession(target_path, providers = [ provider ])
-	return source_session, target_session
+def prepare_crop_frame(vision_frame : VisionFrame, face_landmark_5 : FaceLandmark5) -> VisionFrame:
+	crop_vision_frame = warp_frame(vision_frame, face_landmark_5)
+	crop_vision_frame = crop_vision_frame.astype(numpy.float32) / 255
+	crop_vision_frame = (crop_vision_frame - 0.5) * 2
+	crop_vision_frame = crop_vision_frame.transpose(2, 0, 1)
+	crop_vision_frame = crop_vision_frame[None]
+	return crop_vision_frame
 
 
-def forward_arcface_session(session : InferenceSession, crop_image : NDArray[Any]) -> NDArray[Any]:
+def create_inference_session(model_path : str, provider : str) -> InferenceSession:
+	inference_session = onnxruntime.InferenceSession(model_path, providers = [ provider ])
+	return inference_session
+
+
+def forward(session : InferenceSession, crop_image : VisionFrame) -> Embedding:
 	embedding = session.run(None,
 	{
 		'input': crop_image
@@ -70,35 +67,36 @@ def forward_arcface_session(session : InferenceSession, crop_image : NDArray[Any
 	return embedding
 
 
-def prepare(device : str) -> Tuple[NDArray[Any], NDArray[Any]]:
+def prepare(device : str) -> Tuple[Embedding, Embedding]:
 	face_detector = facer.face_detector('retinaface/mobilenet', device = device)
-	image_paths = get_image_paths()
-	source_session, target_session = get_arcface_sessions(device)
+	vision_frame_paths = get_vision_frame_paths()
+	provider = 'CUDAExecutionProvider'
+	source_session = create_inference_session(CONFIG['models']['source_path'], provider)
+	target_session = create_inference_session(CONFIG['models']['target_path'], provider)
 	source_embedding_list = []
 	target_embedding_list = []
 
-	for image_path in tqdm(image_paths):
+	for vision_frame_path in tqdm(vision_frame_paths):
 		with torch.inference_mode():
 			try:
-				image = cv2.imread(image_path)[:, :, ::-1]
-				image_torch = torch.from_numpy(image).permute(2, 0, 1).unsqueeze(0).to(device = device)
-				face_landmarks_5_list = face_detector(image_torch)['points']
-				for face_landmarks_5 in face_landmarks_5_list:
-					face_landmarks_5 = face_landmarks_5.detach().cpu().numpy()
-					crop_image = prepare_crop_image(image, face_landmarks_5)
-					source_embedding = forward_arcface_session(source_session, crop_image)
-					target_embedding = forward_arcface_session(target_session, crop_image)
+				vision_frame = cv2.imread(vision_frame_path)[:, :, ::-1]
+				vision_frame_torch = torch.from_numpy(vision_frame).permute(2, 0, 1).unsqueeze(0).to(device = device)
+				face_landmarks_5 = face_detector(vision_frame_torch)['points']
+				for face_landmark_5 in face_landmarks_5:
+					face_landmark_5 = face_landmark_5.detach().cpu().numpy()
+					crop_vision_frame = prepare_crop_frame(vision_frame, face_landmark_5)
+					source_embedding = forward(source_session, crop_vision_frame)
+					target_embedding = forward(target_session, crop_vision_frame)
 					source_embedding_list.append(source_embedding)
 					target_embedding_list.append(target_embedding)
 			except:
 				continue
-	source_embeddings = numpy.concatenate(source_embedding_list, axis = 0)
-	target_embeddings = numpy.concatenate(target_embedding_list, axis = 0)
+	source_embeddings = numpy.concatenate(source_embedding_list, axis=0)
+	target_embeddings = numpy.concatenate(target_embedding_list, axis=0)
 	return source_embeddings, target_embeddings
 
 
 if __name__ == '__main__':
-	device = 'cuda'
-	source_embeddings, target_embeddings = prepare(device)
+	source_embeddings, target_embeddings = prepare(CONFIG['devices']['device'])
 	numpy.save(CONFIG['embeddings']['source_path'], source_embeddings)
 	numpy.save(CONFIG['embeddings']['target_path'], target_embeddings)
