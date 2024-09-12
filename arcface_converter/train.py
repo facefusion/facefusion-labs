@@ -65,8 +65,9 @@ def create_data_loaders(batch_size : int, split_ratio : float = 0.8) -> Tuple[Lo
 	source = torch.from_numpy(numpy.load(CONFIG['embeddings']['source_path'])).float()
 	target = torch.from_numpy(numpy.load(CONFIG['embeddings']['target_path'])).float()
 	dataset = TensorDataset(source, target)
-	training_size = int(split_ratio * len(dataset))
-	validation_size = len(dataset) - training_size
+	dataset_size = len(dataset)
+	training_size = int(split_ratio * dataset_size)
+	validation_size = int(dataset_size - training_size)
 	training_dataset, validate_dataset = random_split(dataset, [ training_size, validation_size ])
 	training_loader = DataLoader(training_dataset, batch_size = batch_size, shuffle = True, num_workers = 8, pin_memory = True)
 	validation_loader = DataLoader(validate_dataset, batch_size = batch_size, shuffle = False, num_workers = 8, pin_memory = True)

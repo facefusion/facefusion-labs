@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import configparser
 import os
 from typing import List
@@ -56,15 +57,15 @@ def prepare_crop_vision_frame(vision_frame : VisionFrame, face_landmark_5 : Face
 	return crop_vision_frame
 
 
-def create_inference_session(model_path : str, provider : str) -> InferenceSession:
-	inference_session = onnxruntime.InferenceSession(model_path, providers = [ provider ])
+def create_inference_session(model_path : str, execution_providers : List[str]) -> InferenceSession:
+	inference_session = onnxruntime.InferenceSession(model_path, providers = execution_providers)
 	return inference_session
 
 
-def forward(session : InferenceSession, crop_image : VisionFrame) -> Embedding:
-	embedding = session.run(None,
+def forward(inference_session : InferenceSession, crop_vision_frame : VisionFrame) -> Embedding:
+	embedding = inference_session.run(None,
 	{
-		'input': crop_image
+		'input': crop_vision_frame
 	})[0]
 
 	return embedding
@@ -73,8 +74,8 @@ def forward(session : InferenceSession, crop_image : VisionFrame) -> Embedding:
 def prepare() -> None:
 	face_detector = facer.face_detector('retinaface/mobilenet', device = CONFIG['execution']['device'])
 	vision_frame_paths = get_vision_frame_paths()
-	source_session = create_inference_session(CONFIG['models']['source_path'], CONFIG['execution']['provider'])
-	target_session = create_inference_session(CONFIG['models']['target_path'], CONFIG['execution']['provider'])
+	source_session = create_inference_session(CONFIG['models']['source_path'], [ CONFIG['execution']['providers'] ])
+	target_session = create_inference_session(CONFIG['models']['target_path'], [ CONFIG['execution']['providers'] ])
 	source_embedding_list = []
 	target_embedding_list = []
 
