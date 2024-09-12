@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from typing import Any
 import numpy
 import configparser
 import torch
@@ -14,7 +15,7 @@ CONFIG.read('config.ini')
 
 
 class ArcFaceConverterTrainer(pl.LightningModule):
-    def __init__(self):
+    def __init__(self) -> None:
         super(ArcFaceConverterTrainer, self).__init__()
         self.model = ArcFaceConverter()
         self.loss_fn = torch.nn.MSELoss()
@@ -23,21 +24,21 @@ class ArcFaceConverterTrainer(pl.LightningModule):
     def forward(self, input_embedding: torch.Tensor) -> torch.Tensor:
         return self.model(input_embedding)
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch : Any, batch_idx : int) -> Any:
         source, target = batch
         output = self(source)
         loss = self.loss_fn(output, target)
         self.log('train_loss', loss, prog_bar=True, logger=True)
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch : Any, batch_idx : int) -> Any:
         source, target = batch
         output = self(source)
         loss = self.loss_fn(output, target)
         self.log('val_loss', loss, prog_bar=True, logger=True)
         return loss
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> Any:
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10, factor=0.1, mode='min')
         return {
@@ -51,7 +52,7 @@ class ArcFaceConverterTrainer(pl.LightningModule):
         }
 
 
-def get_data_loader(batch_size, split_ratio = 0.8):
+def get_data_loader(batch_size : int, split_ratio : float = 0.8) -> Any:
 	source = torch.from_numpy(numpy.load(CONFIG['embeddings']['source_path'])).float()
 	target = torch.from_numpy(numpy.load(CONFIG['embeddings']['target_path'])).float()
 	dataset = TensorDataset(source, target)
@@ -63,7 +64,7 @@ def get_data_loader(batch_size, split_ratio = 0.8):
 	return train_loader, val_loader
 
 
-def train(trainer, train_loader, val_loader) -> None:
+def train(trainer : Any, train_loader : Any, val_loader : Any) -> None:
 	model = ArcFaceConverterTrainer()
 	tuner = Tuner(trainer)
 	tuner.lr_find(model, train_loader, val_loader)

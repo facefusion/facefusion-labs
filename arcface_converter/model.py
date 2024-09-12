@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
 
+
 class ArcFaceConverter(nn.Module):
-    def __init__(self, input_dim = 512, output_dim = 512):
+    def __init__(self, input_dim : int = 512, output_dim : int = 512) -> None:
         super(ArcFaceConverter, self).__init__()
         self.fc1 = nn.Linear(input_dim, 1024)
         self.fc2 = nn.Linear(1024, 1024)
