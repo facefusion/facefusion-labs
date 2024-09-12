@@ -80,7 +80,7 @@ def train(trainer : Trainer, training_loader : Loader, validation_loader : Loade
 	trainer.fit(model, training_loader, validation_loader)
 
 
-def create_trainer() -> Trainer
+def create_trainer() -> Trainer:
 	checkpoint_callback = ModelCheckpoint(
 		monitor = 'train_loss',
 		dirpath = CONFIG['checkpoints']['directory_path'],
