@@ -4,4 +4,4 @@ from torch import Tensor
 from torch.utils.data import DataLoader
 
 Batch = Tuple[Tensor, Tensor]
-Loader = DataLoader[Tuple[Tensor, ...]], DataLoader[Tuple[Tensor, ...]]
+Loader = DataLoader[Tuple[Tensor, ...]]
