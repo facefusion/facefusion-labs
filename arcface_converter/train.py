@@ -27,8 +27,8 @@ class ArcFaceConverterTrainer(pytorch_lightning.LightningModule):
 		self.loss_fn = torch.nn.MSELoss()
 		self.lr = 0.001
 
-	def forward(self, input_embedding : Tensor) -> Tensor:
-		return self.model(input_embedding)
+	def forward(self, source_embedding : Tensor) -> Tensor:
+		return self.model(source_embedding)
 
 	def training_step(self, batch : Batch, batch_index : int) -> Tensor:
 		source, target = batch

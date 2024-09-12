@@ -6,16 +6,14 @@ from torch import Tensor
 class ArcFaceConverter(nn.Module):
 	def __init__(self) -> None:
 		super(ArcFaceConverter, self).__init__()
-		input_size = 512
-		output_size = 512
-		self.fc1 = nn.Linear(input_size, 1024)
+		self.fc1 = nn.Linear(512, 1024)
 		self.fc2 = nn.Linear(1024, 1024)
 		self.fc3 = nn.Linear(1024, 1024)
-		self.fc4 = nn.Linear(1024, output_size)
+		self.fc4 = nn.Linear(1024, 512)
 		self.activation = nn.LeakyReLU()
 
-	def forward(self, input_embedding : Tensor) -> Tensor:
-		output_embedding = self.activation(self.fc1(input_embedding))
+	def forward(self, source_embedding : Tensor) -> Tensor:
+		output_embedding = self.activation(self.fc1(source_embedding))
 		output_embedding = self.activation(self.fc2(output_embedding))
 		output_embedding = self.activation(self.fc3(output_embedding))
 		output_embedding = self.fc4(output_embedding)
