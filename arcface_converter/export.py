@@ -4,7 +4,7 @@ import configparser
 
 import torch
 
-from arcface_converter.model import ArcFaceConverter
+from .src.model import ArcFaceConverter
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
