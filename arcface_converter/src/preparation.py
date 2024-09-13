@@ -79,11 +79,11 @@ def prepare() -> None:
 	source_embedding_list = []
 	target_embedding_list = []
 
-	for vision_frame_path in tqdm(vision_frame_paths):
+	for vision_frame_path in tqdm(vision_frame_paths, ascii = ' ='):
 		with torch.inference_mode():
 			try:
 				vision_frame = cv2.imread(vision_frame_path)[:, :, ::-1]
-				vision_frame_torch = torch.from_numpy(vision_frame).permute(2, 0, 1).unsqueeze(0).to(device = CONFIG.get('execution', 'device'))
+				vision_frame_torch = torch.from_numpy(vision_frame.copy()).permute(2, 0, 1).unsqueeze(0).to(device = CONFIG.get('execution', 'device'))
 				face_landmarks_5 = face_detector(vision_frame_torch).get('points')
 
 				for face_landmark_5 in face_landmarks_5:
