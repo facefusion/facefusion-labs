@@ -24,11 +24,3 @@ Train
 ```
 python train.py
 ```
-
-
-Export
------
-
-```
-python export.py
-```

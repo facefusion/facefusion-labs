@@ -12,8 +12,8 @@ from pytorch_lightning.tuner.tuning import Tuner
 from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset, random_split
 
-from arcface_converter.src.model import ArcFaceConverter
-from arcface_converter.src.typing import Batch, Loader
+from .model import ArcFaceConverter
+from .typing import Batch, Loader
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -81,8 +81,8 @@ def create_trainer() -> Trainer:
 		[
 			ModelCheckpoint(
 				monitor = 'train_loss',
-				dirpath = CONFIG.get('checkpoints', 'directory_path'),
-				filename = CONFIG.get('checkpoints', 'file_name'),
+				dirpath = CONFIG.get('outputs', 'directory_path'),
+				filename = CONFIG.get('outputs', 'file_name'),
 				save_top_k = 3,
 				mode = 'min',
 				every_n_epochs = 10
@@ -93,7 +93,9 @@ def create_trainer() -> Trainer:
 	)
 
 
-def train(trainer : Trainer, training_loader : Loader, validation_loader : Loader) -> None:
+def train() -> None:
+	trainer = create_trainer()
+	training_loader, validation_loader = create_loaders()
 	model = ArcFaceConverterTrainer()
 	tuner = Tuner(trainer)
 	tuner.lr_find(model, training_loader, validation_loader)
