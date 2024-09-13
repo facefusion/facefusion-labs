@@ -28,7 +28,7 @@ WARP_TEMPLATE = numpy.array(
 
 
 def get_vision_frame_paths() -> List[str]:
-	dataset_path = CONFIG['datasets']['dataset_path']
+	dataset_path = CONFIG.get('datasets', 'dataset_path')
 	vision_frame_names = os.listdir(dataset_path)
 	vision_frame_paths = []
 
@@ -72,10 +72,10 @@ def forward(inference_session : InferenceSession, crop_vision_frame : VisionFram
 
 
 def prepare() -> None:
-	face_detector = facer.face_detector('retinaface/mobilenet', device = CONFIG['execution']['device'])
+	face_detector = facer.face_detector('retinaface/mobilenet', device = CONFIG.get('execution', 'device'))
 	vision_frame_paths = get_vision_frame_paths()
-	source_session = create_inference_session(CONFIG['models']['source_path'], [ CONFIG['execution']['providers'] ])
-	target_session = create_inference_session(CONFIG['models']['target_path'], [ CONFIG['execution']['providers'] ])
+	source_session = create_inference_session(CONFIG.get('models', 'source_path'), [ CONFIG.get('execution', 'providers') ])
+	target_session = create_inference_session(CONFIG.get('models', 'target_path'), [ CONFIG.get('execution', 'providers') ])
 	source_embedding_list = []
 	target_embedding_list = []
 
@@ -83,7 +83,7 @@ def prepare() -> None:
 		with torch.inference_mode():
 			try:
 				vision_frame = cv2.imread(vision_frame_path)[:, :, ::-1]
-				vision_frame_torch = torch.from_numpy(vision_frame).permute(2, 0, 1).unsqueeze(0).to(device = CONFIG['execution']['device'])
+				vision_frame_torch = torch.from_numpy(vision_frame).permute(2, 0, 1).unsqueeze(0).to(device = CONFIG.get('execution', 'device'))
 				face_landmarks_5 = face_detector(vision_frame_torch).get('points')
 
 				for face_landmark_5 in face_landmarks_5:
@@ -98,5 +98,5 @@ def prepare() -> None:
 
 	source_embeddings = numpy.concatenate(source_embedding_list, axis = 0)
 	target_embeddings = numpy.concatenate(target_embedding_list, axis = 0)
-	numpy.save(CONFIG['embeddings']['source_path'], source_embeddings)
-	numpy.save(CONFIG['embeddings']['target_path'], target_embeddings)
+	numpy.save(CONFIG.get('embeddings', 'source_path'), source_embeddings)
+	numpy.save(CONFIG.get('embeddings', 'target_path'), target_embeddings)
