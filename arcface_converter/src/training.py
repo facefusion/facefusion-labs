@@ -12,8 +12,8 @@ from pytorch_lightning.tuner.tuning import Tuner
 from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset, random_split
 
-from arcface_converter.src.model import ArcFaceConverter
-from arcface_converter.src.typing import Batch, Loader
+from src.model import ArcFaceConverter
+from src.typing import Batch, Loader
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')

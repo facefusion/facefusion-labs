@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from pytorch_lightning.loggers import TensorBoardLogger
 
-from arcface_converter.src.training import create_loaders, create_trainer, train
+from src.training import create_loaders, create_trainer, train
 
 if __name__ == '__main__':
 	trainer = create_trainer()
