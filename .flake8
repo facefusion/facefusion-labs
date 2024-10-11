@@ -1,0 +1,7 @@
+[flake8]
+select = E3, E4, F, I1, I2
+plugins = flake8-import-order
+application_import_names = arcface_converter
+import-order-style = pycharm
+per-file-ignores = preparing.py:E402
+
