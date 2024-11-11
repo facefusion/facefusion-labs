@@ -1,6 +1,6 @@
 lightning==2.4.0
 numpy==1.26.4
-onnx==1.16.2
-onnxruntime==1.19.0
+onnx==1.17.0
+onnxruntime==1.20.0
 opencv-python==4.10.0.84
 mxnet==1.9.1
