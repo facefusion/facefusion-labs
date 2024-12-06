@@ -3,6 +3,8 @@ ArcFace Converter
 
 > Convert face embeddings between various ArcFace models.
 
+![License](https://img.shields.io/badge/license-MIT-green)
+
 
 Preview
 -------
