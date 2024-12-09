@@ -1,0 +1,3 @@
+[submodule "face_swapper/LivePortrait"]
+	path = face_swapper/LivePortrait
+	url = https://github.com/KwaiVGI/LivePortrait
