@@ -3,7 +3,7 @@ from typing import List
 import numpy
 import torch.nn as nn
 
-from .sub_typing import Tensor
+from .typing import Tensor, DiscriminatorOutputs
 
 
 class NLayerDiscriminator(nn.Module):
@@ -49,7 +49,6 @@ class NLayerDiscriminator(nn.Module):
         return self.model(input_tensor)
 
 
-# input_channels=3, num_filters=64, num_layers=5, num_discriminators=3
 class MultiscaleDiscriminator(nn.Module):
     def __init__(self, input_channels : int, num_filters : int, num_layers : int, num_discriminators : int):
         super(MultiscaleDiscriminator, self).__init__()
@@ -61,18 +60,12 @@ class MultiscaleDiscriminator(nn.Module):
             setattr(self, 'discriminator_layer_{}'.format(discriminator_index), single_discriminator.model)
         self.downsample = nn.AvgPool2d(kernel_size = 3, stride = 2, padding = [ 1, 1 ], count_include_pad = False) # type:ignore[arg-type]
 
+
     def single_discriminator_forward(self, model_layers : nn.Sequential, input_tensor : Tensor) -> List[Tensor]:
+        return [ model_layers(input_tensor) ]
 
-        if self.return_intermediate_features:
-            feature_maps = [ input_tensor ]
 
-            for layer in model_layers:
-                feature_maps.append(layer(feature_maps[-1]))
-            return feature_maps[1:]
-        else:
-            return [ model_layers(input_tensor) ]
-
-    def forward(self, input_tensor : Tensor) -> List[Tensor]:
+    def forward(self, input_tensor : Tensor) -> DiscriminatorOutputs:
         discriminator_outputs = []
         downsampled_input = input_tensor
 

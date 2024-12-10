@@ -9,7 +9,7 @@ from PIL import Image
 from torch.utils.data import TensorDataset
 
 from .augmentations import apply_random_motion_blur
-from .sub_typing import Batch
+from .typing import Batch
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -27,6 +27,7 @@ class DataLoaderVGG(TensorDataset):
 		self.image_paths = glob.glob('{}/*/*.*g'.format(dataset_path))
 		self.folder_paths = glob.glob('{}/*'.format(dataset_path))
 		self.image_path_dict = {}
+		self._current_index = 0
 
 		for folder_path in tqdm.tqdm(self.folder_paths):
 			image_paths = glob.glob('{}/*'.format(folder_path))
@@ -50,12 +51,12 @@ class DataLoaderVGG(TensorDataset):
 		[
 			transforms.Resize((256, 256), interpolation=transforms.InterpolationMode.BICUBIC),
 			transforms.ToTensor(),
-			transforms.Resize((256, 256), interpolation=transforms.InterpolationMode.BICUBIC),
 			transforms.RandomHorizontalFlip(p = 0.5),
 			transforms.RandomApply([ apply_random_motion_blur ], p = 0.3),
 			transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation = 0.2, hue = 0.1),
 			transforms.RandomAffine(8, translate = (0.02, 0.02), scale = (0.98, 1.02), shear = (1, 1), fill = 0),
-			transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+			transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+			transforms.Resize((256, 256), interpolation=transforms.InterpolationMode.BICUBIC),
 		])
 
 	def __getitem__(self, item : int) -> Batch:
@@ -80,3 +81,11 @@ class DataLoaderVGG(TensorDataset):
 
 	def __len__(self) -> int:
 		return self.dataset_total
+
+
+	def state_dict(self):
+		return {'current_index': self._current_index}
+
+
+	def load_state_dict(self, state_dict):
+		self._current_index = state_dict['current_index']

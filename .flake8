@@ -4,4 +4,4 @@ plugins = flake8-import-order
 application_import_names = arcface_converter
 import-order-style = pycharm
 per-file-ignores = preparing.py:E402
-exclude = LivePortrait
+exclude = face_swapper
