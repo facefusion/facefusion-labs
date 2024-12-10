@@ -1,7 +1,6 @@
 import configparser
 import random
-
-from sympy.stats.sampling.sample_numpy import numpy
+import numpy
 
 from typing import Tuple
 import os
