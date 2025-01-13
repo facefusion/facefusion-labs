@@ -1,9 +1,7 @@
-from typing import List
-
 import numpy
 import torch.nn as nn
 
-from .typing import Tensor, DiscriminatorOutputs
+from .typing import DiscriminatorOutputs, List, Tensor
 
 
 class NLayerDiscriminator(nn.Module):
@@ -60,10 +58,8 @@ class MultiscaleDiscriminator(nn.Module):
             setattr(self, 'discriminator_layer_{}'.format(discriminator_index), single_discriminator.model)
         self.downsample = nn.AvgPool2d(kernel_size = 3, stride = 2, padding = [ 1, 1 ], count_include_pad = False) # type:ignore[arg-type]
 
-
     def single_discriminator_forward(self, model_layers : nn.Sequential, input_tensor : Tensor) -> List[Tensor]:
         return [ model_layers(input_tensor) ]
-
 
     def forward(self, input_tensor : Tensor) -> DiscriminatorOutputs:
         discriminator_outputs = []

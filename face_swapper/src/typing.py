@@ -1,4 +1,4 @@
-from typing import Any, Tuple, List, Dict, Optional
+from typing import Any, Dict, List, Tuple
 
 from numpy.typing import NDArray
 from torch import Tensor
@@ -9,6 +9,7 @@ Loader = DataLoader[Tuple[Tensor, ...]]
 TargetAttributes = Tuple[Tensor, ...]
 DiscriminatorOutputs = List[List[Tensor]]
 LossDict = Dict[str, Tensor]
+IDEmbedding = Tensor
 
 Embedding = NDArray[Any]
 VisionFrame = NDArray[Any]
