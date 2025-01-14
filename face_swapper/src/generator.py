@@ -1,7 +1,9 @@
+from typing import Tuple
+
 import torch
 import torch.nn as nn
 
-from .typing import IDEmbedding, TargetAttributes, Tensor, Tuple
+from .typing import IDEmbedding, TargetAttributes, Tensor
 
 
 class AdaptiveEmbeddingIntegrationNetwork(nn.Module):
