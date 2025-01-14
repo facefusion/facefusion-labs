@@ -229,7 +229,7 @@ class FaceSwapper(pytorch_lightning.LightningModule):
 		self.logger.experiment.add_image("Generator Preview", grid, self.global_step)
 
 	def log_validation_preview(self) -> None:
-		read_images = lambda path :  [read_image(os.path.join(path, f)) for f in sorted(os.listdir(path)) if f.lower().endswith('.jpg') or f.lower().endswith('.png')]
+		read_images = lambda path : [read_image(os.path.join(path, f)) for f in sorted(os.listdir(path)) if f.lower().endswith('.jpg') or f.lower().endswith('.png')]
 		to_numpy = lambda x: (x.cpu().detach().numpy()[0].transpose(1, 2, 0).clip(-1, 1)[:, :, ::-1] + 1) * 127.5
 		transforms = torchvision.transforms.Compose(
 			[

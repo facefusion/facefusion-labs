@@ -19,10 +19,10 @@ def transform_points(points : Tensor, rotation_matrix : Tensor, expression : Ten
 
 
 def hinge_loss(tensor : Tensor, is_positive : bool) -> Tensor:
-    if is_positive:
-        return torch.relu(1 - tensor)
-    else:
-        return torch.relu(tensor + 1)
+	if is_positive:
+		return torch.relu(1 - tensor)
+	else:
+		return torch.relu(tensor + 1)
 
 
 def calc_distance_ratio(landmarks : Tensor, indices : Tuple[int, int, int, int]) -> Tensor:
