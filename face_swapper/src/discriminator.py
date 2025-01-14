@@ -1,7 +1,9 @@
+from typing import List
+
 import numpy
 import torch.nn as nn
 
-from .typing import DiscriminatorOutputs, List, Tensor
+from .typing import DiscriminatorOutputs, Tensor
 
 
 class NLayerDiscriminator(nn.Module):
