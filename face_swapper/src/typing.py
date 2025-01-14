@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from typing import Any, Dict, List, Tuple
 
 from numpy.typing import NDArray
@@ -10,6 +11,6 @@ TargetAttributes = Tuple[Tensor, ...]
 DiscriminatorOutputs = List[List[Tensor]]
 LossDict = Dict[str, Tensor]
 IDEmbedding = Tensor
-
+StateDict = OrderedDict[str, Any]
 Embedding = NDArray[Any]
 VisionFrame = NDArray[Any]
