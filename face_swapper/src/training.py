@@ -1,5 +1,6 @@
 import configparser
 import os
+from typing import Tuple
 
 import cv2
 import numpy
@@ -17,7 +18,7 @@ from .data_loader import DataLoaderVGG, read_image
 from .discriminator import MultiscaleDiscriminator
 from .generator import AdaptiveEmbeddingIntegrationNetwork
 from .helper import L2_loss, hinge_loss
-from .typing import Batch, DiscriminatorOutputs, IDEmbedding, LossDict, TargetAttributes, Tensor, Tuple
+from .typing import Batch, DiscriminatorOutputs, IDEmbedding, LossDict, TargetAttributes, Tensor
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')

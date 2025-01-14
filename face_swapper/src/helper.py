@@ -1,8 +1,9 @@
 import configparser
+from typing import Tuple
 
 import torch
 
-from .typing import Tensor, Tuple
+from .typing import Tensor
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
