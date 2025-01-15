@@ -30,16 +30,16 @@ class ArcFaceConverterTrainer(pytorch_lightning.LightningModule):
 		return self.model(source_embedding)
 
 	def training_step(self, batch : Batch, batch_index : int) -> Tensor:
-		source, target = batch
-		output = self(source)
-		loss = self.loss_fn(output, target)
+		source_embedding, target_embedding = batch
+		output_embedding = self(source_embedding)
+		loss = self.loss_fn(output_embedding, target_embedding)
 		self.log('train_loss', loss, prog_bar = True, logger = True)
 		return loss
 
 	def validation_step(self, batch : Batch, batch_index : int) -> Tensor:
-		source, target = batch
-		output = self(source)
-		loss = self.loss_fn(output, target)
+		source_embedding, target_embedding = batch
+		output_embedding = self(source_embedding)
+		loss = self.loss_fn(output_embedding, target_embedding)
 		self.log('val_loss', loss, prog_bar = True, logger = True)
 		return loss
 
