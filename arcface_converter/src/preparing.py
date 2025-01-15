@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import configparser
 from os import makedirs
 from os.path import isfile
