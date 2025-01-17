@@ -16,20 +16,20 @@ CONFIG.read('config.ini')
 
 def read_image(image_path: str) -> Image.Image:
 	image = cv2.imread(image_path)[:, :, ::-1]
-	pil_image = Image.fromarray(image)
+	pil_image = Image.fromarray(image) # @todo like said, use the PIL transformator
 	return pil_image
 
 
 class DataLoaderVGG(TensorDataset):
 	def __init__(self, dataset_path : str) -> None:
-		self.same_person_probability = float(CONFIG.get('preparing.dataloader', 'same_person_probability'))
-		self.image_paths = glob.glob('{}/*/*.*g'.format(dataset_path))
+		self.same_person_probability = float(CONFIG.get('preparing.dataloader', 'same_person_probability')) # @todo use CONFIG.getfloat() - also config block at the top
+		self.image_paths = glob.glob('{}/*/*.*g'.format(dataset_path)) # @todo globs belong to the config
 		self.folder_paths = glob.glob('{}/*'.format(dataset_path))
-		self.image_path_dict = {}
+		self.image_path_dict = {} # @todo we are not using dict as suffix... this image_path_set?
 		self._current_index = 0
 
 		for folder_path in tqdm.tqdm(self.folder_paths):
-			image_paths = glob.glob('{}/*'.format(folder_path))
+			image_paths = glob.glob('{}/*'.format(folder_path)) # @todo not sure about alls this globs being used here :-)
 			self.image_path_dict[folder_path] = image_paths
 		self.dataset_total = len(self.image_paths)
 		self.transforms_basic = transforms.Compose(
@@ -61,15 +61,15 @@ class DataLoaderVGG(TensorDataset):
 		source_image_path = self.image_paths[item]
 		source = read_image(source_image_path)
 
-		if random.random() > self.same_person_probability:
+		if random.random() > self.same_person_probability: # @todo if -> we_call_a_method_that_explains_what_we_do()
 			is_same_person = 0
 			target_image_path = random.choice(self.image_paths)
 			target = read_image(target_image_path)
 			source_transform = self.transforms_moderate(source)
 			target_transform = self.transforms_complex(target)
-		else:
+		else: # @todo else -> we_do_some_alternative_action() - in other words, move it to speaking methods :-)
 			is_same_person = 1
-			source_folder_path = '/'.join(source_image_path.split('/')[:-1])
+			source_folder_path = '/'.join(source_image_path.split('/')[:-1]) # @todo use os.path.join()
 			target_image_path = random.choice(self.image_path_dict[source_folder_path])
 			target = read_image(target_image_path)
 			source_transform = self.transforms_basic(source)
