@@ -111,15 +111,17 @@ class AADLayer(nn.Module):
 
 class AddBlocksSequential(nn.Sequential):
 	def forward(self, *inputs : Tuple[Tensor, Tensor, SourceEmbedding]) -> Tuple[Tuple[Tensor, Tensor, SourceEmbedding], ...]:
-		_, attr_embedding, id_embedding = inputs #@todo we are not using shortcuts, it is attribute_embedding
+		_, attribute_embedding, id_embedding = inputs
+		modules = self._modules.values()
 
-		for index, module in enumerate(self._modules.values()): #@todo refactor this to return values
-			if index % 3 == 0 and index > 0:
-				inputs = (inputs, attr_embedding, id_embedding) # type:ignore[assignment]
-			if type(inputs) == tuple: #@todo my IDE complains about the type check
-				inputs = module(*inputs)
-			else:
+		for module_index, module in enumerate(modules):
+			if module_index % 3 == 0 and module_index > 0:
+				inputs = (inputs, attribute_embedding, id_embedding) # type:ignore[assignment]
+
+			if isinstance(inputs, torch.Tensor):
 				inputs = module(inputs)
+			else:
+				inputs = module(*inputs)
 		return inputs
 
 
@@ -133,20 +135,21 @@ class AADResBlock(nn.Module):
 		for i in range(num_blocks):
 			intermediate_channels = input_channels if i < (num_blocks - 1) else output_channels
 			primary_add_blocks.extend(
-				[ #@todo indent
+				[
 					AADLayer(input_channels, attribute_channels, id_channels),
 					nn.ReLU(inplace = True),
 					nn.Conv2d(input_channels, intermediate_channels, kernel_size = 3, stride = 1, padding = 1, bias = False)
-				])
+				]
+			)
 		self.primary_add_blocks = AddBlocksSequential(*primary_add_blocks)
 
 		if input_channels != output_channels:
 			auxiliary_add_blocks =\
-				[ #@todo indent
-					AADLayer(input_channels, attribute_channels, id_channels),
-					nn.ReLU(inplace = True),
-					nn.Conv2d(input_channels, output_channels, kernel_size = 3, stride = 1, padding = 1, bias = False)
-				]
+			[
+				AADLayer(input_channels, attribute_channels, id_channels),
+				nn.ReLU(inplace = True),
+				nn.Conv2d(input_channels, output_channels, kernel_size = 3, stride = 1, padding = 1, bias = False)
+			]
 			self.auxiliary_add_blocks = AddBlocksSequential(*auxiliary_add_blocks)
 
 	def forward(self, feature_map : Tensor, attribute_embedding : Tensor, id_embedding : SourceEmbedding) -> Tensor:
