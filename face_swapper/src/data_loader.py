@@ -22,13 +22,15 @@ def read_image(image_path: str) -> VisionFrame:
 class DataLoaderVGG(TensorDataset):
 	def __init__(self, dataset_path : str) -> None:
 		self.same_person_probability = CONFIG.getfloat('preparing.dataloader', 'same_person_probability')
-		self.image_paths = glob.glob('{}/*/*.*g'.format(dataset_path)) # @todo globs belong to the config
-		self.folder_paths = glob.glob('{}/*'.format(dataset_path))
+		image_pattern = CONFIG.get('preparing.dataset', 'image_pattern')
+		folder_pattern = CONFIG.get('preparing.dataset', 'folder_pattern')
+		self.folder_paths = glob.glob(folder_pattern.format(dataset_path))
+		self.image_paths = []
 		self.image_path_set = {}
-		self._current_index = 0
 
 		for folder_path in self.folder_paths:
-			image_paths = glob.glob('{}/*'.format(folder_path)) # @todo not sure about alls this globs being used here :-)
+			image_paths = glob.glob(image_pattern.format(folder_path))
+			self.image_paths.extend(image_paths)
 			self.image_path_set[folder_path] = image_paths
 		self.dataset_total = len(self.image_paths)
 		self.transforms = transforms.Compose(
