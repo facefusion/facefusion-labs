@@ -1,8 +1,10 @@
 from collections import OrderedDict
 from typing import Any, Dict, List, Tuple
 
+from numpy.typing import NDArray
 from torch import Tensor
 from torch.utils.data import DataLoader
+
 
 Batch = Tuple[Any, Any, Any]
 Loader = DataLoader[Tuple[Tensor, ...]]
@@ -17,3 +19,4 @@ VisionTensor = Tensor
 LossTensor = Tensor
 GeneratorLossSet = Dict[str, LossTensor]
 DiscriminatorLossSet = Dict[str, LossTensor]
+VisionFrame = NDArray[Any]
