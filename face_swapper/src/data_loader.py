@@ -1,35 +1,24 @@
-import configparser
 import glob
 import os.path
 import random
 
-import cv2
 import torch
 import torchvision.transforms as transforms
 from torch.utils.data import TensorDataset
 
-from .typing import Batch, VisionFrame
-
-CONFIG = configparser.ConfigParser()
-CONFIG.read('config.ini')
-
-
-def read_image(image_path: str) -> VisionFrame:
-	image = cv2.imread(image_path)[:, :, ::-1]
-	return image
+from .helper import read_image
+from .typing import Batch
 
 
 class DataLoaderVGG(TensorDataset):
-	def __init__(self, dataset_path : str) -> None:
-		self.same_person_probability = CONFIG.getfloat('preparing.dataloader', 'same_person_probability')
-		image_pattern = CONFIG.get('preparing.dataset', 'image_pattern')
-		folder_pattern = CONFIG.get('preparing.dataset', 'folder_pattern')
-		self.folder_paths = glob.glob(folder_pattern.format(dataset_path))
+	def __init__(self, dataset_path : str, dataset_image_pattern : str, dataset_folder_pattern : str, same_person_probability : float) -> None:
+		self.same_person_probability = same_person_probability
+		self.folder_paths = glob.glob(dataset_folder_pattern.format(dataset_path))
 		self.image_paths = []
 		self.image_path_set = {}
 
 		for folder_path in self.folder_paths:
-			image_paths = glob.glob(image_pattern.format(folder_path))
+			image_paths = glob.glob(dataset_image_pattern.format(folder_path))
 			self.image_paths.extend(image_paths)
 			self.image_path_set[folder_path] = image_paths
 		self.dataset_total = len(self.image_paths)
@@ -40,6 +29,7 @@ class DataLoaderVGG(TensorDataset):
 			transforms.ColorJitter(brightness = 0.2, contrast = 0.2, saturation = 0.2, hue = 0.1),
 			transforms.RandomAffine(4, translate = (0.01, 0.01), scale = (0.98, 1.02), shear = (1, 1), fill = 0),
 			transforms.ToTensor(),
+			transforms.Lambda(lambda img: img[[2, 1, 0], :, :]),
 			transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 		])
 

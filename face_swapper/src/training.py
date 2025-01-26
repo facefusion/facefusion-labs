@@ -5,7 +5,6 @@ from typing import Tuple
 import pytorch_lightning
 import torch
 import torchvision
-from LivePortrait.src.modules.motion_extractor import MotionExtractor
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.utilities.types import Optimizer
@@ -16,8 +15,8 @@ from torch.utils.data import DataLoader
 from .data_loader import DataLoaderVGG
 from .discriminator import MultiscaleDiscriminator
 from .generator import AdaptiveEmbeddingIntegrationNetwork
-from .helper import hinge_fake_loss, hinge_real_loss
-from .typing import Batch, DiscriminatorLossSet, DiscriminatorOutputs, FaceLandmark203, GeneratorLossSet, IdEmbedding, LossTensor, Padding, SourceEmbedding, TargetAttributes, VisionTensor
+from .helper import calc_id_embedding, hinge_fake_loss, hinge_real_loss
+from .typing import Batch, DiscriminatorLossSet, DiscriminatorOutputs, FaceLandmark203, GeneratorLossSet, LossTensor, SourceEmbedding, TargetAttributes, VisionTensor
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -26,23 +25,22 @@ CONFIG.read('config.ini')
 class FaceSwapper(pytorch_lightning.LightningModule):
 	def __init__(self) -> None:
 		super().__init__()
-		id_channels = CONFIG.getint('training.generator', 'id_channels')
-		num_blocks = CONFIG.getint('training.generator', 'num_blocks')
-		input_channels = CONFIG.getint('training.discriminator', 'input_channels')
-		num_filters = CONFIG.getint('training.discriminator', 'num_filters')
-		num_layers = CONFIG.getint('training.discriminator', 'num_layers')
-		num_discriminators = CONFIG.getint('training.discriminator', 'num_discriminators')
-		arcface_path = CONFIG.get('auxiliary_models.paths', 'arcface_path')
-		landmarker_path = CONFIG.get('auxiliary_models.paths', 'landmarker_path')
-		motion_extractor_path = CONFIG.get('auxiliary_models.paths', 'motion_extractor_path')
+		id_channels = CONFIG.getint('training.model.generator', 'id_channels')
+		num_blocks = CONFIG.getint('training.model.generator', 'num_blocks')
+		input_channels = CONFIG.getint('training.model.discriminator', 'input_channels')
+		num_filters = CONFIG.getint('training.model.discriminator', 'num_filters')
+		num_layers = CONFIG.getint('training.model.discriminator', 'num_layers')
+		num_discriminators = CONFIG.getint('training.model.discriminator', 'num_discriminators')
+		id_embedder_path = CONFIG.get('training.model', 'id_embedder_path')
+		landmarker_path = CONFIG.get('training.model', 'landmarker_path')
+		motion_extractor_path = CONFIG.get('training.model', 'motion_extractor_path')
 
 		self.generator = AdaptiveEmbeddingIntegrationNetwork(id_channels, num_blocks)
 		self.discriminator = MultiscaleDiscriminator(input_channels, num_filters, num_layers, num_discriminators)
-		self.arcface = torch.load(arcface_path, map_location = 'cpu', weights_only = False)
-		self.landmarker = torch.load(landmarker_path, map_location = 'cpu', weights_only = False)
-		self.motion_extractor = MotionExtractor(num_kp = 21, backbone = 'convnextv2_tiny')
-		self.motion_extractor.load_state_dict(torch.load(motion_extractor_path, map_location = 'cpu', weights_only = True))
-		self.arcface.eval()
+		self.id_embedder = torch.jit.load(id_embedder_path, map_location ='cpu') #type:ignore[no-untyped-call]
+		self.landmarker = torch.jit.load(landmarker_path, map_location = 'cpu') #type:ignore[no-untyped-call]
+		self.motion_extractor = torch.jit.load(motion_extractor_path, map_location = 'cpu') #type:ignore[no-untyped-call]
+		self.id_embedder.eval()
 		self.landmarker.eval()
 		self.motion_extractor.eval()
 		self.automatic_optimization = False
@@ -54,16 +52,15 @@ class FaceSwapper(pytorch_lightning.LightningModule):
 		return output
 
 	def configure_optimizers(self) -> Tuple[Optimizer, Optimizer]:
-		generator_learning_rate = CONFIG.getfloat('training.generator', 'learning_rate')
-		discriminator_learning_rate = CONFIG.getfloat('training.discriminator', 'learning_rate')
-		generator_optimizer = torch.optim.Adam(self.generator.parameters(), lr = generator_learning_rate, betas = (0.0, 0.999), weight_decay = 1e-4)
-		discriminator_optimizer = torch.optim.Adam(self.discriminator.parameters(), lr = discriminator_learning_rate, betas = (0.0, 0.999), weight_decay = 1e-4)
+		learning_rate = CONFIG.getfloat('training.trainer', 'learning_rate')
+		generator_optimizer = torch.optim.Adam(self.generator.parameters(), lr = learning_rate, betas = (0.0, 0.999), weight_decay = 1e-4)
+		discriminator_optimizer = torch.optim.Adam(self.discriminator.parameters(), lr = learning_rate, betas = (0.0, 0.999), weight_decay = 1e-4)
 		return generator_optimizer, discriminator_optimizer
 
 	def training_step(self, batch : Batch, batch_index : int) -> Tensor:
 		source_tensor, target_tensor, is_same_person = batch
 		generator_optimizer, discriminator_optimizer = self.optimizers() #type:ignore[attr-defined]
-		source_embedding = self.get_id_embedding(source_tensor, (0, 0, 0, 0))
+		source_embedding = calc_id_embedding(self.id_embedder, source_tensor, (0, 0, 0, 0))
 		swap_tensor, target_attributes = self.generator(target_tensor, source_embedding)
 		discriminator_outputs = self.discriminator(swap_tensor)
 
@@ -112,8 +109,8 @@ class FaceSwapper(pytorch_lightning.LightningModule):
 		return loss_reconstruction
 
 	def calc_id_loss(self, source_tensor : VisionTensor, swap_tensor : VisionTensor) -> LossTensor:
-		swap_embedding = self.get_id_embedding(swap_tensor, (30, 0, 10, 10))
-		source_embedding = self.get_id_embedding(source_tensor, (30, 0, 10, 10))
+		swap_embedding = calc_id_embedding(self.id_embedder, swap_tensor, (30, 0, 10, 10))
+		source_embedding = calc_id_embedding(self.id_embedder, source_tensor, (30, 0, 10, 10))
 		loss_id = (1 - torch.cosine_similarity(source_embedding, swap_embedding, dim = 1)).mean()
 		return loss_id
 
@@ -181,17 +178,6 @@ class FaceSwapper(pytorch_lightning.LightningModule):
 		discriminator_loss_set['loss_discriminator'] = (loss_true.mean() + loss_fake.mean()) * 0.5
 		return discriminator_loss_set
 
-	def get_id_embedding(self, vision_tensor : VisionTensor, padding : Padding) -> IdEmbedding:
-		crop_vision_tensor = torch.nn.functional.interpolate(vision_tensor, size = (112, 112), mode = 'area')
-		crop_vision_tensor = crop_vision_tensor[:, :, 0:112, 8:128]
-		crop_vision_tensor[:, :, :padding[0], :] = 0
-		crop_vision_tensor[:, :, 112 - padding[1]:, :] = 0
-		crop_vision_tensor[:, :, :, :padding[2]] = 0
-		crop_vision_tensor[:, :, :, 112 - padding[3]:] = 0
-		embedding = self.arcface(crop_vision_tensor)
-		embedding = torch.nn.functional.normalize(embedding, p = 2, dim = 1)
-		return embedding
-
 	def get_face_landmarks(self, vision_tensor : VisionTensor) -> FaceLandmark203:
 		vision_tensor_norm = (vision_tensor + 1) * 0.5
 		vision_tensor_norm = torch.nn.functional.interpolate(vision_tensor_norm, size = (224, 224), mode = 'bilinear')
@@ -200,10 +186,8 @@ class FaceSwapper(pytorch_lightning.LightningModule):
 
 	def get_pose_features(self, vision_tensor : Tensor) -> Tuple[Tensor, Tensor, Tensor]:
 		vision_tensor_norm = (vision_tensor + 1) * 0.5
-		motion_dict = self.motion_extractor(vision_tensor_norm)
-		translation = motion_dict.get('t')
-		scale = motion_dict.get('scale')
-		rotation = torch.cat([ motion_dict.get('pitch'), motion_dict.get('yaw'), motion_dict.get('roll') ], dim = 1)
+		pitch, yaw, roll, translation, expression, scale, _ = self.motion_extractor(vision_tensor_norm)
+		rotation = torch.cat([ pitch, yaw, roll ], dim = 1)
 		return translation, scale, rotation
 
 	def log_generator_preview(self, source_tensor : VisionTensor, target_tensor : VisionTensor, swap_tensor : VisionTensor) -> None:
@@ -246,7 +230,11 @@ def train() -> None:
 	batch_size = CONFIG.getint('training.loader', 'batch_size')
 	num_workers = CONFIG.getint('training.loader', 'num_workers')
 	checkpoint_path = CONFIG.get('training.output', 'checkpoint_path')
-	dataset = DataLoaderVGG(CONFIG.get('preparing.dataset', 'dataset_path'))
+	dataset_path = CONFIG.get('preparing.dataset', 'dataset_path')
+	dataset_image_pattern = CONFIG.get('preparing.dataset', 'image_pattern')
+	dataset_folder_pattern = CONFIG.get('preparing.dataset', 'folder_pattern')
+	same_person_probability = CONFIG.getfloat('preparing.dataset', 'same_person_probability')
+	dataset = DataLoaderVGG(dataset_path, dataset_image_pattern, dataset_folder_pattern, same_person_probability)
 
 	data_loader = DataLoader(dataset, batch_size = batch_size, shuffle = True, num_workers = num_workers, drop_last = True, pin_memory = True, persistent_workers = True)
 	face_swap_model = FaceSwapper()
