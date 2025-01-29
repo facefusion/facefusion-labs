@@ -1,13 +1,21 @@
+import platform
+
 import cv2
 import numpy
 import torch
 
-from .typing import IdEmbedding, Padding, Tensor, VisionFrame, VisionTensor
+from .typing import IdEmbedder, IdEmbedding, Padding, Tensor, VisionFrame, VisionTensor
+
+
+def is_windows() -> bool:
+	return platform.system().lower() == 'windows'
 
 
 def read_image(image_path : str) -> VisionFrame:
-	image = cv2.imread(image_path)
-	return image
+	if is_windows():
+		image_buffer = numpy.fromfile(image_path, dtype = numpy.uint8)
+		return cv2.imdecode(image_buffer, cv2.IMREAD_COLOR)
+	return cv2.imread(image_path)
 
 
 def convert_to_vision_tensor(vision_frame : VisionFrame) -> VisionTensor:
@@ -28,14 +36,18 @@ def convert_to_vision_frame(vision_tensor : VisionTensor) -> VisionFrame:
 
 
 def hinge_real_loss(tensor : Tensor) -> Tensor:
-	return torch.relu(1 - tensor)
+	real_loss = torch.relu(1 - tensor)
+	real_loss = real_loss.mean(dim = [ 1, 2, 3 ])
+	return real_loss
 
 
 def hinge_fake_loss(tensor : Tensor) -> Tensor:
-	return torch.relu(tensor + 1)
+	fake_loss = torch.relu(tensor + 1)
+	fake_loss = fake_loss.mean(dim = [ 1, 2, 3 ])
+	return fake_loss
 
 
-def calc_id_embedding(id_embedder : torch.nn.Module, vision_tensor : VisionTensor, padding : Padding) -> IdEmbedding:
+def calc_id_embedding(id_embedder : IdEmbedder, vision_tensor : VisionTensor, padding : Padding) -> IdEmbedding:
 	crop_vision_tensor = vision_tensor[:, :, 15 : 241, 15 : 241]
 	crop_vision_tensor = torch.nn.functional.interpolate(crop_vision_tensor, size = (112, 112), mode = 'area')
 	crop_vision_tensor[:, :, :padding[0], :] = 0
@@ -43,14 +55,5 @@ def calc_id_embedding(id_embedder : torch.nn.Module, vision_tensor : VisionTenso
 	crop_vision_tensor[:, :, :, :padding[2]] = 0
 	crop_vision_tensor[:, :, :, 112 - padding[3]:] = 0
 	source_embedding = id_embedder(crop_vision_tensor)
-	source_embedding = torch.nn.functional.normalize(source_embedding, p = 2, dim = 1)
+	source_embedding = torch.nn.functional.normalize(source_embedding, p = 2)
 	return source_embedding
-
-
-def infer(generator : torch.nn.Module, id_embedder : torch.nn.Module, source_vision_frame : VisionFrame, target_vision_frame : VisionFrame) -> VisionFrame:
-	source_vision_tensor = convert_to_vision_tensor(source_vision_frame)
-	target_vision_tensor = convert_to_vision_tensor(target_vision_frame)
-	source_embedding = calc_id_embedding(id_embedder, source_vision_tensor, (0, 0, 0, 0))
-	output_vision_tensor = generator(source_embedding, target_vision_tensor)[0]
-	output_vision_frame = convert_to_vision_frame(output_vision_tensor)
-	return output_vision_frame

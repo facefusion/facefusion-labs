@@ -16,7 +16,7 @@ def export() -> None:
 	opset_version = CONFIG.getint('exporting', 'opset_version')
 
 	makedirs(directory_path, exist_ok = True)
-	state_dict = torch.load(source_path, map_location = 'cpu')['state_dict']['generator']
+	state_dict = torch.load(source_path, map_location = 'cpu').get('state_dict').get('generator')
 	model = AdaptiveEmbeddingIntegrationNetwork(512, 2)
 	model.load_state_dict(state_dict)
 	model.eval()

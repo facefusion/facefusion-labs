@@ -34,7 +34,7 @@ class AADGenerator(nn.Module):
 		self.res_block_6 = AADResBlock(256, 128, 128, id_channels, num_blocks)
 		self.res_block_7 = AADResBlock(128, 64, 64, id_channels, num_blocks)
 		self.res_block_8 = AADResBlock(64, 3, 64, id_channels, num_blocks)
-		self.apply(initialize_weight)
+		self.apply(init_weight)
 
 	def forward(self, target_attributes : TargetAttributes, source_embedding : SourceEmbedding) -> Tensor:
 		feature_map = self.upsample(source_embedding)
@@ -65,7 +65,7 @@ class UNet(nn.Module):
 		self.upsampler_4 = Upsample(512, 128)
 		self.upsampler_5 = Upsample(256, 64)
 		self.upsampler_6 = Upsample(128, 32)
-		self.apply(initialize_weight)
+		self.apply(init_weight)
 
 	def forward(self, target : VisionTensor) -> TargetAttributes:
 		downsample_feature_1 = self.downsampler_1(target)
@@ -93,7 +93,7 @@ class AADLayer(nn.Module):
 		self.conv_gamma = nn.Conv2d(attr_channels, input_channels, kernel_size = 1)
 		self.fc_beta = nn.Linear(id_channels, input_channels)
 		self.fc_gamma = nn.Linear(id_channels, input_channels)
-		self.instance_norm = nn.InstanceNorm2d(input_channels, affine = False)
+		self.instance_norm = nn.InstanceNorm2d(input_channels)
 		self.conv_mask = nn.Conv2d(input_channels, 1, kernel_size = 1)
 
 	def forward(self, feature_map : Tensor, attribute_embedding : Tensor, id_embedding : SourceEmbedding) -> Tensor:
@@ -110,9 +110,10 @@ class AADLayer(nn.Module):
 
 
 class AddBlocksSequential(nn.Sequential):
+	#todo: what are inputs? improve the name
 	def forward(self, *inputs : Tuple[Tensor, Tensor, SourceEmbedding]) -> Tuple[Tuple[Tensor, Tensor, SourceEmbedding], ...]:
 		_, attribute_embedding, id_embedding = inputs
-		modules = self._modules.values()
+		modules = self._modules.values() #todo: what kind of modules?
 
 		for module_index, module in enumerate(modules):
 			if module_index % 3 == 0 and module_index > 0:
@@ -122,7 +123,8 @@ class AddBlocksSequential(nn.Sequential):
 				inputs = module(inputs)
 			else:
 				inputs = module(*inputs)
-		return inputs
+
+		return inputs #todo: would be easier to read when you just return xxx_inputs, attribute_embedding, id_embedding ?
 
 
 class AADResBlock(nn.Module):
@@ -130,33 +132,38 @@ class AADResBlock(nn.Module):
 		super(AADResBlock, self).__init__()
 		self.input_channels = input_channels
 		self.output_channels = output_channels
+		self.prepare_primary_add_blocks(input_channels, attribute_channels, id_channels, output_channels, num_blocks)
+		self.prepare_auxiliary_add_blocks(input_channels, attribute_channels, id_channels, output_channels)
+
+	def prepare_primary_add_blocks(self, input_channels : int, attribute_channels : int, id_channels : int, output_channels : int, num_blocks : int) -> None:
 		primary_add_blocks = []
 
-		for i in range(num_blocks):
-			intermediate_channels = input_channels if i < (num_blocks - 1) else output_channels
+		for index in range(num_blocks):
+			intermediate_channels = input_channels if index < (num_blocks - 1) else output_channels
 			primary_add_blocks.extend(
 				[
 					AADLayer(input_channels, attribute_channels, id_channels),
 					nn.ReLU(inplace = True),
-					nn.Conv2d(input_channels, intermediate_channels, kernel_size = 3, stride = 1, padding = 1, bias = False)
+					nn.Conv2d(input_channels, intermediate_channels, kernel_size = 3, padding = 1, bias = False)
 				]
 			)
 		self.primary_add_blocks = AddBlocksSequential(*primary_add_blocks)
 
-		if input_channels != output_channels:
-			auxiliary_add_blocks =\
-			[
+	def prepare_auxiliary_add_blocks(self, input_channels : int, attribute_channels : int, id_channels : int, output_channels : int) -> None:
+		if input_channels > output_channels:
+			auxiliary_add_blocks = AddBlocksSequential(
 				AADLayer(input_channels, attribute_channels, id_channels),
 				nn.ReLU(inplace = True),
-				nn.Conv2d(input_channels, output_channels, kernel_size = 3, stride = 1, padding = 1, bias = False)
-			]
-			self.auxiliary_add_blocks = AddBlocksSequential(*auxiliary_add_blocks)
+				nn.Conv2d(input_channels, output_channels, kernel_size = 3, padding = 1, bias = False)
+			)
+			self.auxiliary_add_blocks = auxiliary_add_blocks
 
 	def forward(self, feature_map : Tensor, attribute_embedding : Tensor, id_embedding : SourceEmbedding) -> Tensor:
 		primary_feature = self.primary_add_blocks(feature_map, attribute_embedding, id_embedding)
 
-		if self.input_channels != self.output_channels:
+		if self.input_channels > self.output_channels:
 			feature_map = self.auxiliary_add_blocks(feature_map, attribute_embedding, id_embedding)
+
 		output_feature = primary_feature + feature_map
 		return output_feature
 
@@ -201,7 +208,7 @@ class PixelShuffleUpsample(nn.Module):
 		return temp
 
 
-def initialize_weight(module : nn.Module) -> None:
+def init_weight(module : nn.Module) -> None:
 	if isinstance(module, nn.Linear):
 		module.weight.data.normal_(std = 0.001)
 		module.bias.data.zero_()
