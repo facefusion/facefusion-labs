@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import configparser
 from typing import Any, Tuple
 
@@ -12,8 +10,8 @@ from pytorch_lightning.tuner.tuning import Tuner
 from torch import Tensor
 from torch.utils.data import DataLoader, Dataset, TensorDataset, random_split
 
-from .model import ArcFaceConverter
-from .typing import Batch, Loader
+from networks.arcface_converter import ArcFaceConverter
+from types import Batch, Loader
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -22,12 +20,12 @@ CONFIG.read('config.ini')
 class ArcFaceConverterTrainer(pytorch_lightning.LightningModule):
 	def __init__(self) -> None:
 		super(ArcFaceConverterTrainer, self).__init__()
-		self.model = ArcFaceConverter()
+		self.arcface_converter = ArcFaceConverter()
 		self.loss_fn = torch.nn.MSELoss()
 		self.lr = 0.001
 
 	def forward(self, source_embedding : Tensor) -> Tensor:
-		return self.model(source_embedding)
+		return self.arcface_converter(source_embedding)
 
 	def training_step(self, batch : Batch, batch_index : int) -> Tensor:
 		source, target = batch
@@ -112,7 +110,7 @@ def create_trainer() -> Trainer:
 def train() -> None:
 	trainer = create_trainer()
 	training_loader, validation_loader = create_loaders()
-	model = ArcFaceConverterTrainer()
+	arcface_converter = ArcFaceConverterTrainer()
 	tuner = Tuner(trainer)
-	tuner.lr_find(model, training_loader, validation_loader)
-	trainer.fit(model, training_loader, validation_loader)
+	tuner.lr_find(arcface_converter, training_loader, validation_loader)
+	trainer.fit(arcface_converter, training_loader, validation_loader)

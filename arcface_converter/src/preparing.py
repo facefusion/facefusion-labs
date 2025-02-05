@@ -11,14 +11,14 @@ from mxnet.io import ImageRecordIter
 from onnxruntime import InferenceSession
 from tqdm import tqdm
 
-from .typing import Embedding, EmbeddingPairs, VisionFrame
+from types import Embedding, EmbeddingPairs, VisionFrame
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 
 
 def prepare_crop_vision_frame(crop_vision_frame : VisionFrame) -> VisionFrame:
-	crop_vision_frame = crop_vision_frame.astype(numpy.float32) / 255
+	crop_vision_frame = crop_vision_frame.astype(numpy.float32) / 255.0
 	crop_vision_frame = (crop_vision_frame - 0.5) * 2
 	return crop_vision_frame
 

@@ -4,7 +4,7 @@ import cv2
 import numpy
 import torch
 
-from .typing import IdEmbedder, IdEmbedding, Padding, Tensor, VisionFrame, VisionTensor
+from types import IdEmbedder, IdEmbedding, Padding, Tensor, VisionFrame, VisionTensor
 
 
 def is_windows() -> bool:
@@ -20,7 +20,7 @@ def read_image(image_path : str) -> VisionFrame:
 
 def convert_to_vision_tensor(vision_frame : VisionFrame) -> VisionTensor:
 	vision_tensor = torch.from_numpy(vision_frame[:, :, ::-1].transpose(2, 0, 1).astype(numpy.float32))
-	vision_tensor = vision_tensor / 255
+	vision_tensor = vision_tensor / 255.0
 	vision_tensor = (vision_tensor - 0.5) * 2
 	vision_tensor = vision_tensor.unsqueeze(0)
 	return vision_tensor

@@ -12,11 +12,11 @@ from pytorch_msssim import ssim
 from torch import Tensor
 from torch.utils.data import DataLoader
 
-from .data_loader import DataLoaderVGG
-from .discriminator import MultiscaleDiscriminator
-from .generator import AdaptiveEmbeddingIntegrationNetwork
-from .helper import calc_id_embedding, hinge_fake_loss, hinge_real_loss
-from .typing import Batch, DiscriminatorLossSet, DiscriminatorOutputs, FaceLandmark203, GeneratorLossSet, LossTensor, SourceEmbedding, SwapAttributes, TargetAttributes, VisionTensor
+from data_loader import DataLoaderVGG
+from discriminator import MultiscaleDiscriminator
+from generator import AdaptiveEmbeddingIntegrationNetwork
+from helper import calc_id_embedding, hinge_fake_loss, hinge_real_loss
+from types import Batch, DiscriminatorLossSet, DiscriminatorOutputs, FaceLandmark203, GeneratorLossSet, LossTensor, SourceEmbedding, SwapAttributes, TargetAttributes, VisionTensor
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -237,16 +237,16 @@ def create_trainer() -> Trainer:
 
 
 def train() -> None:
-	batch_size = CONFIG.getint('training.loader', 'batch_size')
-	num_workers = CONFIG.getint('training.loader', 'num_workers')
-	checkpoint_path = CONFIG.get('training.output', 'checkpoint_path')
 	dataset_path = CONFIG.get('preparing.dataset', 'dataset_path')
 	dataset_image_pattern = CONFIG.get('preparing.dataset', 'image_pattern')
 	dataset_directory_pattern = CONFIG.get('preparing.dataset', 'directory_pattern')
 	same_person_probability = CONFIG.getfloat('preparing.dataset', 'same_person_probability')
+	batch_size = CONFIG.getint('training.loader', 'batch_size')
+	num_workers = CONFIG.getint('training.loader', 'num_workers')
+	file_path = CONFIG.get('training.output', 'file_path')
 	dataset = DataLoaderVGG(dataset_path, dataset_image_pattern, dataset_directory_pattern, same_person_probability)
 
 	data_loader = DataLoader(dataset, batch_size = batch_size, shuffle = True, num_workers = num_workers, drop_last = True, pin_memory = True, persistent_workers = True)
 	face_swap_model = FaceSwapperTrain()
 	trainer = create_trainer()
-	trainer.fit(face_swap_model, data_loader, ckpt_path = checkpoint_path)
+	trainer.fit(face_swap_model, data_loader, ckpt_path = file_path)
