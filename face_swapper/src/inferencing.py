@@ -3,9 +3,9 @@ import configparser
 import cv2
 import torch
 
-from .generator import AdaptiveEmbeddingIntegrationNetwork
-from .helper import calc_id_embedding, convert_to_vision_frame, convert_to_vision_tensor, read_image
-from .typing import Generator, IdEmbedder, VisionFrame
+from generator import AdaptiveEmbeddingIntegrationNetwork
+from helper import calc_id_embedding, convert_to_vision_frame, convert_to_vision_tensor, read_image
+from types import Generator, IdEmbedder, VisionFrame
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -21,17 +21,17 @@ def run_swap(generator : Generator, id_embedder : IdEmbedder, source_vision_fram
 
 
 def infer() -> None:
-	generator_path = CONFIG.get('inference', 'generator_path')
-	id_embedder_path = CONFIG.get('inference', 'id_embedder_path')
-	source_path = CONFIG.get('inference', 'source_path')
-	target_path = CONFIG.get('inference', 'target_path')
-	output_path = CONFIG.get('inference', 'output_path')
+	generator_path = CONFIG.get('inferencing', 'generator_path')
+	id_embedder_path = CONFIG.get('inferencing', 'id_embedder_path')
+	source_path = CONFIG.get('inferencing', 'source_path')
+	target_path = CONFIG.get('inferencing', 'target_path')
+	output_path = CONFIG.get('inferencing', 'output_path')
 
-	state_dict = torch.load(generator_path, map_location='cpu').get('state_dict').get('generator')
+	state_dict = torch.load(generator_path, map_location = 'cpu').get('state_dict').get('generator')
 	generator = AdaptiveEmbeddingIntegrationNetwork(512, 2)
 	generator.load_state_dict(state_dict)
 	generator.eval()
-	id_embedder = torch.jit.load(id_embedder_path, map_location='cpu')  # type:ignore[no-untyped-call]
+	id_embedder = torch.jit.load(id_embedder_path, map_location = 'cpu')  # type:ignore[no-untyped-call]
 	id_embedder.eval()
 
 	source_vision_frame = read_image(source_path)
