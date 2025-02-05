@@ -14,10 +14,10 @@ pip install -r requirements.txt
 ```
 
 
-Example
--------
+Setup
+-----
 
-This example utilizes the MegaFace dataset to train the Face Swapper model.
+This `config.ini` utilizes the MegaFace dataset to train the Face Swapper model.
 
 ```
 [preparing.dataset]
