@@ -1,3 +1,3 @@
-Non-Commercial license
+ResearchRAIL-M license
 
 Copyright (c) 2024 Henry Ruhs
