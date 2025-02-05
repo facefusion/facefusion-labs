@@ -12,11 +12,11 @@ from pytorch_msssim import ssim
 from torch import Tensor
 from torch.utils.data import DataLoader
 
-from data_loader import DataLoaderVGG
-from discriminator import MultiscaleDiscriminator
-from generator import AdaptiveEmbeddingIntegrationNetwork
-from helper import calc_id_embedding, hinge_fake_loss, hinge_real_loss
-from types import Batch, DiscriminatorLossSet, DiscriminatorOutputs, FaceLandmark203, GeneratorLossSet, LossTensor, SourceEmbedding, SwapAttributes, TargetAttributes, VisionTensor
+from .data_loader import DataLoaderVGG
+from .discriminator import MultiscaleDiscriminator
+from .generator import AdaptiveEmbeddingIntegrationNetwork
+from .helper import calc_id_embedding, hinge_fake_loss, hinge_real_loss
+from .types import Batch, DiscriminatorLossSet, DiscriminatorOutputs, FaceLandmark203, GeneratorLossSet, LossTensor, SourceEmbedding, SwapAttributes, TargetAttributes, VisionTensor
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')

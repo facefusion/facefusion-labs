@@ -4,7 +4,7 @@ import cv2
 import numpy
 import torch
 
-from types import IdEmbedder, IdEmbedding, Padding, Tensor, VisionFrame, VisionTensor
+from .types import IdEmbedder, IdEmbedding, Padding, Tensor, VisionFrame, VisionTensor
 
 
 def is_windows() -> bool:
