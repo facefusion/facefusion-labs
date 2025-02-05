@@ -4,13 +4,12 @@ from os.path import isfile
 from typing import List
 
 import numpy
-
 numpy.bool = numpy.bool_
 from mxnet.io import ImageRecordIter
 from onnxruntime import InferenceSession
 from tqdm import tqdm
 
-from types import Embedding, EmbeddingPairs, VisionFrame
+from .types import Embedding, EmbeddingPairs, VisionFrame
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')

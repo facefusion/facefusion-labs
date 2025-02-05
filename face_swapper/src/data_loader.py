@@ -7,8 +7,8 @@ import torch
 import torchvision.transforms as transforms
 from torch.utils.data import TensorDataset
 
-from helper import read_image
-from types import Batch, ImagePathList, ImagePathSet
+from .helper import read_image
+from .types import Batch, ImagePathList, ImagePathSet
 
 
 class DataLoaderVGG(TensorDataset):

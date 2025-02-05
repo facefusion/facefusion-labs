@@ -3,9 +3,9 @@ import configparser
 import cv2
 import torch
 
-from generator import AdaptiveEmbeddingIntegrationNetwork
-from helper import calc_id_embedding, convert_to_vision_frame, convert_to_vision_tensor, read_image
-from types import Generator, IdEmbedder, VisionFrame
+from .generator import AdaptiveEmbeddingIntegrationNetwork
+from .helper import calc_id_embedding, convert_to_vision_frame, convert_to_vision_tensor, read_image
+from .types import Generator, IdEmbedder, VisionFrame
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
