@@ -1,11 +1,10 @@
-#!/usr/bin/env python3
-
 import configparser
 from os import makedirs
 from os.path import isfile
 from typing import List
 
 import numpy
+
 numpy.bool = numpy.bool_
 from mxnet.io import ImageRecordIter
 from onnxruntime import InferenceSession
