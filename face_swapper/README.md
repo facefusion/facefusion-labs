@@ -6,6 +6,12 @@ Face Swapper
 ![License](https://img.shields.io/badge/license-ResearchRAIL--M-red)
 
 
+Preview
+-------
+
+![Preview](https://raw.githubusercontent.com/facefusion/facefusion-labs/master/.github/preview_face_swapper.png?sanitize=true)
+
+
 Installation
 ------------
 
