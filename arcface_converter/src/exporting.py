@@ -16,7 +16,7 @@ def export() -> None:
 	opset_version = CONFIG.getint('exporting', 'opset_version')
 
 	makedirs(directory_path, exist_ok = True)
-	model = ArcFaceConverterTrainer.load_from_checkpoint(source_path, map_location = 'cpu')
-	model.eval()
+	arcface_converter_trainer = ArcFaceConverterTrainer.load_from_checkpoint(source_path, map_location = 'cpu')
+	arcface_converter_trainer.eval()
 	input_tensor = torch.randn(1, 512)
-	torch.onnx.export(model, input_tensor, target_path, input_names = [ 'input' ], output_names = [ 'output' ], opset_version = opset_version)
+	torch.onnx.export(arcface_converter_trainer, input_tensor, target_path, input_names = [ 'input' ], output_names = [ 'output' ], opset_version = opset_version)

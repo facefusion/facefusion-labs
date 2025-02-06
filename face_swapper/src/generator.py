@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from .typing import SourceEmbedding, TargetAttributes, VisionTensor
+from .types import SourceEmbedding, TargetAttributes, VisionTensor
 
 
 class AdaptiveEmbeddingIntegrationNetwork(nn.Module):

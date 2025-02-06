@@ -6,7 +6,7 @@ import torch.nn
 import torch.nn as nn
 from torch import Tensor
 
-from .typing import DiscriminatorOutputs
+from .types import DiscriminatorOutputs
 
 
 class NLayerDiscriminator(nn.Module):
