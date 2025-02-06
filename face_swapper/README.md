@@ -9,7 +9,7 @@ Face Swapper
 Preview
 -------
 
-![Preview](https://raw.githubusercontent.com/facefusion/facefusion-labs/master/.github/preview_face_swapper.png?sanitize=true)
+![Preview](https://raw.githubusercontent.com/facefusion/facefusion-labs/next/.github/preview_face_swapper.png?sanitize=true)
 
 
 Installation
