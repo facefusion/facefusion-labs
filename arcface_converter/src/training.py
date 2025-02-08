@@ -10,7 +10,7 @@ from pytorch_lightning.tuner.tuning import Tuner
 from torch import Tensor
 from torch.utils.data import DataLoader, Dataset, TensorDataset, random_split
 
-from .networks.arcface_converter import ArcFaceConverter
+from .models.arcface_converter import ArcFaceConverter
 from .types import Batch, Loader
 
 CONFIG = configparser.ConfigParser()
