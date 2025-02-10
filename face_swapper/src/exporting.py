@@ -3,7 +3,7 @@ from os import makedirs
 
 import torch
 
-from .generator import AdaptiveEmbeddingIntegrationNetwork
+from .models.generator import AdaptiveEmbeddingIntegrationNetwork
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -17,7 +17,7 @@ def export() -> None:
 
 	makedirs(directory_path, exist_ok = True)
 	state_dict = torch.load(source_path, map_location = 'cpu').get('state_dict').get('generator')
-	model = AdaptiveEmbeddingIntegrationNetwork(512, 2)
+	model = AdaptiveEmbeddingIntegrationNetwork()
 	model.load_state_dict(state_dict)
 	model.eval()
 	source_tensor = torch.randn(1, 512)
