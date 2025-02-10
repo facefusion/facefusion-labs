@@ -1,25 +1,7 @@
-from typing import Tuple
-
 import torch
-import torch.nn as nn
-from torch import Tensor
+from torch import Tensor, nn as nn
 
-from .types import SourceEmbedding, TargetAttributes, VisionTensor
-
-
-class AdaptiveEmbeddingIntegrationNetwork(nn.Module):
-	def __init__(self, id_channels : int, num_blocks : int) -> None:
-		super(AdaptiveEmbeddingIntegrationNetwork, self).__init__()
-		self.encoder = UNet()
-		self.generator = AADGenerator(id_channels, num_blocks)
-
-	def forward(self, target : VisionTensor, source_embedding : SourceEmbedding) -> Tuple[VisionTensor, TargetAttributes]:
-		target_attributes = self.get_attributes(target)
-		swap_tensor = self.generator(target_attributes, source_embedding)
-		return swap_tensor, target_attributes
-
-	def get_attributes(self, target : VisionTensor) -> TargetAttributes:
-		return self.encoder(target)
+from face_swapper.src.types import SourceEmbedding, TargetAttributes
 
 
 class AADGenerator(nn.Module):
@@ -34,7 +16,6 @@ class AADGenerator(nn.Module):
 		self.res_block_6 = AADResBlock(256, 128, 128, id_channels, num_blocks)
 		self.res_block_7 = AADResBlock(128, 64, 64, id_channels, num_blocks)
 		self.res_block_8 = AADResBlock(64, 3, 64, id_channels, num_blocks)
-		self.apply(init_weight)
 
 	def forward(self, target_attributes : TargetAttributes, source_embedding : SourceEmbedding) -> Tensor:
 		feature_map = self.upsample(source_embedding)
@@ -47,42 +28,6 @@ class AADGenerator(nn.Module):
 		feature_map_7 = torch.nn.functional.interpolate(self.res_block_7(feature_map_6, target_attributes[6], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
 		output = self.res_block_8(feature_map_7, target_attributes[7], source_embedding)
 		return torch.tanh(output)
-
-
-class UNet(nn.Module):
-	def __init__(self) -> None:
-		super(UNet, self).__init__()
-		self.downsampler_1 = DownSample(3, 32)
-		self.downsampler_2 = DownSample(32, 64)
-		self.downsampler_3 = DownSample(64, 128)
-		self.downsampler_4 = DownSample(128, 256)
-		self.downsampler_5 = DownSample(256, 512)
-		self.downsampler_6 = DownSample(512, 1024)
-		self.bottleneck = DownSample(1024, 1024)
-		self.upsampler_1 = Upsample(1024, 1024)
-		self.upsampler_2 = Upsample(2048, 512)
-		self.upsampler_3 = Upsample(1024, 256)
-		self.upsampler_4 = Upsample(512, 128)
-		self.upsampler_5 = Upsample(256, 64)
-		self.upsampler_6 = Upsample(128, 32)
-		self.apply(init_weight)
-
-	def forward(self, target : VisionTensor) -> TargetAttributes:
-		downsample_feature_1 = self.downsampler_1(target)
-		downsample_feature_2 = self.downsampler_2(downsample_feature_1)
-		downsample_feature_3 = self.downsampler_3(downsample_feature_2)
-		downsample_feature_4 = self.downsampler_4(downsample_feature_3)
-		downsample_feature_5 = self.downsampler_5(downsample_feature_4)
-		downsample_feature_6 = self.downsampler_6(downsample_feature_5)
-		bottleneck_output = self.bottleneck(downsample_feature_6)
-		upsample_feature_1 = self.upsampler_1(bottleneck_output, downsample_feature_6)
-		upsample_feature_2 = self.upsampler_2(upsample_feature_1, downsample_feature_5)
-		upsample_feature_3 = self.upsampler_3(upsample_feature_2, downsample_feature_4)
-		upsample_feature_4 = self.upsampler_4(upsample_feature_3, downsample_feature_3)
-		upsample_feature_5 = self.upsampler_5(upsample_feature_4, downsample_feature_2)
-		upsample_feature_6 = self.upsampler_6(upsample_feature_5, downsample_feature_1)
-		output = torch.nn.functional.interpolate(upsample_feature_6, scale_factor = 2, mode = 'bilinear', align_corners = False)
-		return bottleneck_output, upsample_feature_1, upsample_feature_2, upsample_feature_3, upsample_feature_4, upsample_feature_5, upsample_feature_6, output
 
 
 class AADLayer(nn.Module):
@@ -109,22 +54,18 @@ class AADLayer(nn.Module):
 		return feature_blend
 
 
-class AddBlocksSequential(nn.Sequential):
-	#todo: what are inputs? improve the name
-	def forward(self, *inputs : Tuple[Tensor, Tensor, SourceEmbedding]) -> Tuple[Tuple[Tensor, Tensor, SourceEmbedding], ...]:
-		_, attribute_embedding, id_embedding = inputs
-		modules = self._modules.values() #todo: what kind of modules?
+class AADSequential(nn.Module):
+	def __init__(self, *args : nn.Module) -> None:
+		super(AADSequential, self).__init__()
+		self.layers = nn.ModuleList(args)
 
-		for module_index, module in enumerate(modules):
-			if module_index % 3 == 0 and module_index > 0:
-				inputs = (inputs, attribute_embedding, id_embedding) # type:ignore[assignment]
-
-			if isinstance(inputs, torch.Tensor):
-				inputs = module(inputs)
+	def forward(self, feature_map: Tensor, attribute_embedding: Tensor, id_embedding: SourceEmbedding) -> Tensor:
+		for layer in self.layers:
+			if isinstance(layer, AADLayer):
+				feature_map = layer(feature_map, attribute_embedding, id_embedding)
 			else:
-				inputs = module(*inputs)
-
-		return inputs #todo: would be easier to read when you just return xxx_inputs, attribute_embedding, id_embedding ?
+				feature_map = layer(feature_map)
+		return feature_map
 
 
 class AADResBlock(nn.Module):
@@ -147,11 +88,11 @@ class AADResBlock(nn.Module):
 					nn.Conv2d(input_channels, intermediate_channels, kernel_size = 3, padding = 1, bias = False)
 				]
 			)
-		self.primary_add_blocks = AddBlocksSequential(*primary_add_blocks)
+		self.primary_add_blocks = AADSequential(*primary_add_blocks)
 
 	def prepare_auxiliary_add_blocks(self, input_channels : int, attribute_channels : int, id_channels : int, output_channels : int) -> None:
 		if input_channels > output_channels:
-			auxiliary_add_blocks = AddBlocksSequential(
+			auxiliary_add_blocks = AADSequential(
 				AADLayer(input_channels, attribute_channels, id_channels),
 				nn.ReLU(inplace = True),
 				nn.Conv2d(input_channels, output_channels, kernel_size = 3, padding = 1, bias = False)
@@ -168,34 +109,6 @@ class AADResBlock(nn.Module):
 		return output_feature
 
 
-class DownSample(nn.Module):
-	def __init__(self, input_channels : int, output_channels : int) -> None:
-		super(DownSample, self).__init__()
-		self.conv = nn.Conv2d(in_channels = input_channels, out_channels = output_channels, kernel_size = 4, stride = 2, padding = 1, bias = False)
-		self.batch_norm = nn.BatchNorm2d(output_channels)
-		self.leaky_relu = nn.LeakyReLU(0.1, inplace = True)
-
-	def forward(self, temp : Tensor) -> Tensor:
-		temp = self.conv(temp)
-		temp = self.batch_norm(temp)
-		temp = self.leaky_relu(temp)
-		return temp
-
-
-class Upsample(nn.Module):
-	def __init__(self, input_channels : int, output_channels : int) -> None:
-		super(Upsample, self).__init__()
-		self.deconv = nn.ConvTranspose2d(in_channels = input_channels, out_channels = output_channels, kernel_size = 4, stride = 2, padding = 1, bias = False)
-		self.batch_norm = nn.BatchNorm2d(output_channels)
-		self.leaky_relu = nn.LeakyReLU(0.1, inplace = True)
-
-	def forward(self, temp : Tensor, skip_tensor : Tensor) -> Tensor:
-		temp = self.deconv(temp)
-		temp = self.batch_norm(temp)
-		temp = self.leaky_relu(temp)
-		return torch.cat((temp, skip_tensor), dim = 1)
-
-
 class PixelShuffleUpsample(nn.Module):
 	def __init__(self, input_channels : int, output_channels : int) -> None:
 		super(PixelShuffleUpsample, self).__init__()
@@ -206,15 +119,3 @@ class PixelShuffleUpsample(nn.Module):
 		temp = self.conv(temp.view(temp.shape[0], -1, 1, 1))
 		temp = self.pixel_shuffle(temp)
 		return temp
-
-
-def init_weight(module : nn.Module) -> None:
-	if isinstance(module, nn.Linear):
-		module.weight.data.normal_(std = 0.001)
-		module.bias.data.zero_()
-
-	if isinstance(module, nn.Conv2d):
-		nn.init.xavier_normal_(module.weight.data)
-
-	if isinstance(module, nn.ConvTranspose2d):
-		nn.init.xavier_normal_(module.weight.data)

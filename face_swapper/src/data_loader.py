@@ -24,8 +24,7 @@ class DataLoaderVGG(TensorDataset):
 		image_path_set = {}
 
 		for directory_path in self.directory_paths:
-			image_paths = glob.glob(dataset_image_pattern.format(directory_path))
-			image_paths.extend(image_paths)
+			image_paths.extend(glob.glob(dataset_image_pattern.format(directory_path)))
 			image_path_set[directory_path] = image_paths
 		return image_paths, image_path_set
 
