@@ -10,7 +10,7 @@ from pytorch_lightning.tuner.tuning import Tuner
 from torch import Tensor
 from torch.utils.data import DataLoader, Dataset, TensorDataset, random_split
 
-from .models.embedding_forge import EmbeddingForge
+from .models.embedding_converter import EmbeddingConverter
 from .types import Batch, Loader
 
 CONFIG = configparser.ConfigParser()
@@ -20,7 +20,7 @@ CONFIG.read('config.ini')
 class EmbeddingForgeTrainer(pytorch_lightning.LightningModule):
 	def __init__(self) -> None:
 		super(EmbeddingForgeTrainer, self).__init__()
-		self.embedding_forge = EmbeddingForge()
+		self.embedding_forge = EmbeddingConverter()
 		self.loss_fn = torch.nn.MSELoss()
 		self.lr = 0.001
 

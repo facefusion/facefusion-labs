@@ -1,7 +1,7 @@
 Embedding Forge
-=================
+===============
 
-> Convert face embeddings between different face embedding models.
+> Seamlessly convert and alter face embedding models.
 
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -9,7 +9,7 @@ Embedding Forge
 Preview
 -------
 
-![Preview](https://raw.githubusercontent.com/facefusion/facefusion-labs/master/.github/preview_arcface_converter.png?sanitize=true)
+![Preview](https://raw.githubusercontent.com/facefusion/facefusion-labs/rename-arcface-converter/.github/preview_embedding_forge.png?sanitize=true)
 
 
 Installation
