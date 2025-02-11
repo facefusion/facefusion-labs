@@ -81,10 +81,7 @@ class NLayerDiscriminator(nn.Module):
 				nn.Conv2d(previous_filters, current_filters, kernel_size = kernel_size, padding = padding_size),
 				nn.InstanceNorm2d(current_filters),
 				nn.LeakyReLU(0.2, True)
-			]
-		]
-		model_layers +=\
-		[
+			],
 			[
 				nn.Conv2d(current_filters, 1, kernel_size = kernel_size, padding = padding_size)
 			]
