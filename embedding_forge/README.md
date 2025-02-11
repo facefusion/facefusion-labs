@@ -1,7 +1,7 @@
-ArcFace Converter
+Embedding Forge
 =================
 
-> Convert face embeddings between various ArcFace models.
+> Convert face embeddings between different face embedding models.
 
 ![License](https://img.shields.io/badge/license-MIT-green)
 
