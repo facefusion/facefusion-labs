@@ -61,22 +61,23 @@ class FaceSwapperTrain(pytorch_lightning.LightningModule, FaceSwapperLoss):
 		if self.global_step % CONFIG.getint('training.output', 'preview_frequency') == 0:
 			self.generate_preview(source_tensor, target_tensor, swap_tensor)
 
-		self.log('l_G', generator_losses.get('loss_generator'), prog_bar = True)
-		self.log('l_D', discriminator_losses.get('loss_discriminator'), prog_bar = True)
-		self.log('l_ADV', generator_losses.get('loss_adversarial'), prog_bar = True)
-		self.log('l_ATTR', generator_losses.get('loss_attribute'), prog_bar = True)
-		self.log('l_ID', generator_losses.get('loss_id'), prog_bar = True)
-		self.log('l_REC', generator_losses.get('loss_reconstruction'), prog_bar = True)
+		self.log('loss_generator', generator_losses.get('loss_generator'), prog_bar = True)
+		self.log('loss_discriminator', discriminator_losses.get('loss_discriminator'), prog_bar = True)
+		self.log('loss_adversarial', generator_losses.get('loss_adversarial'))
+		self.log('loss_attribute', generator_losses.get('loss_attribute'))
+		self.log('loss_identity', generator_losses.get('loss_identity'))
+		self.log('loss_reconstruction', generator_losses.get('loss_reconstruction'))
 		return generator_losses.get('loss_generator')
 
-	def generate_preview(self, source_tensor : VisionTensor, target_tensor : VisionTensor, swap_tensor : VisionTensor) -> None:
-		max_preview = 8
-		source_tensors = source_tensor[:max_preview]
-		target_tensors = target_tensor[:max_preview]
-		swap_tensors = swap_tensor[:max_preview]
-		rows = [ torch.cat([ source_tensor, target_tensor, swap_tensor ], dim = 2) for source_tensor, target_tensor, swap_tensor in zip(source_tensors, target_tensors, swap_tensors) ]
-		grid = torchvision.utils.make_grid(torch.cat(rows, dim = 1).unsqueeze(0), nrow = 1, normalize = True, scale_each = True)
-		self.logger.experiment.add_image("Generator Preview", grid, self.global_step)
+	def generate_preview(self, source_tensor : VisionTensor, target_tensor : VisionTensor, output_tensor : VisionTensor) -> None:
+		preview_limit = 8
+		preview_items = []
+
+		for source_tensor, target_tensor, output_tensor in zip(source_tensor[:preview_limit], target_tensor[:preview_limit], output_tensor[:preview_limit]):
+			preview_items.append(torch.cat([ source_tensor, target_tensor, output_tensor] , dim = 2))
+
+		preview_grid = torchvision.utils.make_grid(torch.cat(preview_items, dim = 1).unsqueeze(0), normalize = True, scale_each = True)
+		self.logger.experiment.add_image('preview', preview_grid, self.global_step)
 
 
 def create_trainer() -> Trainer:
@@ -92,7 +93,7 @@ def create_trainer() -> Trainer:
 		callbacks =
 		[
 			ModelCheckpoint(
-				monitor = 'l_G',
+				monitor = 'loss_generator',
 				dirpath = output_directory_path,
 				filename = output_file_pattern,
 				every_n_train_steps = 1000,
@@ -111,10 +112,10 @@ def train() -> None:
 	same_person_probability = CONFIG.getfloat('preparing.dataset', 'same_person_probability')
 	batch_size = CONFIG.getint('training.loader', 'batch_size')
 	num_workers = CONFIG.getint('training.loader', 'num_workers')
-	file_path = CONFIG.get('training.output', 'file_path')
+	output_file_path = CONFIG.get('training.output', 'file_path')
 
 	dataset = DataLoaderVGG(dataset_path, dataset_image_pattern, dataset_directory_pattern, same_person_probability)
 	data_loader = DataLoader(dataset, batch_size = batch_size, shuffle = True, num_workers = num_workers, drop_last = True, pin_memory = True, persistent_workers = True)
 	face_swap_model = FaceSwapperTrain()
 	trainer = create_trainer()
-	trainer.fit(face_swap_model, data_loader, ckpt_path = file_path)
+	trainer.fit(face_swap_model, data_loader, ckpt_path = output_file_path)

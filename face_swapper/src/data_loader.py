@@ -19,6 +19,17 @@ class DataLoaderVGG(TensorDataset):
 		self.dataset_total = len(self.image_paths)
 		self.transforms = self.compose_transforms()
 
+	def __getitem__(self, index : int) -> Batch:
+		source_image_path = self.image_paths[index]
+
+		if random.random() > self.same_person_probability:
+			return self.prepare_same_person(source_image_path)
+
+		return self.prepare_different_person(source_image_path)
+
+	def __len__(self) -> int:
+		return self.dataset_total
+
 	def prepare_image_paths(self, dataset_image_pattern : str) -> Tuple[ImagePathList, ImagePathSet]:
 		image_paths = []
 		image_path_set = {}
@@ -41,14 +52,6 @@ class DataLoaderVGG(TensorDataset):
 		])
 		return transform
 
-	def __getitem__(self, index : int) -> Batch:
-		source_image_path = self.image_paths[index]
-
-		if random.random() > self.same_person_probability:
-			return self.prepare_same_person(source_image_path)
-
-		return self.prepare_different_person(source_image_path)
-
 	def prepare_different_person(self, source_image_path : str) -> Batch:
 		is_same_person = torch.tensor(0)
 		target_image_path = random.choice(self.image_paths)
@@ -66,6 +69,3 @@ class DataLoaderVGG(TensorDataset):
 		source_tensor = self.transforms(source_vision_frame)
 		target_tensor = self.transforms(target_vision_frame)
 		return source_tensor, target_tensor, is_same_person
-
-	def __len__(self) -> int:
-		return self.dataset_total
