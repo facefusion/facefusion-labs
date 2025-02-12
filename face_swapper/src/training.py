@@ -63,10 +63,10 @@ class FaceSwapperTrain(pytorch_lightning.LightningModule, FaceSwapperLoss):
 
 		self.log('loss_generator', generator_losses.get('loss_generator'), prog_bar = True)
 		self.log('loss_discriminator', discriminator_losses.get('loss_discriminator'), prog_bar = True)
-		self.log('loss_adversarial', generator_losses.get('loss_adversarial'), prog_bar = True)
-		self.log('loss_attribute', generator_losses.get('loss_attribute'), prog_bar = True)
-		self.log('loss_id', generator_losses.get('loss_id'), prog_bar = True)
-		self.log('loss_reconstruction', generator_losses.get('loss_reconstruction'), prog_bar = True)
+		self.log('loss_adversarial', generator_losses.get('loss_adversarial'))
+		self.log('loss_attribute', generator_losses.get('loss_attribute'))
+		self.log('loss_identity', generator_losses.get('loss_identity'))
+		self.log('loss_reconstruction', generator_losses.get('loss_reconstruction'))
 		return generator_losses.get('loss_generator')
 
 	def generate_preview(self, source_tensor : VisionTensor, target_tensor : VisionTensor, swap_tensor : VisionTensor) -> None:
