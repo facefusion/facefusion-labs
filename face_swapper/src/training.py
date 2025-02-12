@@ -92,7 +92,7 @@ def create_trainer() -> Trainer:
 		callbacks =
 		[
 			ModelCheckpoint(
-				monitor = 'l_G',
+				monitor = 'loss_generator',
 				dirpath = output_directory_path,
 				filename = output_file_pattern,
 				every_n_train_steps = 1000,
