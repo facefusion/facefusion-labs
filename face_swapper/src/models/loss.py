@@ -3,7 +3,7 @@ from typing import Tuple
 
 import torch
 from pytorch_msssim import ssim
-from torch import Tensor
+from torch import Tensor, nn
 
 from face_swapper.src.helper import calc_id_embedding, hinge_fake_loss, hinge_real_loss
 from face_swapper.src.types import Batch, DiscriminatorLossSet, DiscriminatorOutputs, FaceLandmark203, GeneratorLossSet, LossTensor, SwapAttributes, TargetAttributes, VisionTensor
