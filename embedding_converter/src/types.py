@@ -1,13 +1,13 @@
-from typing import Any, Tuple
+from typing import Any, Tuple, TypeAlias
 
 from numpy.typing import NDArray
 from torch import Tensor
 
-Embedding = NDArray[Any]
-EmbeddingDataset = NDArray[Embedding]
-FaceLandmark5 = NDArray[Any]
+Embedding : TypeAlias = NDArray[Any]
+EmbeddingDataset : TypeAlias = NDArray[Embedding]
+FaceLandmark5 : TypeAlias = NDArray[Any]
 
-VisionFrame = NDArray[Any]
-VisionTensor = Tensor
+VisionFrame : TypeAlias = NDArray[Any]
+VisionTensor : TypeAlias = Tensor
 
-Batch = Tuple[VisionTensor, VisionTensor]
+Batch : TypeAlias = Tuple[VisionTensor, VisionTensor]
