@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor, nn as nn
 
-from face_swapper.src.types import SourceEmbedding, TargetAttributes
+from face_swapper.src.types import Embedding, TargetAttributes
 
 
 class AADGenerator(nn.Module):
@@ -17,7 +17,7 @@ class AADGenerator(nn.Module):
 		self.res_block_7 = AADResBlock(128, 64, 64, id_channels, num_blocks)
 		self.res_block_8 = AADResBlock(64, 3, 64, id_channels, num_blocks)
 
-	def forward(self, target_attributes : TargetAttributes, source_embedding : SourceEmbedding) -> Tensor:
+	def forward(self, target_attributes : TargetAttributes, source_embedding : Embedding) -> Tensor:
 		feature_map = self.upsample(source_embedding)
 		feature_map_1 = torch.nn.functional.interpolate(self.res_block_1(feature_map, target_attributes[0], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
 		feature_map_2 = torch.nn.functional.interpolate(self.res_block_2(feature_map_1, target_attributes[1], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
@@ -41,7 +41,7 @@ class AADLayer(nn.Module):
 		self.instance_norm = nn.InstanceNorm2d(input_channels)
 		self.conv_mask = nn.Conv2d(input_channels, 1, kernel_size = 1)
 
-	def forward(self, feature_map : Tensor, attribute_embedding : Tensor, id_embedding : SourceEmbedding) -> Tensor:
+	def forward(self, feature_map : Tensor, attribute_embedding : Tensor, id_embedding : Embedding) -> Tensor:
 		feature_map = self.instance_norm(feature_map)
 		gamma_attribute = self.conv_gamma(attribute_embedding)
 		beta_attribute = self.conv_beta(attribute_embedding)
@@ -59,7 +59,7 @@ class AADSequential(nn.Module):
 		super(AADSequential, self).__init__()
 		self.layers = nn.ModuleList(args)
 
-	def forward(self, feature_map: Tensor, attribute_embedding: Tensor, id_embedding: SourceEmbedding) -> Tensor:
+	def forward(self, feature_map: Tensor, attribute_embedding: Tensor, id_embedding: Embedding) -> Tensor:
 		for layer in self.layers:
 			if isinstance(layer, AADLayer):
 				feature_map = layer(feature_map, attribute_embedding, id_embedding)
@@ -99,7 +99,7 @@ class AADResBlock(nn.Module):
 			)
 			self.auxiliary_add_blocks = auxiliary_add_blocks
 
-	def forward(self, feature_map : Tensor, attribute_embedding : Tensor, id_embedding : SourceEmbedding) -> Tensor:
+	def forward(self, feature_map : Tensor, attribute_embedding : Tensor, id_embedding : Embedding) -> Tensor:
 		primary_feature = self.primary_add_blocks(feature_map, attribute_embedding, id_embedding)
 
 		if self.input_channels > self.output_channels:
