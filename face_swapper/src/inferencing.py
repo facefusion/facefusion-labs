@@ -5,7 +5,7 @@ import torch
 
 from .helper import calc_id_embedding, convert_to_vision_frame, convert_to_vision_tensor, read_image
 from .models.generator import AdaptiveEmbeddingIntegrationNetwork
-from .types import Generator, Embedder, VisionFrame
+from .types import Embedder, Generator, VisionFrame
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
