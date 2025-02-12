@@ -4,11 +4,11 @@ from numpy.typing import NDArray
 from torch import Tensor
 from torch.utils.data import DataLoader
 
-Batch = Tuple[Tensor, Tensor]
-Loader = DataLoader[Tuple[Tensor, ...]]
-
 Embedding = NDArray[Any]
 EmbeddingDataset = NDArray[Embedding]
 FaceLandmark5 = NDArray[Any]
 
 VisionFrame = NDArray[Any]
+VisionTensor = Tensor
+
+Batch = Tuple[VisionTensor, VisionTensor]
