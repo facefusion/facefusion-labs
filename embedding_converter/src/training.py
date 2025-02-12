@@ -94,7 +94,7 @@ def create_trainer() -> Trainer:
 		callbacks =
 		[
 			ModelCheckpoint(
-				monitor = 'train_loss',
+				monitor = 'loss_training',
 				dirpath = output_directory_path,
 				filename = output_file_pattern,
 				every_n_epochs = 10,
