@@ -20,12 +20,12 @@ CONFIG.read('config.ini')
 class EmbeddingForgeTrainer(pytorch_lightning.LightningModule):
 	def __init__(self) -> None:
 		super(EmbeddingForgeTrainer, self).__init__()
-		self.embedding_forge = EmbeddingConverter()
+		self.embedding_converter = EmbeddingConverter()
 		self.loss_fn = torch.nn.MSELoss()
 		self.lr = 0.001
 
 	def forward(self, source_embedding : Tensor) -> Tensor:
-		return self.embedding_forge(source_embedding)
+		return self.embedding_converter(source_embedding)
 
 	def training_step(self, batch : Batch, batch_index : int) -> Tensor:
 		source, target = batch
