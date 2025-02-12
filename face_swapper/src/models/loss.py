@@ -18,7 +18,7 @@ class FaceSwapperLoss:
 		landmarker_path = CONFIG.get('training.model', 'landmarker_path')
 		motion_extractor_path = CONFIG.get('training.model', 'motion_extractor_path')
 		self.batch_size = CONFIG.getint('training.loader', 'batch_size')
-		self.mse_loss = torch.nn.MSELoss()
+		self.mse_loss = nn.MSELoss()
 		self.id_embedder = torch.jit.load(id_embedder_path, map_location = 'cpu')  # type:ignore[no-untyped-call]
 		self.landmarker = torch.jit.load(landmarker_path, map_location = 'cpu')  # type:ignore[no-untyped-call]
 		self.motion_extractor = torch.jit.load(motion_extractor_path, map_location = 'cpu')  # type:ignore[no-untyped-call]
@@ -127,7 +127,7 @@ class FaceSwapperLoss:
 
 	def get_face_landmarks(self, vision_tensor : VisionTensor) -> FaceLandmark203:
 		vision_tensor_norm = (vision_tensor + 1) * 0.5
-		vision_tensor_norm = torch.nn.functional.interpolate(vision_tensor_norm, size = (224, 224), mode = 'bilinear')
+		vision_tensor_norm = nn.functional.interpolate(vision_tensor_norm, size = (224, 224), mode = 'bilinear')
 		landmarks = self.landmarker(vision_tensor_norm)[2].view(-1, 203, 2)
 		return landmarks
 

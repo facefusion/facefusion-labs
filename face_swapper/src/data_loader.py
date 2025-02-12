@@ -12,9 +12,9 @@ from .types import Batch, ImagePathList, ImagePathSet
 
 
 class DataLoaderVGG(TensorDataset):
-	def __init__(self, dataset_path : str, dataset_image_pattern : str, dataset_folder_pattern : str, same_person_probability : float) -> None:
+	def __init__(self, dataset_path : str, dataset_image_pattern : str, dataset_directory_pattern : str, same_person_probability : float) -> None:
 		self.same_person_probability = same_person_probability
-		self.directory_paths = glob.glob(dataset_folder_pattern.format(dataset_path))
+		self.directory_paths = glob.glob(dataset_directory_pattern.format(dataset_path))
 		self.image_paths, self.image_path_set = self.prepare_image_paths(dataset_image_pattern)
 		self.dataset_total = len(self.image_paths)
 		self.transforms = self.compose_transforms()

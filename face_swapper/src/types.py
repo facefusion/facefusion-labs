@@ -1,32 +1,31 @@
 from collections import OrderedDict
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, TypeAlias
 
-import torch.nn
 from numpy.typing import NDArray
 from torch import Tensor
-from torch.utils.data import DataLoader
+from torch.nn import Module
 
-Batch = Tuple[Any, Any, Any]
-Loader = DataLoader[Tuple[Tensor, ...]]
-ImagePathList = List[str]
-ImagePathSet = Dict[str, ImagePathList]
+ImagePathList : TypeAlias = List[str]
+ImagePathSet : TypeAlias = Dict[str, ImagePathList]
 
-SwapAttributes = Tuple[Tensor, ...]
-TargetAttributes = Tuple[Tensor, ...]
-DiscriminatorOutputs = List[List[Tensor]]
+SwapAttributes : TypeAlias = Tuple[Tensor, ...]
+TargetAttributes : TypeAlias = Tuple[Tensor, ...]
+DiscriminatorOutputs : TypeAlias = List[List[Tensor]]
 
-Embedding = Tensor
-FaceLandmark203 = Tensor
+Embedding : TypeAlias = Tensor
+FaceLandmark203 : TypeAlias = Tensor
 
-StateSet = OrderedDict[str, Any]
-Padding = Tuple[int, int, int, int]
+StateSet : TypeAlias = OrderedDict[str, Any]
+Padding : TypeAlias = Tuple[int, int, int, int]
 
-LossTensor = Tensor
-VisionTensor = Tensor
-VisionFrame = NDArray[Any]
+VisionFrame : TypeAlias = NDArray[Any]
+LossTensor : TypeAlias = Tensor
+VisionTensor : TypeAlias = Tensor
 
-GeneratorLossSet = Dict[str, Tensor]
-DiscriminatorLossSet = Dict[str, Tensor]
+Batch : TypeAlias = Tuple[VisionTensor, VisionTensor, Tensor]
 
-Generator = torch.nn.Module
-Embedder = torch.nn.Module
+GeneratorLossSet : TypeAlias = Dict[str, Tensor]
+DiscriminatorLossSet : TypeAlias = Dict[str, Tensor]
+
+Generator : TypeAlias = Module
+Embedder : TypeAlias = Module
