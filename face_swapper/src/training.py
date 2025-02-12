@@ -85,8 +85,8 @@ def create_trainer() -> Trainer:
 	output_directory_path = CONFIG.get('training.output', 'directory_path')
 	output_file_pattern = CONFIG.get('training.output', 'file_pattern')
 	trainer_precision = CONFIG.get('training.trainer', 'precision')
-	os.makedirs(output_directory_path, exist_ok = True)
 
+	os.makedirs(output_directory_path, exist_ok = True)
 	return Trainer(
 		max_epochs = trainer_max_epochs,
 		precision = trainer_precision,
