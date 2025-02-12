@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from embedding_converter.src.types import VisionTensor
+from ..types import VisionTensor
 
 
 class EmbeddingConverter(nn.Module):
@@ -21,7 +21,7 @@ class EmbeddingConverter(nn.Module):
 		])
 		return layers
 
-	def forward(self, input_tensor: VisionTensor) -> VisionTensor:
+	def forward(self, input_tensor : VisionTensor) -> VisionTensor:
 		output_tensor = input_tensor / torch.norm(input_tensor)
 
 		for layer in self.layers[:-1]:
