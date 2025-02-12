@@ -1,5 +1,5 @@
 import torch
-from torch import Tensor, nn as nn
+from torch import Tensor, nn
 
 from face_swapper.src.types import Embedding, TargetAttributes
 
@@ -19,13 +19,13 @@ class AADGenerator(nn.Module):
 
 	def forward(self, target_attributes : TargetAttributes, source_embedding : Embedding) -> Tensor:
 		feature_map = self.upsample(source_embedding)
-		feature_map_1 = torch.nn.functional.interpolate(self.res_block_1(feature_map, target_attributes[0], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
-		feature_map_2 = torch.nn.functional.interpolate(self.res_block_2(feature_map_1, target_attributes[1], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
-		feature_map_3 = torch.nn.functional.interpolate(self.res_block_3(feature_map_2, target_attributes[2], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
-		feature_map_4 = torch.nn.functional.interpolate(self.res_block_4(feature_map_3, target_attributes[3], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
-		feature_map_5 = torch.nn.functional.interpolate(self.res_block_5(feature_map_4, target_attributes[4], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
-		feature_map_6 = torch.nn.functional.interpolate(self.res_block_6(feature_map_5, target_attributes[5], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
-		feature_map_7 = torch.nn.functional.interpolate(self.res_block_7(feature_map_6, target_attributes[6], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
+		feature_map_1 = nn.functional.interpolate(self.res_block_1(feature_map, target_attributes[0], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
+		feature_map_2 = nn.functional.interpolate(self.res_block_2(feature_map_1, target_attributes[1], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
+		feature_map_3 = nn.functional.interpolate(self.res_block_3(feature_map_2, target_attributes[2], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
+		feature_map_4 = nn.functional.interpolate(self.res_block_4(feature_map_3, target_attributes[3], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
+		feature_map_5 = nn.functional.interpolate(self.res_block_5(feature_map_4, target_attributes[4], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
+		feature_map_6 = nn.functional.interpolate(self.res_block_6(feature_map_5, target_attributes[5], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
+		feature_map_7 = nn.functional.interpolate(self.res_block_7(feature_map_6, target_attributes[6], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
 		output = self.res_block_8(feature_map_7, target_attributes[7], source_embedding)
 		return torch.tanh(output)
 
@@ -41,7 +41,7 @@ class AADLayer(nn.Module):
 		self.instance_norm = nn.InstanceNorm2d(input_channels)
 		self.conv_mask = nn.Conv2d(input_channels, 1, kernel_size = 1)
 
-	def forward(self, feature_map : Tensor, attribute_embedding : Tensor, id_embedding : Embedding) -> Tensor:
+	def forward(self, feature_map : Tensor, attribute_embedding : Embedding, id_embedding : Embedding) -> Tensor:
 		feature_map = self.instance_norm(feature_map)
 		gamma_attribute = self.conv_gamma(attribute_embedding)
 		beta_attribute = self.conv_beta(attribute_embedding)
@@ -59,7 +59,7 @@ class AADSequential(nn.Module):
 		super(AADSequential, self).__init__()
 		self.layers = nn.ModuleList(args)
 
-	def forward(self, feature_map: Tensor, attribute_embedding: Tensor, id_embedding: Embedding) -> Tensor:
+	def forward(self, feature_map : Tensor, attribute_embedding : Embedding, id_embedding : Embedding) -> Tensor:
 		for layer in self.layers:
 			if isinstance(layer, AADLayer):
 				feature_map = layer(feature_map, attribute_embedding, id_embedding)
@@ -99,7 +99,7 @@ class AADResBlock(nn.Module):
 			)
 			self.auxiliary_add_blocks = auxiliary_add_blocks
 
-	def forward(self, feature_map : Tensor, attribute_embedding : Tensor, id_embedding : Embedding) -> Tensor:
+	def forward(self, feature_map : Tensor, attribute_embedding : Embedding, id_embedding : Embedding) -> Tensor:
 		primary_feature = self.primary_add_blocks(feature_map, attribute_embedding, id_embedding)
 
 		if self.input_channels > self.output_channels:
@@ -115,7 +115,7 @@ class PixelShuffleUpsample(nn.Module):
 		self.conv = nn.Conv2d(in_channels = input_channels, out_channels = output_channels, kernel_size = 3, padding = 1)
 		self.pixel_shuffle = nn.PixelShuffle(upscale_factor = 2)
 
-	def forward(self, temp : Tensor) -> Tensor:
-		temp = self.conv(temp.view(temp.shape[0], -1, 1, 1))
-		temp = self.pixel_shuffle(temp)
-		return temp
+	def forward(self, input_tensor : Tensor) -> Tensor:
+		temp_tensor = self.conv(input_tensor.view(input_tensor.shape[0], -1, 1, 1))
+		temp_tensor = self.pixel_shuffle(temp_tensor)
+		return temp_tensor
