@@ -64,7 +64,7 @@ kernel_size = 4
 ```
 [training.losses]
 weight_adversarial = 1
-weight_id = 20
+weight_identity = 20
 weight_attribute = 10
 weight_reconstruction = 10
 weight_pose = 100
