@@ -81,7 +81,7 @@ providers = CUDAExecutionProvider
 Preparing
 ---------
 
-Prepare the embedding pairs.
+Prepare the embedding dataset.
 
 ```
 python prepare.py
