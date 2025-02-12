@@ -9,7 +9,7 @@ Face Swapper
 Preview
 -------
 
-![Preview](https://raw.githubusercontent.com/facefusion/facefusion-labs/next/.github/preview_face_swapper.png?sanitize=true)
+![Preview](https://raw.githubusercontent.com/facefusion/facefusion-labs/next/.github/previews/face_swapper.png?sanitize=true)
 
 
 Installation
@@ -72,8 +72,8 @@ weight_pose = 100
 
 ```
 [training.trainer]
-max_epochs = 50
 learning_rate = 0.0004
+max_epochs = 50
 precision = 16-mixed
 automatic_optimization = false
 ```

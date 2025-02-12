@@ -10,39 +10,39 @@ from pytorch_lightning.tuner.tuning import Tuner
 from torch import Tensor
 from torch.utils.data import DataLoader, Dataset, TensorDataset, random_split
 
-from .models.arcface_converter import ArcFaceConverter
+from .models.embedding_converter import EmbeddingConverter
 from .types import Batch, Loader
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 
 
-class ArcFaceConverterTrainer(pytorch_lightning.LightningModule):
+class EmbeddingConverterTrainer(pytorch_lightning.LightningModule):
 	def __init__(self) -> None:
-		super(ArcFaceConverterTrainer, self).__init__()
-		self.arcface_converter = ArcFaceConverter()
-		self.loss_fn = torch.nn.MSELoss()
-		self.lr = 0.001
+		super(EmbeddingConverterTrainer, self).__init__()
+		self.embedding_converter = EmbeddingConverter()
+		self.mse_loss = torch.nn.MSELoss()
 
 	def forward(self, source_embedding : Tensor) -> Tensor:
-		return self.arcface_converter(source_embedding)
+		return self.embedding_converter(source_embedding)
 
 	def training_step(self, batch : Batch, batch_index : int) -> Tensor:
 		source, target = batch
 		output = self(source)
-		loss = self.loss_fn(output, target)
-		self.log('train_loss', loss, prog_bar = True, logger = True)
-		return loss
+		loss_training = self.mse_loss(output, target)
+		self.log('loss_training', loss_training, prog_bar = True)
+		return loss_training
 
 	def validation_step(self, batch : Batch, batch_index : int) -> Tensor:
 		source, target = batch
 		output = self(source)
-		loss = self.loss_fn(output, target)
-		self.log('val_loss', loss, prog_bar = True, logger = True)
-		return loss
+		loss_validation = self.mse_loss(output, target)
+		self.log('loss_validation', loss_validation, prog_bar = True)
+		return loss_validation
 
 	def configure_optimizers(self) -> Any:
-		optimizer = torch.optim.Adam(self.parameters(), lr = self.lr)
+		learning_rate = CONFIG.getfloat('training.trainer', 'learning_rate')
+		optimizer = torch.optim.Adam(self.parameters(), lr = learning_rate)
 		scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
 
 		return\
@@ -110,7 +110,7 @@ def create_trainer() -> Trainer:
 def train() -> None:
 	trainer = create_trainer()
 	training_loader, validation_loader = create_loaders()
-	arcface_converter = ArcFaceConverterTrainer()
+	embedding_converter = EmbeddingConverterTrainer()
 	tuner = Tuner(trainer)
-	tuner.lr_find(arcface_converter, training_loader, validation_loader)
-	trainer.fit(arcface_converter, training_loader, validation_loader)
+	tuner.lr_find(embedding_converter, training_loader, validation_loader)
+	trainer.fit(embedding_converter, training_loader, validation_loader)

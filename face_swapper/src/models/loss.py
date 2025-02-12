@@ -34,12 +34,13 @@ class FaceSwapperLoss:
 		weight_reconstruction = CONFIG.getfloat('training.losses', 'weight_reconstruction')
 		weight_pose = CONFIG.getfloat('training.losses', 'weight_pose')
 		weight_gaze = CONFIG.getfloat('training.losses', 'weight_gaze')
-		generator_loss_set = {}
-
-		generator_loss_set['loss_adversarial'] = self.calc_adversarial_loss(discriminator_outputs)
-		generator_loss_set['loss_id'] = self.calc_id_loss(source_tensor, swap_tensor)
-		generator_loss_set['loss_attribute'] = self.calc_attribute_loss(target_attributes, swap_attributes)
-		generator_loss_set['loss_reconstruction'] = self.calc_reconstruction_loss(swap_tensor, target_tensor, is_same_person)
+		generator_loss_set =\
+		{
+			'loss_adversarial': self.calc_adversarial_loss(discriminator_outputs),
+			'loss_id': self.calc_id_loss(source_tensor, swap_tensor),
+			'loss_attribute': self.calc_attribute_loss(target_attributes, swap_attributes),
+			'loss_reconstruction': self.calc_reconstruction_loss(swap_tensor, target_tensor, is_same_person)
+		}
 
 		if weight_pose > 0:
 			generator_loss_set['loss_pose'] = self.calc_pose_loss(swap_tensor, target_tensor)

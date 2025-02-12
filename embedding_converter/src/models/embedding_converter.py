@@ -3,9 +3,9 @@ import torch.nn as nn
 from torch import Tensor
 
 
-class ArcFaceConverter(nn.Module):
+class EmbeddingConverter(nn.Module):
 	def __init__(self) -> None:
-		super(ArcFaceConverter, self).__init__()
+		super(EmbeddingConverter, self).__init__()
 		self.fc1 = nn.Linear(512, 1024)
 		self.fc2 = nn.Linear(1024, 2048)
 		self.fc3 = nn.Linear(2048, 1024)

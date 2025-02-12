@@ -9,7 +9,7 @@ from mxnet.io import ImageRecordIter
 from onnxruntime import InferenceSession
 from tqdm import tqdm
 
-from .types import Embedding, VisionFrame
+from .types import Embedding, EmbeddingDataset, VisionFrame
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -35,9 +35,9 @@ def forward(inference_session : InferenceSession, crop_vision_frame : VisionFram
 	return embedding
 
 
-def process_embeddings(dataset_reader : ImageRecordIter, source_inference_session : InferenceSession, target_inference_session : InferenceSession) -> Embedding:
+def create_embedding_dataset(dataset_reader : ImageRecordIter, source_inference_session : InferenceSession, target_inference_session : InferenceSession) -> EmbeddingDataset:
 	dataset_process_limit = CONFIG.getint('preparing.dataset', 'process_limit')
-	embeddings = []
+	embedding_pairs = []
 
 	with tqdm(total = dataset_process_limit) as progress:
 		for batch in dataset_reader:
@@ -45,13 +45,13 @@ def process_embeddings(dataset_reader : ImageRecordIter, source_inference_sessio
 			crop_vision_frame = prepare_crop_vision_frame(crop_vision_frame)
 			source_embedding = forward(source_inference_session, crop_vision_frame)
 			target_embedding = forward(target_inference_session, crop_vision_frame)
-			embeddings.append([ source_embedding, target_embedding ])
+			embedding_pairs.append([ source_embedding, target_embedding ])
 			progress.update()
 
 			if progress.n == dataset_process_limit:
-				return numpy.concatenate(embeddings, axis = 1).T
+				return numpy.concatenate(embedding_pairs, axis = 1).T
 
-	return numpy.concatenate(embeddings, axis = 1).T
+	return numpy.concatenate(embedding_pairs, axis = 1).T
 
 
 def prepare() -> None:
@@ -74,6 +74,6 @@ def prepare() -> None:
 		)
 		source_inference_session = create_inference_session(model_source_path, execution_providers)
 		target_inference_session = create_inference_session(model_target_path, execution_providers)
-		embedding_pairs = process_embeddings(dataset_reader, source_inference_session, target_inference_session)
-		numpy.save(input_source_path, embedding_pairs[..., 0].T)
-		numpy.save(input_target_path, embedding_pairs[..., 1].T)
+		embedding_dataset = create_embedding_dataset(dataset_reader, source_inference_session, target_inference_session)
+		numpy.save(input_source_path, embedding_dataset[..., 0].T)
+		numpy.save(input_target_path, embedding_dataset[..., 1].T)
