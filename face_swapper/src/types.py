@@ -15,8 +15,7 @@ SwapAttributes = Tuple[Tensor, ...]
 TargetAttributes = Tuple[Tensor, ...]
 DiscriminatorOutputs = List[List[Tensor]]
 
-IdEmbedding = Tensor
-SourceEmbedding = IdEmbedding
+Embedding = Tensor
 FaceLandmark203 = Tensor
 
 StateSet = OrderedDict[str, Any]
@@ -30,4 +29,4 @@ GeneratorLossSet = Dict[str, Tensor]
 DiscriminatorLossSet = Dict[str, Tensor]
 
 Generator = torch.nn.Module
-IdEmbedder = torch.nn.Module
+Embedder = torch.nn.Module

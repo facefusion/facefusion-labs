@@ -8,6 +8,6 @@ Batch = Tuple[Tensor, Tensor]
 Loader = DataLoader[Tuple[Tensor, ...]]
 
 Embedding = NDArray[Any]
-EmbeddingPairs = NDArray[Any]
 FaceLandmark5 = NDArray[Any]
+
 VisionFrame = NDArray[Any]

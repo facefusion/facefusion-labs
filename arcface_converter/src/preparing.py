@@ -9,7 +9,7 @@ from mxnet.io import ImageRecordIter
 from onnxruntime import InferenceSession
 from tqdm import tqdm
 
-from .types import Embedding, EmbeddingPairs, VisionFrame
+from .types import Embedding, VisionFrame
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -35,9 +35,9 @@ def forward(inference_session : InferenceSession, crop_vision_frame : VisionFram
 	return embedding
 
 
-def process_embeddings(dataset_reader : ImageRecordIter, source_inference_session : InferenceSession, target_inference_session : InferenceSession) -> EmbeddingPairs:
+def process_embeddings(dataset_reader : ImageRecordIter, source_inference_session : InferenceSession, target_inference_session : InferenceSession) -> Embedding:
 	dataset_process_limit = CONFIG.getint('preparing.dataset', 'process_limit')
-	embedding_pairs = []
+	embeddings = []
 
 	with tqdm(total = dataset_process_limit) as progress:
 		for batch in dataset_reader:
@@ -45,13 +45,13 @@ def process_embeddings(dataset_reader : ImageRecordIter, source_inference_sessio
 			crop_vision_frame = prepare_crop_vision_frame(crop_vision_frame)
 			source_embedding = forward(source_inference_session, crop_vision_frame)
 			target_embedding = forward(target_inference_session, crop_vision_frame)
-			embedding_pairs.append([ source_embedding, target_embedding ])
+			embeddings.append([ source_embedding, target_embedding ])
 			progress.update()
 
 			if progress.n == dataset_process_limit:
-				return numpy.concatenate(embedding_pairs, axis = 1).T
+				return numpy.concatenate(embeddings, axis = 1).T
 
-	return numpy.concatenate(embedding_pairs, axis = 1).T
+	return numpy.concatenate(embeddings, axis = 1).T
 
 
 def prepare() -> None:

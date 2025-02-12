@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from face_swapper.src.networks.attribute_modulator import AADGenerator
 from face_swapper.src.networks.encoder import UNet
-from face_swapper.src.types import SourceEmbedding, TargetAttributes, VisionTensor
+from face_swapper.src.types import Embedding, TargetAttributes, VisionTensor
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -22,7 +22,7 @@ class AdaptiveEmbeddingIntegrationNetwork(nn.Module):
 		self.encoder.apply(init_weight)
 		self.generator.apply(init_weight)
 
-	def forward(self, target : VisionTensor, source_embedding : SourceEmbedding) -> Tuple[VisionTensor, TargetAttributes]:
+	def forward(self, target : VisionTensor, source_embedding : Embedding) -> Tuple[VisionTensor, TargetAttributes]:
 		target_attributes = self.get_attributes(target)
 		swap_tensor = self.generator(target_attributes, source_embedding)
 		return swap_tensor, target_attributes
