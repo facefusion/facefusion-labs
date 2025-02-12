@@ -1,5 +1,4 @@
 import configparser
-from itertools import chain
 from typing import List
 
 import numpy
