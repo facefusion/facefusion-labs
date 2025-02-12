@@ -1,7 +1,7 @@
-ArcFace Converter
-=================
+Embedding Converter
+===================
 
-> Convert face embeddings between various ArcFace models.
+> Convert face embeddings between various models.
 
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -9,7 +9,7 @@ ArcFace Converter
 Preview
 -------
 
-![Preview](https://raw.githubusercontent.com/facefusion/facefusion-labs/master/.github/preview_arcface_converter.png?sanitize=true)
+![Preview](https://raw.githubusercontent.com/facefusion/facefusion-labs/next/.github/previews/embedding_converter.png?sanitize=true)
 
 
 Installation
@@ -23,7 +23,7 @@ pip install -r requirements.txt
 Setup
 -----
 
-This `config.ini` utilizes the MegaFace dataset to train an ArcFace Converter for SimSwap.
+This `config.ini` utilizes the MegaFace dataset to train the Embedding Converter for SimSwap.
 
 ```
 [preparing.dataset]
@@ -54,6 +54,7 @@ num_workers = 8
 
 ```
 [training.trainer]
+learning_rate = 0.001
 max_epochs = 4096
 ```
 
@@ -80,7 +81,7 @@ providers = CUDAExecutionProvider
 Preparing
 ---------
 
-Prepare the face embedding pairs.
+Prepare the embedding pairs.
 
 ```
 python prepare.py
@@ -90,7 +91,7 @@ python prepare.py
 Training
 --------
 
-Train the ArcFace converter model.
+Train the Embedding Converter model.
 
 ```
 python train.py

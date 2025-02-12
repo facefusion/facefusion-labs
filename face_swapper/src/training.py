@@ -61,12 +61,12 @@ class FaceSwapperTrain(pytorch_lightning.LightningModule, FaceSwapperLoss):
 		if self.global_step % CONFIG.getint('training.output', 'preview_frequency') == 0:
 			self.generate_preview(source_tensor, target_tensor, swap_tensor)
 
-		self.log('l_G', generator_losses.get('loss_generator'), prog_bar = True)
-		self.log('l_D', discriminator_losses.get('loss_discriminator'), prog_bar = True)
-		self.log('l_ADV', generator_losses.get('loss_adversarial'), prog_bar = True)
-		self.log('l_ATTR', generator_losses.get('loss_attribute'), prog_bar = True)
-		self.log('l_ID', generator_losses.get('loss_id'), prog_bar = True)
-		self.log('l_REC', generator_losses.get('loss_reconstruction'), prog_bar = True)
+		self.log('loss_generator', generator_losses.get('loss_generator'), prog_bar = True)
+		self.log('loss_discriminator', discriminator_losses.get('loss_discriminator'), prog_bar = True)
+		self.log('loss_adversarial', generator_losses.get('loss_adversarial'), prog_bar = True)
+		self.log('loss_attribute', generator_losses.get('loss_attribute'), prog_bar = True)
+		self.log('loss_id', generator_losses.get('loss_id'), prog_bar = True)
+		self.log('loss_reconstruction', generator_losses.get('loss_reconstruction'), prog_bar = True)
 		return generator_losses.get('loss_generator')
 
 	def generate_preview(self, source_tensor : VisionTensor, target_tensor : VisionTensor, swap_tensor : VisionTensor) -> None:
@@ -76,7 +76,7 @@ class FaceSwapperTrain(pytorch_lightning.LightningModule, FaceSwapperLoss):
 		swap_tensors = swap_tensor[:max_preview]
 		rows = [ torch.cat([ source_tensor, target_tensor, swap_tensor ], dim = 2) for source_tensor, target_tensor, swap_tensor in zip(source_tensors, target_tensors, swap_tensors) ]
 		grid = torchvision.utils.make_grid(torch.cat(rows, dim = 1).unsqueeze(0), nrow = 1, normalize = True, scale_each = True)
-		self.logger.experiment.add_image("Generator Preview", grid, self.global_step)
+		self.logger.experiment.add_image('preview', grid, self.global_step)
 
 
 def create_trainer() -> Trainer:
@@ -111,10 +111,10 @@ def train() -> None:
 	same_person_probability = CONFIG.getfloat('preparing.dataset', 'same_person_probability')
 	batch_size = CONFIG.getint('training.loader', 'batch_size')
 	num_workers = CONFIG.getint('training.loader', 'num_workers')
-	file_path = CONFIG.get('training.output', 'file_path')
+	output_file_path = CONFIG.get('training.output', 'file_path')
 
 	dataset = DataLoaderVGG(dataset_path, dataset_image_pattern, dataset_directory_pattern, same_person_probability)
 	data_loader = DataLoader(dataset, batch_size = batch_size, shuffle = True, num_workers = num_workers, drop_last = True, pin_memory = True, persistent_workers = True)
 	face_swap_model = FaceSwapperTrain()
 	trainer = create_trainer()
-	trainer.fit(face_swap_model, data_loader, ckpt_path = file_path)
+	trainer.fit(face_swap_model, data_loader, ckpt_path = output_file_path)
