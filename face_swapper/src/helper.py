@@ -4,7 +4,7 @@ import cv2
 import numpy
 import torch
 
-from .types import IdEmbedder, IdEmbedding, Padding, Tensor, VisionFrame, VisionTensor
+from .types import Embedder, Embedding, Padding, Tensor, VisionFrame, VisionTensor
 
 
 def is_windows() -> bool:
@@ -47,7 +47,7 @@ def hinge_fake_loss(tensor : Tensor) -> Tensor:
 	return fake_loss
 
 
-def calc_id_embedding(id_embedder : IdEmbedder, vision_tensor : VisionTensor, padding : Padding) -> IdEmbedding:
+def calc_id_embedding(id_embedder : Embedder, vision_tensor : VisionTensor, padding : Padding) -> Embedding:
 	crop_vision_tensor = vision_tensor[:, :, 15 : 241, 15 : 241]
 	crop_vision_tensor = torch.nn.functional.interpolate(crop_vision_tensor, size = (112, 112), mode = 'area')
 	crop_vision_tensor[:, :, :padding[0], :] = 0
