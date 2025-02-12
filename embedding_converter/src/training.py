@@ -11,7 +11,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader, Dataset, TensorDataset, random_split
 
 from .models.embedding_converter import EmbeddingConverter
-from .types import Batch, Loader
+from .types import Batch, Embedding
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -23,20 +23,20 @@ class EmbeddingConverterTrainer(pytorch_lightning.LightningModule):
 		self.embedding_converter = EmbeddingConverter()
 		self.mse_loss = torch.nn.MSELoss()
 
-	def forward(self, source_embedding : Tensor) -> Tensor:
+	def forward(self, source_embedding : Embedding) -> Embedding:
 		return self.embedding_converter(source_embedding)
 
 	def training_step(self, batch : Batch, batch_index : int) -> Tensor:
-		source, target = batch
-		output = self(source)
-		loss_training = self.mse_loss(output, target)
+		source_tensor, target = batch
+		output_tensor = self(source_tensor)
+		loss_training = self.mse_loss(output_tensor, target)
 		self.log('loss_training', loss_training, prog_bar = True)
 		return loss_training
 
 	def validation_step(self, batch : Batch, batch_index : int) -> Tensor:
-		source, target = batch
-		output = self(source)
-		loss_validation = self.mse_loss(output, target)
+		source_tensor, target_tensor = batch
+		output_tensor = self(source_tensor)
+		loss_validation = self.mse_loss(output_tensor, target_tensor)
 		self.log('loss_validation', loss_validation, prog_bar = True)
 		return loss_validation
 
@@ -58,7 +58,7 @@ class EmbeddingConverterTrainer(pytorch_lightning.LightningModule):
 		}
 
 
-def create_loaders() -> Tuple[Loader, Loader]:
+def create_loaders() -> Tuple[DataLoader, DataLoader]:
 	loader_batch_size = CONFIG.getint('training.loader', 'batch_size')
 	loader_num_workers = CONFIG.getint('training.loader', 'num_workers')
 
@@ -73,9 +73,9 @@ def split_dataset() -> Tuple[Dataset[Any], Dataset[Any]]:
 	input_target_path = CONFIG.get('preparing.input', 'target_path')
 	loader_split_ratio = CONFIG.getfloat('training.loader', 'split_ratio')
 
-	source_input = torch.from_numpy(numpy.load(input_source_path)).float()
-	target_input = torch.from_numpy(numpy.load(input_target_path)).float()
-	dataset = TensorDataset(source_input, target_input)
+	source_tensor = torch.from_numpy(numpy.load(input_source_path)).float()
+	target_tensor = torch.from_numpy(numpy.load(input_target_path)).float()
+	dataset = TensorDataset(source_tensor, target_tensor)
 
 	dataset_size = len(dataset)
 	training_size = int(loader_split_ratio * len(dataset))
