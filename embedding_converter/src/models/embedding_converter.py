@@ -8,7 +8,7 @@ class EmbeddingConverter(nn.Module):
 	def __init__(self) -> None:
 		super(EmbeddingConverter, self).__init__()
 		self.layers = self.create_layers()
-		self.activation = nn.LeakyReLU()
+		self.leaky_relu = nn.LeakyReLU()
 
 	@staticmethod
 	def create_layers() -> nn.ModuleList:
@@ -24,7 +24,7 @@ class EmbeddingConverter(nn.Module):
 		output_tensor = input_tensor / torch.norm(input_tensor)
 
 		for layer in self.layers[:-1]:
-			output_tensor = self.activation(layer(output_tensor))
+			output_tensor = self.leaky_relu(layer(output_tensor))
 
 		output_tensor = self.layers[-1](output_tensor)
 		return output_tensor
