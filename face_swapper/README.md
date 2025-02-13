@@ -28,7 +28,7 @@ This `config.ini` utilizes the MegaFace dataset to train the Face Swapper model.
 ```
 [preparing.dataset]
 dataset_path = .datasets/train
-folder_pattern = {}/*
+directory_pattern = {}/*
 image_pattern = {}/*.*g
 same_person_probability = 0.2
 ```
