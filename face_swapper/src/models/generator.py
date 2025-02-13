@@ -4,7 +4,7 @@ from typing import Tuple
 from torch import nn
 
 from face_swapper.src.networks.attribute_modulator import AADGenerator
-from face_swapper.src.networks.encoder import UNet
+from face_swapper.src.networks.unet import UNet
 from face_swapper.src.types import Embedding, TargetAttributes, VisionTensor
 
 CONFIG = configparser.ConfigParser()
@@ -17,9 +17,9 @@ class AdaptiveEmbeddingIntegrationNetwork(nn.Module):
 		id_channels = CONFIG.getint('training.model.generator', 'id_channels')
 		num_blocks = CONFIG.getint('training.model.generator', 'num_blocks')
 
-		self.encoder = UNet()
+		self.unet = UNet()
 		self.generator = AADGenerator(id_channels, num_blocks)
-		self.encoder.apply(init_weight)
+		self.unet.apply(init_weight)
 		self.generator.apply(init_weight)
 
 	def forward(self, target : VisionTensor, source_embedding : Embedding) -> Tuple[VisionTensor, TargetAttributes]:
@@ -28,7 +28,7 @@ class AdaptiveEmbeddingIntegrationNetwork(nn.Module):
 		return swap_tensor, target_attributes
 
 	def get_attributes(self, target : VisionTensor) -> TargetAttributes:
-		return self.encoder(target)
+		return self.unet(target)
 
 
 def init_weight(module : nn.Module) -> None:
