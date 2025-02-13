@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 
 from .data_loader import DataLoaderVGG
 from .helper import calc_id_embedding
-from .models.discriminator import MultiscaleDiscriminator
+from .models.discriminator import Discriminator
 from .models.generator import AdaptiveEmbeddingIntegrationNetwork
 from .models.loss import FaceSwapperLoss
 from .types import Batch, Embedding, TargetAttributes, VisionTensor
@@ -26,7 +26,7 @@ class FaceSwapperTrain(pytorch_lightning.LightningModule, FaceSwapperLoss):
 	def __init__(self) -> None:
 		super().__init__()
 		self.generator = AdaptiveEmbeddingIntegrationNetwork()
-		self.discriminator = MultiscaleDiscriminator()
+		self.discriminator = Discriminator()
 		self.automatic_optimization = CONFIG.getboolean('training.trainer', 'automatic_optimization')
 
 	def forward(self, target_tensor : VisionTensor, source_embedding : Embedding) -> Tuple[VisionTensor, TargetAttributes]:
