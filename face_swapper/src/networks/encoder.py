@@ -1,5 +1,5 @@
 import torch
-from torch import Tensor, nn as nn
+from torch import Tensor, nn
 
 from face_swapper.src.types import TargetAttributes, VisionTensor
 
@@ -11,11 +11,11 @@ class Upsample(nn.Module):
 		self.batch_norm = nn.BatchNorm2d(output_channels)
 		self.leaky_relu = nn.LeakyReLU(0.1, inplace = True)
 
-	def forward(self, temp : Tensor, skip_tensor : Tensor) -> Tensor:
-		temp = self.deconv(temp)
-		temp = self.batch_norm(temp)
-		temp = self.leaky_relu(temp)
-		return torch.cat((temp, skip_tensor), dim = 1)
+	def forward(self, input_tensor : Tensor, skip_tensor : Tensor) -> Tensor:
+		temp_tensor = self.deconv(input_tensor)
+		temp_tensor = self.batch_norm(temp_tensor)
+		temp_tensor = self.leaky_relu(temp_tensor)
+		return torch.cat((temp_tensor, skip_tensor), dim = 1)
 
 
 class DownSample(nn.Module):
@@ -25,11 +25,11 @@ class DownSample(nn.Module):
 		self.batch_norm = nn.BatchNorm2d(output_channels)
 		self.leaky_relu = nn.LeakyReLU(0.1, inplace = True)
 
-	def forward(self, temp : Tensor) -> Tensor:
-		temp = self.conv(temp)
-		temp = self.batch_norm(temp)
-		temp = self.leaky_relu(temp)
-		return temp
+	def forward(self, input_tensor : Tensor) -> Tensor:
+		temp_tensor = self.conv(input_tensor)
+		temp_tensor = self.batch_norm(temp_tensor)
+		temp_tensor = self.leaky_relu(temp_tensor)
+		return temp_tensor
 
 
 class UNet(nn.Module):
@@ -63,5 +63,5 @@ class UNet(nn.Module):
 		upsample_feature_4 = self.upsampler_4(upsample_feature_3, downsample_feature_3)
 		upsample_feature_5 = self.upsampler_5(upsample_feature_4, downsample_feature_2)
 		upsample_feature_6 = self.upsampler_6(upsample_feature_5, downsample_feature_1)
-		output = torch.nn.functional.interpolate(upsample_feature_6, scale_factor = 2, mode = 'bilinear', align_corners = False)
+		output = nn.functional.interpolate(upsample_feature_6, scale_factor = 2, mode = 'bilinear', align_corners = False)
 		return bottleneck_output, upsample_feature_1, upsample_feature_2, upsample_feature_3, upsample_feature_4, upsample_feature_5, upsample_feature_6, output

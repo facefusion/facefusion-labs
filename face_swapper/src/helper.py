@@ -3,8 +3,9 @@ import platform
 import cv2
 import numpy
 import torch
+from torch import Tensor, nn
 
-from .types import Embedder, Embedding, Padding, Tensor, VisionFrame, VisionTensor
+from .types import Embedder, Embedding, Padding, VisionFrame, VisionTensor
 
 
 def is_windows() -> bool:
@@ -35,25 +36,25 @@ def convert_to_vision_frame(vision_tensor : VisionTensor) -> VisionFrame:
 	return vision_frame
 
 
-def hinge_real_loss(tensor : Tensor) -> Tensor:
-	real_loss = torch.relu(1 - tensor)
+def hinge_real_loss(input_tensor : Tensor) -> Tensor:
+	real_loss = torch.relu(1 - input_tensor)
 	real_loss = real_loss.mean(dim = [ 1, 2, 3 ])
 	return real_loss
 
 
-def hinge_fake_loss(tensor : Tensor) -> Tensor:
-	fake_loss = torch.relu(tensor + 1)
+def hinge_fake_loss(input_tensor : Tensor) -> Tensor:
+	fake_loss = torch.relu(input_tensor + 1)
 	fake_loss = fake_loss.mean(dim = [ 1, 2, 3 ])
 	return fake_loss
 
 
 def calc_id_embedding(id_embedder : Embedder, vision_tensor : VisionTensor, padding : Padding) -> Embedding:
 	crop_vision_tensor = vision_tensor[:, :, 15 : 241, 15 : 241]
-	crop_vision_tensor = torch.nn.functional.interpolate(crop_vision_tensor, size = (112, 112), mode = 'area')
+	crop_vision_tensor = nn.functional.interpolate(crop_vision_tensor, size = (112, 112), mode = 'area')
 	crop_vision_tensor[:, :, :padding[0], :] = 0
 	crop_vision_tensor[:, :, 112 - padding[1]:, :] = 0
 	crop_vision_tensor[:, :, :, :padding[2]] = 0
 	crop_vision_tensor[:, :, :, 112 - padding[3]:] = 0
 	source_embedding = id_embedder(crop_vision_tensor)
-	source_embedding = torch.nn.functional.normalize(source_embedding, p = 2)
+	source_embedding = nn.functional.normalize(source_embedding, p = 2)
 	return source_embedding

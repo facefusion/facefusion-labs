@@ -2,7 +2,7 @@ import configparser
 from typing import List
 
 import numpy
-import torch.nn as nn
+from torch import nn
 
 from face_swapper.src.types import VisionTensor
 

@@ -7,7 +7,7 @@ import torch
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.tuner.tuning import Tuner
-from torch import Tensor
+from torch import Tensor, nn
 from torch.utils.data import DataLoader, Dataset, TensorDataset, random_split
 
 from .models.embedding_converter import EmbeddingConverter
@@ -21,7 +21,7 @@ class EmbeddingConverterTrainer(pytorch_lightning.LightningModule):
 	def __init__(self) -> None:
 		super(EmbeddingConverterTrainer, self).__init__()
 		self.embedding_converter = EmbeddingConverter()
-		self.mse_loss = torch.nn.MSELoss()
+		self.mse_loss = nn.MSELoss()
 
 	def forward(self, source_embedding : Embedding) -> Embedding:
 		return self.embedding_converter(source_embedding)
