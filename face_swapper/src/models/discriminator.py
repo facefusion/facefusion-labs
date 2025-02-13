@@ -26,7 +26,7 @@ class MultiscaleDiscriminator(nn.Module):
 
 		for _ in range(num_discriminators):
 			discriminator = NLayerDiscriminator(input_channels, num_filters, num_layers, kernel_size).discriminator
-			self.discriminators.append(discriminator)
+			discriminators.append(discriminator)
 
 		return discriminators
 
