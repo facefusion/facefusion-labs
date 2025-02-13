@@ -7,26 +7,32 @@ from ..types import Embedding, TargetAttributes
 class AADGenerator(nn.Module):
 	def __init__(self, id_channels : int, num_blocks : int) -> None:
 		super(AADGenerator, self).__init__()
-		self.upsample = PixelShuffleUpsample(id_channels, 1024 * 4)
-		self.res_block_1 = AADResBlock(1024, 1024, 1024, id_channels, num_blocks)
-		self.res_block_2 = AADResBlock(1024, 1024, 2048, id_channels, num_blocks)
-		self.res_block_3 = AADResBlock(1024, 1024, 1024, id_channels, num_blocks)
-		self.res_block_4 = AADResBlock(1024, 512, 512, id_channels, num_blocks)
-		self.res_block_5 = AADResBlock(512, 256, 256, id_channels, num_blocks)
-		self.res_block_6 = AADResBlock(256, 128, 128, id_channels, num_blocks)
-		self.res_block_7 = AADResBlock(128, 64, 64, id_channels, num_blocks)
-		self.res_block_8 = AADResBlock(64, 3, 64, id_channels, num_blocks)
+		output_channels = 1024 * 4
+		self.pixel_shuffle_up = PixelShuffleUp(id_channels, output_channels)
+		self.add_res_blocks = self.create_add_res_blocks(id_channels, num_blocks)
 
-	def forward(self, target_attributes : TargetAttributes, source_embedding : Embedding) -> Tensor:
-		feature_map = self.upsample(source_embedding)
-		feature_map_1 = nn.functional.interpolate(self.res_block_1(feature_map, target_attributes[0], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
-		feature_map_2 = nn.functional.interpolate(self.res_block_2(feature_map_1, target_attributes[1], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
-		feature_map_3 = nn.functional.interpolate(self.res_block_3(feature_map_2, target_attributes[2], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
-		feature_map_4 = nn.functional.interpolate(self.res_block_4(feature_map_3, target_attributes[3], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
-		feature_map_5 = nn.functional.interpolate(self.res_block_5(feature_map_4, target_attributes[4], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
-		feature_map_6 = nn.functional.interpolate(self.res_block_6(feature_map_5, target_attributes[5], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
-		feature_map_7 = nn.functional.interpolate(self.res_block_7(feature_map_6, target_attributes[6], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
-		output = self.res_block_8(feature_map_7, target_attributes[7], source_embedding)
+	@staticmethod
+	def create_add_res_blocks(id_channels : int, num_blocks : int) -> nn.ModuleList:
+		return nn.ModuleList(
+		[
+			AADResBlock(1024, 1024, 1024, id_channels, num_blocks),
+			AADResBlock(1024, 1024, 2048, id_channels, num_blocks),
+			AADResBlock(1024, 1024, 1024, id_channels, num_blocks),
+			AADResBlock(1024, 512, 512, id_channels, num_blocks),
+			AADResBlock(512, 256, 256, id_channels, num_blocks),
+			AADResBlock(256, 128, 128, id_channels, num_blocks),
+			AADResBlock(128, 64, 64, id_channels, num_blocks),
+			AADResBlock(64, 3, 64, id_channels, num_blocks)
+		])
+
+	def forward(self, target_attributes : TargetAttributes, source_embedding : Embedding) -> torch.Tensor:
+		feature_map = self.pixel_shuffle_up(source_embedding)
+
+		for index, add_res_block in enumerate(self.add_res_blocks[:-1]):
+			feature = add_res_block(feature_map, target_attributes[index], source_embedding)
+			feature_map = nn.functional.interpolate(feature, scale_factor = 2, mode = 'bilinear', align_corners = False)
+
+		output = self.add_res_blocks[-1](feature_map, target_attributes[-1], source_embedding)
 		return torch.tanh(output)
 
 
@@ -73,31 +79,30 @@ class AADResBlock(nn.Module):
 		super(AADResBlock, self).__init__()
 		self.input_channels = input_channels
 		self.output_channels = output_channels
-		self.prepare_primary_add_blocks(input_channels, attribute_channels, id_channels, output_channels, num_blocks)
-		self.prepare_auxiliary_add_blocks(input_channels, attribute_channels, id_channels, output_channels)
+		self.primary_add_blocks = self.prepare_primary_add_blocks(input_channels, attribute_channels, id_channels, output_channels, num_blocks)
+		self.auxiliary_add_blocks = self.prepare_auxiliary_add_blocks(input_channels, attribute_channels, id_channels, output_channels)
 
-	def prepare_primary_add_blocks(self, input_channels : int, attribute_channels : int, id_channels : int, output_channels : int, num_blocks : int) -> None:
+	@staticmethod
+	def prepare_primary_add_blocks(input_channels : int, attribute_channels : int, id_channels : int, output_channels : int, num_blocks : int) -> AADSequential:
 		primary_add_blocks = []
 
 		for index in range(num_blocks):
 			intermediate_channels = input_channels if index < (num_blocks - 1) else output_channels
 			primary_add_blocks.extend(
-				[
-					AADLayer(input_channels, attribute_channels, id_channels),
-					nn.ReLU(inplace = True),
-					nn.Conv2d(input_channels, intermediate_channels, kernel_size = 3, padding = 1, bias = False)
-				]
-			)
-		self.primary_add_blocks = AADSequential(*primary_add_blocks)
-
-	def prepare_auxiliary_add_blocks(self, input_channels : int, attribute_channels : int, id_channels : int, output_channels : int) -> None:
-		if input_channels > output_channels:
-			auxiliary_add_blocks = AADSequential(
+			[
 				AADLayer(input_channels, attribute_channels, id_channels),
 				nn.ReLU(inplace = True),
-				nn.Conv2d(input_channels, output_channels, kernel_size = 3, padding = 1, bias = False)
-			)
-			self.auxiliary_add_blocks = auxiliary_add_blocks
+				nn.Conv2d(input_channels, intermediate_channels, kernel_size = 3, padding = 1, bias = False)
+			])
+		return AADSequential(*primary_add_blocks)
+
+	@staticmethod
+	def prepare_auxiliary_add_blocks(input_channels : int, attribute_channels : int, id_channels : int, output_channels : int) -> AADSequential:
+		return AADSequential(
+			AADLayer(input_channels, attribute_channels, id_channels),
+			nn.ReLU(inplace = True),
+			nn.Conv2d(input_channels, output_channels, kernel_size = 3, padding = 1, bias = False)
+		)
 
 	def forward(self, feature_map : Tensor, attribute_embedding : Embedding, id_embedding : Embedding) -> Tensor:
 		primary_feature = self.primary_add_blocks(feature_map, attribute_embedding, id_embedding)
@@ -109,9 +114,9 @@ class AADResBlock(nn.Module):
 		return output_feature
 
 
-class PixelShuffleUpsample(nn.Module):
+class PixelShuffleUp(nn.Module):
 	def __init__(self, input_channels : int, output_channels : int) -> None:
-		super(PixelShuffleUpsample, self).__init__()
+		super(PixelShuffleUp, self).__init__()
 		self.conv = nn.Conv2d(in_channels = input_channels, out_channels = output_channels, kernel_size = 3, padding = 1)
 		self.pixel_shuffle = nn.PixelShuffle(upscale_factor = 2)
 

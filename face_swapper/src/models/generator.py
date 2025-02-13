@@ -3,7 +3,7 @@ from typing import Tuple
 
 from torch import nn
 
-from ..networks.attribute_modulator import AADGenerator
+from ..networks.aei_net import AADGenerator
 from ..networks.unet import UNet
 from ..types import Embedding, TargetAttributes, VisionTensor
 
