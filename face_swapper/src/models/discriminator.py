@@ -16,7 +16,8 @@ class MultiscaleDiscriminator(nn.Module):
 		self.downsample = nn.AvgPool2d(kernel_size = 3, stride = 2, padding = (1, 1), count_include_pad = False)
 		self.discriminators = self.create_discriminators()
 
-	def create_discriminators(self) -> nn.ModuleList:
+	@staticmethod
+	def create_discriminators() -> nn.ModuleList:
 		num_discriminators = CONFIG.getint('training.model.discriminator', 'num_discriminators')
 		input_channels = CONFIG.getint('training.model.discriminator', 'input_channels')
 		num_filters = CONFIG.getint('training.model.discriminator', 'num_filters')
