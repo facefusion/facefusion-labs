@@ -92,6 +92,7 @@ validation_frequency = 1000
 directory_path = .exports
 source_path = .outputs/last.ckpt
 target_path = .exports/face_swapper.onnx
+ir_version = 10
 opset_version = 15
 ```
 

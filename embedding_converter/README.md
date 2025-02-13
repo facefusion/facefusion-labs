@@ -69,6 +69,7 @@ file_pattern = arcface_converter_simswap_{epoch:02d}_{val_loss:.4f}
 directory_path = .exports
 source_path = .outputs/last.ckpt
 target_path = .exports/arcface_converter_simswap.onnx
+ir_version = 10
 opset_version = 15
 ```
 
