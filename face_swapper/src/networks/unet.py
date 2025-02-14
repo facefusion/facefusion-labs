@@ -7,32 +7,32 @@ from face_swapper.src.types import TargetAttributes
 class UNet(nn.Module):
 	def __init__(self) -> None:
 		super(UNet, self).__init__()
-		self.down = self.create_down()
-		self.up = self.create_up()
+		self.down_samples = self.create_down_samples()
+		self.up_samples = self.create_up_sample()
 
 	@staticmethod
-	def create_down() -> nn.ModuleList:
+	def create_down_samples() -> nn.ModuleList:
 		return nn.ModuleList(
 		[
-			Down(3, 32),
-			Down(32, 64),
-			Down(64, 128),
-			Down(128, 256),
-			Down(256, 512),
-			Down(512, 1024),
-			Down(1024, 1024)
+			DownSample(3, 32),
+			DownSample(32, 64),
+			DownSample(64, 128),
+			DownSample(128, 256),
+			DownSample(256, 512),
+			DownSample(512, 1024),
+			DownSample(1024, 1024)
 		])
 
 	@staticmethod
-	def create_up() -> nn.ModuleList:
+	def create_up_sample() -> nn.ModuleList:
 		return nn.ModuleList(
 		[
-			Up(1024, 1024),
-			Up(2048, 512),
-			Up(1024, 256),
-			Up(512, 128),
-			Up(256, 64),
-			Up(128, 32)
+			UpSample(1024, 1024),
+			UpSample(2048, 512),
+			UpSample(1024, 256),
+			UpSample(512, 128),
+			UpSample(256, 64),
+			UpSample(128, 32)
 		])
 
 	def forward(self, target_tensor : Tensor) -> TargetAttributes:
@@ -40,25 +40,25 @@ class UNet(nn.Module):
 		up_features = []
 		temp_tensor = target_tensor
 
-		for down in self.down:
-			temp_tensor = down(temp_tensor)
+		for down_sample in self.down_samples:
+			temp_tensor = down_sample(temp_tensor)
 			down_features.append(temp_tensor)
 
 		bottleneck_tensor = down_features[-1]
 		temp_tensor = bottleneck_tensor
 
-		for index, up in enumerate(self.up):
+		for index, up_sample in enumerate(self.up_samples):
 			down_index = -(index + 2)
-			up_feature = up(temp_tensor, down_features[down_index])
+			up_feature = up_sample(temp_tensor, down_features[down_index])
 			up_features.append(up_feature)
 
 		output_tensor = nn.functional.interpolate(temp_tensor, scale_factor = 2, mode = 'bilinear', align_corners = False)
 		return bottleneck_tensor, *up_features, output_tensor
 
 
-class Up(nn.Module):
+class UpSample(nn.Module):
 	def __init__(self, input_channels : int, output_channels : int) -> None:
-		super(Up, self).__init__()
+		super(UpSample, self).__init__()
 		self.conv_transpose = nn.ConvTranspose2d(in_channels = input_channels, out_channels = output_channels, kernel_size = 4, stride = 2, padding = 1, bias = False)
 		self.batch_norm = nn.BatchNorm2d(output_channels)
 		self.leaky_relu = nn.LeakyReLU(0.1, inplace = True)
@@ -71,9 +71,9 @@ class Up(nn.Module):
 		return temp_tensor
 
 
-class Down(nn.Module):
+class DownSample(nn.Module):
 	def __init__(self, input_channels : int, output_channels : int) -> None:
-		super(Down, self).__init__()
+		super(DownSample, self).__init__()
 		self.conv = nn.Conv2d(in_channels = input_channels, out_channels = output_channels, kernel_size = 4, stride = 2, padding = 1, bias = False)
 		self.batch_norm = nn.BatchNorm2d(output_channels)
 		self.leaky_relu = nn.LeakyReLU(0.1, inplace = True)
