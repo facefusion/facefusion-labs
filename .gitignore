@@ -4,5 +4,6 @@ __pycache__
 .idea
 .inputs
 .exports
+.models
 .outputs
 .vscode
