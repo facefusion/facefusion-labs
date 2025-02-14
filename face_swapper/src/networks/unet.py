@@ -52,6 +52,7 @@ class UNet(nn.Module):
 		for index, up_sample in enumerate(self.up_samples):
 			up_feature = up_sample(temp_tensor, down_features[-(index + 2)])
 			up_features.append(up_feature)
+			temp_tensor = up_feature
 
 		output_tensor = nn.functional.interpolate(temp_tensor, scale_factor = 2, mode = 'bilinear', align_corners = False)
 		return bottleneck_tensor, *up_features, output_tensor
