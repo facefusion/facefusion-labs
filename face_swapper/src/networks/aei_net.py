@@ -8,7 +8,7 @@ class AADGenerator(nn.Module):
 	def __init__(self, id_channels : int, num_blocks : int) -> None:
 		super(AADGenerator, self).__init__()
 		output_channels = 1024 * 4
-		self.pixel_shuffle_up = PixelShuffleUp(id_channels, output_channels)
+		self.pixel_shuffle_up_sample = PixelShuffleUpSample(id_channels, output_channels)
 		self.add_res_blocks = self.create_add_res_blocks(id_channels, num_blocks)
 
 	@staticmethod
@@ -26,7 +26,7 @@ class AADGenerator(nn.Module):
 		])
 
 	def forward(self, target_attributes : TargetAttributes, source_embedding : Embedding) -> torch.Tensor:
-		feature_map = self.pixel_shuffle_up(source_embedding)
+		feature_map = self.pixel_shuffle_up_sample(source_embedding)
 
 		for index, add_res_block in enumerate(self.add_res_blocks[:-1]):
 			feature = add_res_block(feature_map, target_attributes[index], source_embedding)
@@ -114,9 +114,9 @@ class AADResBlock(nn.Module):
 		return output_feature
 
 
-class PixelShuffleUp(nn.Module):
+class PixelShuffleUpSample(nn.Module):
 	def __init__(self, input_channels : int, output_channels : int) -> None:
-		super(PixelShuffleUp, self).__init__()
+		super(PixelShuffleUpSample, self).__init__()
 		self.conv = nn.Conv2d(in_channels = input_channels, out_channels = output_channels, kernel_size = 3, padding = 1)
 		self.pixel_shuffle = nn.PixelShuffle(upscale_factor = 2)
 
