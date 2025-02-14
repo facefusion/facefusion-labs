@@ -8,7 +8,7 @@ class UNet(nn.Module):
 	def __init__(self) -> None:
 		super(UNet, self).__init__()
 		self.down_samples = self.create_down_samples()
-		self.up_samples = self.create_up_sample()
+		self.up_samples = self.create_up_samples()
 
 	@staticmethod
 	def create_down_samples() -> nn.ModuleList:
@@ -24,7 +24,7 @@ class UNet(nn.Module):
 		])
 
 	@staticmethod
-	def create_up_sample() -> nn.ModuleList:
+	def create_up_samples() -> nn.ModuleList:
 		return nn.ModuleList(
 		[
 			UpSample(1024, 1024),
