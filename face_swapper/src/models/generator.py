@@ -19,7 +19,7 @@ class AdaptiveEmbeddingIntegrationNetwork(nn.Module):
 		num_blocks = CONFIG.getint('training.model.generator', 'num_blocks')
 
 		if encoder_type == 'unet':
-			self.attributor = UNet()
+			self.encoder = UNet()
 		if encoder_type == 'unetplusplus':
 			self.encoder = UNetPlusPlus()
 		self.generator = AADGenerator(id_channels, num_blocks)
