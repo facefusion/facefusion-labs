@@ -4,7 +4,7 @@ from typing import Tuple
 from torch import nn
 
 from face_swapper.src.networks.attribute_modulator import AADGenerator
-from face_swapper.src.networks.encoder import UNet
+from face_swapper.src.networks.unet import UNet
 from face_swapper.src.types import Embedding, TargetAttributes, VisionTensor
 
 CONFIG = configparser.ConfigParser()
