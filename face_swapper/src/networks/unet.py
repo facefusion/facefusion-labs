@@ -1,3 +1,5 @@
+from typing import List
+
 import torch
 from torch import Tensor, nn
 
@@ -35,6 +37,30 @@ class UNet(nn.Module):
 			UpSample(128, 32)
 		])
 
+	def forward(self, target_tensor: Tensor) -> TargetAttributes:
+		down_features = []
+		up_features = []
+		temp_tensor = target_tensor
+
+		for down_sample in self.down_samples:
+			temp_tensor = down_sample(temp_tensor)
+			down_features.append(temp_tensor)
+
+		bottleneck_tensor = down_features[-1]
+		temp_tensor = bottleneck_tensor
+
+		for index, up_sample in enumerate(self.up_samples):
+			up_feature = up_sample(temp_tensor, down_features[-(index + 2)])
+			up_features.append(up_feature)
+
+		output_tensor = nn.functional.interpolate(temp_tensor, scale_factor = 2, mode = 'bilinear', align_corners = False)
+		return bottleneck_tensor, *up_features, output_tensor
+
+
+class UNetPlusPlus(UNet):
+	def __init__(self) -> None:
+		super(UNetPlusPlus, self).__init__()
+
 	def forward(self, target_tensor : Tensor) -> TargetAttributes:
 		down_features = []
 		up_features = []
@@ -48,8 +74,8 @@ class UNet(nn.Module):
 		temp_tensor = bottleneck_tensor
 
 		for index, up_sample in enumerate(self.up_samples):
-			down_index = -(index + 2)
-			up_feature = up_sample(temp_tensor, down_features[down_index])
+			skip_tensors = down_features[-(index + 2):]
+			up_feature = up_sample(temp_tensor, skip_tensors)
 			up_features.append(up_feature)
 
 		output_tensor = nn.functional.interpolate(temp_tensor, scale_factor = 2, mode = 'bilinear', align_corners = False)
@@ -63,11 +89,11 @@ class UpSample(nn.Module):
 		self.batch_norm = nn.BatchNorm2d(output_channels)
 		self.leaky_relu = nn.LeakyReLU(0.1, inplace = True)
 
-	def forward(self, input_tensor : Tensor, skip_tensor : Tensor) -> Tensor:
+	def forward(self, input_tensor : Tensor, skip_tensors : List[Tensor]) -> Tensor:
 		temp_tensor = self.conv_transpose(input_tensor)
 		temp_tensor = self.batch_norm(temp_tensor)
 		temp_tensor = self.leaky_relu(temp_tensor)
-		temp_tensor = torch.cat((temp_tensor, skip_tensor), dim = 1)
+		temp_tensor = torch.cat([ temp_tensor ] + skip_tensors, dim = 1)
 		return temp_tensor
 
 
