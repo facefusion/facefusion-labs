@@ -68,6 +68,7 @@ weight_identity = 20
 weight_attribute = 10
 weight_reconstruction = 10
 weight_pose = 100
+weight_gaze = 10
 ```
 
 ```
