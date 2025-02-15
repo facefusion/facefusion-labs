@@ -3,7 +3,7 @@ Face Swapper
 
 > Face shape and feature aware identity transfer.
 
-![License](https://img.shields.io/badge/license-ResearchRAIL--M-red)
+![License](https://img.shields.io/badge/license-ResearchRAIL--MS-red)
 
 
 Preview
