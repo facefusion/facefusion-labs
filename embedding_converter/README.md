@@ -3,7 +3,7 @@ Embedding Converter
 
 > Convert face embeddings between various models.
 
-![License](https://img.shields.io/badge/license-OpenhRAIL--MS-green)
+![License](https://img.shields.io/badge/license-OpenRAIL--MS-green)
 
 
 Preview
