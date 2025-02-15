@@ -3,8 +3,8 @@ from typing import List
 
 from torch import nn
 
-from face_swapper.src.networks.nld import NLD
-from face_swapper.src.types import VisionTensor
+from ..networks.nld import NLD
+from ..types import VisionTensor
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')

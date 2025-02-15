@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor, nn
 
-from face_swapper.src.types import Embedding, TargetAttributes
+from ..types import Embedding, TargetAttributes
 
 
 class AADGenerator(nn.Module):
