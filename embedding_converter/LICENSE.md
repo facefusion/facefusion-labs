@@ -1,3 +1,3 @@
-MIT license
+OpenRAIL-MS license
 
 Copyright (c) 2025 Henry Ruhs
