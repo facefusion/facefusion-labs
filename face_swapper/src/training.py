@@ -25,6 +25,7 @@ CONFIG.read('config.ini')
 class FaceSwapperTrain(pytorch_lightning.LightningModule, FaceSwapperLoss):
 	def __init__(self) -> None:
 		super().__init__()
+		FaceSwapperLoss.__init__(self)
 		self.generator = AdaptiveEmbeddingIntegrationNetwork()
 		self.discriminator = Discriminator()
 		self.automatic_optimization = CONFIG.getboolean('training.trainer', 'automatic_optimization')
@@ -45,12 +46,12 @@ class FaceSwapperTrain(pytorch_lightning.LightningModule, FaceSwapperLoss):
 		source_embedding = calc_id_embedding(self.id_embedder, source_tensor, (0, 0, 0, 0))
 		swap_tensor, target_attributes = self.generator(target_tensor, source_embedding)
 		swap_attributes = self.generator.get_attributes(swap_tensor)
-		real_discriminator_outputs = self.discriminator(source_tensor.detach())
+		real_discriminator_outputs = self.discriminator(source_tensor)
 		fake_discriminator_outputs = self.discriminator(swap_tensor.detach())
 
 		generator_losses = self.calc_generator_loss(swap_tensor, target_attributes, swap_attributes, fake_discriminator_outputs, batch)
 		generator_optimizer.zero_grad()
-		self.manual_backward(generator_losses.get('loss_generator'))
+		self.manual_backward(generator_losses.get('loss_generator'), retain_graph = True)
 		generator_optimizer.step()
 
 		discriminator_losses = self.calc_discriminator_loss(real_discriminator_outputs, fake_discriminator_outputs)
@@ -113,6 +114,9 @@ def train() -> None:
 	batch_size = CONFIG.getint('training.loader', 'batch_size')
 	num_workers = CONFIG.getint('training.loader', 'num_workers')
 	output_file_path = CONFIG.get('training.output', 'file_path')
+
+	if not os.path.isfile(output_file_path):
+		output_file_path = None
 
 	dataset = DataLoaderVGG(dataset_path, dataset_image_pattern, dataset_directory_pattern, same_person_probability)
 	data_loader = DataLoader(dataset, batch_size = batch_size, shuffle = True, num_workers = num_workers, drop_last = True, pin_memory = True, persistent_workers = True)
