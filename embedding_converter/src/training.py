@@ -1,12 +1,12 @@
 import configparser
 from typing import Any, Tuple
 
+import lightning
 import numpy
-import pytorch_lightning
 import torch
-from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.tuner.tuning import Tuner
+from lightning import Trainer
+from lightning.pytorch.callbacks import ModelCheckpoint
+from lightning.pytorch.loggers import TensorBoardLogger
 from torch import Tensor, nn
 from torch.utils.data import DataLoader, Dataset, TensorDataset, random_split
 
@@ -17,7 +17,7 @@ CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 
 
-class EmbeddingConverterTrainer(pytorch_lightning.LightningModule):
+class EmbeddingConverterTrainer(lightning.LightningModule):
 	def __init__(self) -> None:
 		super(EmbeddingConverterTrainer, self).__init__()
 		self.embedding_converter = EmbeddingConverter()
@@ -88,8 +88,10 @@ def create_trainer() -> Trainer:
 	trainer_max_epochs = CONFIG.getint('training.trainer', 'max_epochs')
 	output_directory_path = CONFIG.get('training.output', 'directory_path')
 	output_file_pattern = CONFIG.get('training.output', 'file_pattern')
+	logger = TensorBoardLogger('.logs', name = 'embedding_converter')
 
 	return Trainer(
+		logger = logger,
 		max_epochs = trainer_max_epochs,
 		callbacks =
 		[
