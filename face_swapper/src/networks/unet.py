@@ -13,7 +13,7 @@ class UNet(nn.Module):
 		self.up_samples = self.create_up_samples()
 
 	@staticmethod
-	def create_down_samples(self) -> nn.ModuleList:
+	def create_down_samples(self : nn.Module) -> nn.ModuleList:
 		return nn.ModuleList(
 		[
 			nn.Sequential(
