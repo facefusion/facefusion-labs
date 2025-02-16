@@ -1,7 +1,10 @@
-lightning==2.4.0
+--extra-index-url https://download.pytorch.org/whl/cu124
+lightning==2.5.0
 numpy==1.26.4
 onnx==1.17.0
-onnxruntime==1.20.0
-opencv-python==4.10.0.84
+onnxruntime==1.20.1
+opencv-python==4.11.0.86
 mxnet==1.9.1
 pytorch-msssim==1.0.0
+torch==2.6.0
+torchvision==0.21.0
