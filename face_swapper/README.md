@@ -116,6 +116,12 @@ Train the Face Swapper model.
 python train.py
 ```
 
+Launch the TensorBoard to monitor the training.
+
+```
+tensorboard --logdir=.logs
+```
+
 
 Exporting
 ---------
