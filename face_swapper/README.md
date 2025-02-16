@@ -35,8 +35,8 @@ same_person_probability = 0.2
 
 ```
 [training.loader]
-batch_size = 24
-num_workers = 12
+batch_size = 8
+num_workers = 8
 ```
 
 ```

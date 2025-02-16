@@ -8,3 +8,4 @@ mxnet==1.9.1
 pytorch-msssim==1.0.0
 torch==2.6.0
 torchvision==0.21.0
+tensorboard==2.19.0
