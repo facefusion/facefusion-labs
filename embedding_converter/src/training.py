@@ -7,6 +7,7 @@ import torch
 from lightning import Trainer
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
+from lightning.pytorch.tuner import Tuner
 from torch import Tensor, nn
 from torch.utils.data import DataLoader, Dataset, TensorDataset, random_split
 

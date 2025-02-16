@@ -8,7 +8,6 @@ import torchvision
 from lightning import Trainer
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
-
 from torch import Tensor
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
