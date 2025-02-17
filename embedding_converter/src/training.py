@@ -1,4 +1,5 @@
 import configparser
+import os
 from typing import Any, Tuple
 
 import lightning
@@ -111,9 +112,15 @@ def create_trainer() -> Trainer:
 
 
 def train() -> None:
-	trainer = create_trainer()
+	resume_file_path = CONFIG.get('training.output', 'resume_file_path')
+
 	training_loader, validation_loader = create_loaders()
 	embedding_converter_trainer = EmbeddingConverterTrainer()
+	trainer = create_trainer()
 	tuner = Tuner(trainer)
 	tuner.lr_find(embedding_converter_trainer, training_loader, validation_loader)
-	trainer.fit(embedding_converter_trainer, training_loader, validation_loader)
+
+	if os.path.exists(resume_file_path):
+		trainer.fit(embedding_converter_trainer, training_loader, validation_loader, ckpt_path = resume_file_path)
+	else:
+		trainer.fit(embedding_converter_trainer, training_loader, validation_loader)

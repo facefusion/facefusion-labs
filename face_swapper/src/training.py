@@ -23,7 +23,7 @@ CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 
 
-class FaceSwapperTrain(lightning.LightningModule, FaceSwapperLoss):
+class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 	def __init__(self) -> None:
 		super().__init__()
 		FaceSwapperLoss.__init__(self)
@@ -62,7 +62,7 @@ class FaceSwapperTrain(lightning.LightningModule, FaceSwapperLoss):
 		self.manual_backward(discriminator_losses.get('loss_discriminator'))
 		discriminator_optimizer.step()
 
-		if self.global_step % CONFIG.getint('training.output', 'preview_frequency') == 0:
+		if self.global_step % CONFIG.getint('training.trainer', 'preview_frequency') == 0:
 			self.generate_preview(source_tensor, target_tensor, swap_tensor)
 
 		self.log('loss_generator', generator_losses.get('loss_generator'), prog_bar = True)
@@ -103,7 +103,7 @@ def create_trainer() -> Trainer:
 				dirpath = output_directory_path,
 				filename = output_file_pattern,
 				every_n_train_steps = 1000,
-				save_top_k = 5,
+				save_top_k = 3,
 				save_last = True
 			)
 		],
@@ -118,13 +118,14 @@ def train() -> None:
 	same_person_probability = CONFIG.getfloat('preparing.dataset', 'same_person_probability')
 	batch_size = CONFIG.getint('training.loader', 'batch_size')
 	num_workers = CONFIG.getint('training.loader', 'num_workers')
-	output_file_path = CONFIG.get('training.output', 'file_path')
-
-	if not os.path.isfile(output_file_path):
-		output_file_path = None
+	resume_file_path = CONFIG.get('training.output', 'resume_file_path')
 
 	dataset = DataLoaderVGG(dataset_path, dataset_image_pattern, dataset_directory_pattern, same_person_probability)
 	data_loader = DataLoader(dataset, batch_size = batch_size, shuffle = True, num_workers = num_workers, drop_last = True, pin_memory = True, persistent_workers = True)
-	face_swap_model = FaceSwapperTrain()
+	face_swapper_trainer = FaceSwapperTrainer()
 	trainer = create_trainer()
-	trainer.fit(face_swap_model, data_loader, ckpt_path = output_file_path)
+
+	if os.path.isfile(resume_file_path):
+		trainer.fit(face_swapper_trainer, data_loader, ckpt_path = resume_file_path)
+	else:
+		trainer.fit(face_swapper_trainer, data_loader)

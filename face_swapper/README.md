@@ -77,15 +77,14 @@ learning_rate = 0.0004
 max_epochs = 50
 precision = 16-mixed
 automatic_optimization = false
+preview_frequency = 250
 ```
 
 ```
 [training.output]
 directory_path = .outputs
-file_path = .outputs/last.ckpt
-file_pattern = 'checkpoint-{epoch}-{step}-{l_G:.4f}-{l_D:.4f}'
-preview_frequency = 250
-validation_frequency = 1000
+file_pattern = 'face-swapper_{epoch}_{step}'
+resume_file_path = .outputs/last.ckpt
 ```
 
 ```
