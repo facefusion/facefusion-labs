@@ -106,8 +106,7 @@ def create_trainer() -> Trainer:
 				save_top_k = 3,
 				save_last = True
 			)
-		],
-		val_check_interval = 1000
+		]
 	)
 
 
