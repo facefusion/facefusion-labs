@@ -4,7 +4,7 @@ import cv2
 import torch
 
 from .helper import calc_id_embedding, convert_to_vision_frame, convert_to_vision_tensor, read_image
-from .models.generator import AdaptiveEmbeddingIntegrationNetwork
+from .models.generator import Generator
 from .types import Embedder, Generator, VisionFrame
 
 CONFIG = configparser.ConfigParser()
@@ -28,7 +28,7 @@ def infer() -> None:
 	output_path = CONFIG.get('inferencing', 'output_path')
 
 	state_dict = torch.load(generator_path, map_location = 'cpu').get('state_dict').get('generator')
-	generator = AdaptiveEmbeddingIntegrationNetwork()
+	generator = Generator()
 	generator.load_state_dict(state_dict)
 	generator.eval()
 	id_embedder = torch.jit.load(id_embedder_path, map_location = 'cpu')  # type:ignore[no-untyped-call]

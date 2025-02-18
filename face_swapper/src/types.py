@@ -14,6 +14,7 @@ SwapAttributes : TypeAlias = Tuple[Tensor, ...]
 TargetAttributes : TypeAlias = Tuple[Tensor, ...]
 DiscriminatorOutputs : TypeAlias = List[List[Tensor]]
 
+Attributes : TypeAlias = Tuple[Tensor, ...]
 Embedding : TypeAlias = Tensor
 FaceLandmark203 : TypeAlias = Tensor
 
