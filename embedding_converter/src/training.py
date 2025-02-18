@@ -38,9 +38,9 @@ class EmbeddingConverterTrainer(lightning.LightningModule):
 	def validation_step(self, batch : Batch, batch_index : int) -> Tensor:
 		source_tensor, target_tensor = batch
 		output_tensor = self(source_tensor)
-		loss_validation = self.mse_loss(output_tensor, target_tensor)
-		self.log('loss_validation', loss_validation, prog_bar = True)
-		return loss_validation
+		validation = self.mse_loss(output_tensor, target_tensor)
+		self.log('validation', validation, prog_bar = True)
+		return validation
 
 	def configure_optimizers(self) -> Any:
 		learning_rate = CONFIG.getfloat('training.trainer', 'learning_rate')
@@ -94,6 +94,7 @@ def create_trainer() -> Trainer:
 
 	return Trainer(
 		logger = logger,
+		log_every_n_steps = 10,
 		max_epochs = trainer_max_epochs,
 		callbacks =
 		[
@@ -106,8 +107,7 @@ def create_trainer() -> Trainer:
 				save_last = True
 			)
 		],
-		enable_progress_bar = True,
-		log_every_n_steps = 2
+		val_check_interval = 1000
 	)
 
 
