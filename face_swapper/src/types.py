@@ -28,5 +28,5 @@ VisionTensor : TypeAlias = Tensor
 GeneratorLossSet : TypeAlias = Dict[str, Tensor]
 DiscriminatorLossSet : TypeAlias = Dict[str, Tensor]
 
-Generator : TypeAlias = Module
-Embedder : TypeAlias = Module
+GeneratorModule : TypeAlias = Module
+EmbedderModule : TypeAlias = Module

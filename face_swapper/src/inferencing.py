@@ -5,13 +5,13 @@ import torch
 
 from .helper import calc_id_embedding, convert_to_vision_frame, convert_to_vision_tensor, read_image
 from .models.generator import Generator
-from .types import Embedder, Generator, VisionFrame
+from .types import EmbedderModule, GeneratorModule, VisionFrame
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 
 
-def run_swap(generator : Generator, id_embedder : Embedder, source_vision_frame : VisionFrame, target_vision_frame : VisionFrame) -> VisionFrame:
+def run_swap(generator : GeneratorModule, id_embedder : EmbedderModule, source_vision_frame : VisionFrame, target_vision_frame : VisionFrame) -> VisionFrame:
 	source_vision_tensor = convert_to_vision_tensor(source_vision_frame)
 	target_vision_tensor = convert_to_vision_tensor(target_vision_frame)
 	source_embedding = calc_id_embedding(id_embedder, source_vision_tensor, (0, 0, 0, 0))
