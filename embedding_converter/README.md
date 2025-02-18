@@ -61,7 +61,8 @@ max_epochs = 4096
 ```
 [training.output]
 directory_path = .outputs
-file_pattern = arcface_converter_simswap_{epoch:02d}_{val_loss:.4f}
+file_pattern = arcface_converter_simswap_{epoch}_{step}
+resume_file_path = .outputs/last.ckpt
 ```
 
 ```
