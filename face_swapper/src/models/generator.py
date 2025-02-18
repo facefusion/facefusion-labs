@@ -1,11 +1,10 @@
 import configparser
-from typing import Tuple
 
 from torch import Tensor, nn
 
 from ..networks.attribute_modulator import AADGenerator
 from ..networks.unet import UNet
-from ..types import Embedding, Attributes
+from ..types import Attributes, Embedding
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
