@@ -4,14 +4,14 @@ import cv2
 import torch
 
 from .helper import calc_id_embedding, convert_to_vision_frame, convert_to_vision_tensor, read_image
-from .models.generator import AdaptiveEmbeddingIntegrationNetwork
-from .types import Embedder, Generator, VisionFrame
+from .models.generator import Generator
+from .types import EmbedderModule, GeneratorModule, VisionFrame
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 
 
-def run_swap(generator : Generator, id_embedder : Embedder, source_vision_frame : VisionFrame, target_vision_frame : VisionFrame) -> VisionFrame:
+def run_swap(generator : GeneratorModule, id_embedder : EmbedderModule, source_vision_frame : VisionFrame, target_vision_frame : VisionFrame) -> VisionFrame:
 	source_vision_tensor = convert_to_vision_tensor(source_vision_frame)
 	target_vision_tensor = convert_to_vision_tensor(target_vision_frame)
 	source_embedding = calc_id_embedding(id_embedder, source_vision_tensor, (0, 0, 0, 0))
@@ -28,7 +28,7 @@ def infer() -> None:
 	output_path = CONFIG.get('inferencing', 'output_path')
 
 	state_dict = torch.load(generator_path, map_location = 'cpu').get('state_dict').get('generator')
-	generator = AdaptiveEmbeddingIntegrationNetwork()
+	generator = Generator()
 	generator.load_state_dict(state_dict)
 	generator.eval()
 	id_embedder = torch.jit.load(id_embedder_path, map_location = 'cpu')  # type:ignore[no-untyped-call]

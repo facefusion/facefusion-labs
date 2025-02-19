@@ -15,9 +15,9 @@ from torch.utils.data import DataLoader
 from .data_loader import DataLoaderVGG
 from .helper import calc_id_embedding
 from .models.discriminator import Discriminator
-from .models.generator import AdaptiveEmbeddingIntegrationNetwork
+from .models.generator import Generator
 from .models.loss import FaceSwapperLoss
-from .types import Batch, Embedding, TargetAttributes, VisionTensor
+from .types import Batch, Embedding, VisionTensor
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -27,13 +27,13 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 	def __init__(self) -> None:
 		super().__init__()
 		FaceSwapperLoss.__init__(self)
-		self.generator = AdaptiveEmbeddingIntegrationNetwork()
+		self.generator = Generator()
 		self.discriminator = Discriminator()
 		self.automatic_optimization = CONFIG.getboolean('training.trainer', 'automatic_optimization')
 
-	def forward(self, target_tensor : VisionTensor, source_embedding : Embedding) -> Tuple[VisionTensor, TargetAttributes]:
-		output = self.generator(target_tensor, source_embedding)
-		return output
+	def forward(self, target_tensor : VisionTensor, source_embedding : Embedding) -> Tensor:
+		output_tensor = self.generator(source_embedding, target_tensor)
+		return output_tensor
 
 	def configure_optimizers(self) -> Tuple[Optimizer, Optimizer]:
 		learning_rate = CONFIG.getfloat('training.trainer', 'learning_rate')
@@ -45,7 +45,8 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 		source_tensor, target_tensor, is_same_person = batch
 		generator_optimizer, discriminator_optimizer = self.optimizers() #type:ignore[attr-defined]
 		source_embedding = calc_id_embedding(self.id_embedder, source_tensor, (0, 0, 0, 0))
-		swap_tensor, target_attributes = self.generator(target_tensor, source_embedding)
+		swap_tensor = self.generator(source_embedding, target_tensor)
+		target_attributes = self.generator.get_attributes(target_tensor)
 		swap_attributes = self.generator.get_attributes(swap_tensor)
 		fake_discriminator_outputs = self.discriminator(swap_tensor)
 
