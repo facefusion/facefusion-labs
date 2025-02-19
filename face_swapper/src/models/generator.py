@@ -16,18 +16,18 @@ class Generator(nn.Module):
 		id_channels = CONFIG.getint('training.model.generator', 'id_channels')
 		num_blocks = CONFIG.getint('training.model.generator', 'num_blocks')
 
-		self.attribute_encoder = UNet()
-		self.attribute_generator = AADGenerator(id_channels, num_blocks)
-		self.attribute_encoder.apply(init_weight)
-		self.attribute_generator.apply(init_weight)
+		self.unet = UNet()
+		self.aad_generator = AADGenerator(id_channels, num_blocks)
+		self.unet.apply(init_weight)
+		self.aad_generator.apply(init_weight)
 
 	def forward(self, source_embedding : Embedding, target_tensor : Tensor) -> Tensor:
 		target_attributes = self.get_attributes(target_tensor)
-		output_tensor = self.attribute_generator(target_attributes, source_embedding)
+		output_tensor = self.aad_generator(target_attributes, source_embedding)
 		return output_tensor
 
 	def get_attributes(self, input_tensor : Tensor) -> Attributes:
-		return self.attribute_encoder(input_tensor)
+		return self.unet(input_tensor)
 
 
 def init_weight(module : nn.Module) -> None:
