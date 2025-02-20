@@ -2,6 +2,7 @@
 lightning==2.5.0
 numpy==1.26.4
 onnx==1.17.0
+onnxruntime==1.20.1
 opencv-python==4.11.0.86
 pytorch-msssim==1.0.0
 torch==2.6.0

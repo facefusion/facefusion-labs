@@ -115,11 +115,10 @@ def create_trainer() -> Trainer:
 
 
 def train() -> None:
-	dataset_path = CONFIG.get('preparing.dataset', 'dataset_path')
-	dataset_image_pattern = CONFIG.get('preparing.dataset', 'image_pattern')
+	dataset_file_pattern = CONFIG.get('training.dataset', 'image_pattern')
 	resume_file_path = CONFIG.get('training.output', 'resume_file_path')
 
-	dataset = DataLoaderRecognition(dataset_path, dataset_image_pattern)
+	dataset = DataLoaderRecognition(dataset_file_pattern)
 	training_loader, validation_loader = create_loaders(dataset)
 	embedding_converter_trainer = EmbeddingConverterTrainer()
 	trainer = create_trainer()
