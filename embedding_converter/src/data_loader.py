@@ -6,12 +6,12 @@ import torchvision.transforms as transforms
 from torch.utils.data import Dataset
 
 from .helper import read_image
-from .types import Batch, ImagePathList
+from .types import Batch, Paths
 
 
 class DataLoaderRecognition(Dataset[torch.Tensor]):
-	def __init__(self, dataset_path : str, dataset_image_pattern : str) -> None:
-		self.image_paths = self.prepare_image_paths(dataset_path, dataset_image_pattern)
+	def __init__(self, dataset_file_pattern : str) -> None:
+		self.image_paths = self.prepare_image_paths(dataset_file_pattern)
 		self.dataset_total = len(self.image_paths)
 		self.transforms = self.compose_transforms()
 
@@ -24,9 +24,8 @@ class DataLoaderRecognition(Dataset[torch.Tensor]):
 	def __len__(self) -> int:
 		return self.dataset_total
 
-	def prepare_image_paths(self, dataset_path : str, dataset_image_pattern : str) -> ImagePathList:
-		image_paths = glob.glob(dataset_image_pattern.format(dataset_path))
-		return image_paths
+	def prepare_image_paths(self, dataset_file_pattern : str) -> Paths:
+		return glob.glob(dataset_file_pattern)
 
 	def compose_transforms(self) -> transforms:
 		transform = transforms.Compose(

@@ -26,9 +26,8 @@ Setup
 This `config.ini` utilizes the MegaFace dataset to train the Embedding Converter for SimSwap.
 
 ```
-[preparing.dataset]
-dataset_path = .datasets/images
-image_pattern = {}/*.*g
+[training.dataset]
+dataset_file_pattern = .datasets/images/{}/*.*g
 ```
 
 ```
