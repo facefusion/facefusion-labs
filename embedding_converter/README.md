@@ -26,30 +26,21 @@ Setup
 This `config.ini` utilizes the MegaFace dataset to train the Embedding Converter for SimSwap.
 
 ```
-[preparing.dataset]
-dataset_path = .datasets/megaface/train.rec
-crop_size = 112
-process_limit = 650000
-```
-
-```
-[preparing.model]
-source_path = .models/arcface_w600k_r50.onnx
-target_path = .models/arcface_simswap.onnx
-```
-
-```
-[preparing.input]
-directory_path = .inputs
-source_path = .inputs/arcface_w600k_r50.npy
-target_path = .inputs/arcface_simswap.npy
+[training.dataset]
+dataset_file_pattern = .datasets/images/{}/*.*g
 ```
 
 ```
 [training.loader]
 split_ratio = 0.8
-batch_size = 51200
+batch_size = 256
 num_workers = 8
+```
+
+```
+[training.model]
+source_path = .models/arcface_w600k_r50.pt
+target_path = .models/arcface_simswap.pt
 ```
 
 ```
@@ -72,21 +63,6 @@ source_path = .outputs/last.ckpt
 target_path = .exports/arcface_converter_simswap.onnx
 ir_version = 10
 opset_version = 15
-```
-
-```
-[execution]
-providers = CUDAExecutionProvider
-```
-
-
-Preparing
----------
-
-Prepare the embedding dataset.
-
-```
-python prepare.py
 ```
 
 
