@@ -94,14 +94,14 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 		self.logger.experiment.add_image('preview', preview_grid, self.global_step) # type:ignore[attr-defined]
 
 
-def create_loaders(dataset : Dataset[Any]): # type:ignore[type-arg]
+def create_loaders(dataset : Dataset[Any]) -> Tuple[TorchDataLoader[Any], TorchDataLoader[Any]]:
 	batch_size = CONFIG.getint('training.loader', 'batch_size')
 	num_workers = CONFIG.getint('training.loader', 'num_workers')
 
 	training_dataset, validate_dataset = split_dataset(dataset)
 	training_loader = TorchDataLoader(training_dataset, batch_size = batch_size, shuffle = True, num_workers = num_workers, drop_last = True, pin_memory = True, persistent_workers = True)
 	validation_loader = TorchDataLoader(validate_dataset, batch_size = batch_size, shuffle = False, num_workers = num_workers, drop_last = False, pin_memory = True, persistent_workers = True)
-	return training_loader, validation_loader # type:ignore[return-value]
+	return training_loader, validation_loader
 
 
 def split_dataset(dataset : Dataset[Any]) -> Tuple[Dataset[Any], Dataset[Any]]:

@@ -95,14 +95,15 @@ class FaceSwapperLoss:
 		return loss_attribute
 
 	def calc_reconstruction_loss(self, source_tensor : VisionTensor, target_tensor : VisionTensor, swap_tensor : VisionTensor) -> LossTensor:
-		source_embedding = calc_id_embedding(self.id_embedder, source_tensor, (0, 0, 0, 0))
-		target_embedding = calc_id_embedding(self.id_embedder, target_tensor, (0, 0, 0, 0))
+		with torch.no_grad():
+			source_embedding = calc_id_embedding(self.id_embedder, source_tensor, (0, 0, 0, 0))
+			target_embedding = calc_id_embedding(self.id_embedder, target_tensor, (0, 0, 0, 0))
 		face_similarities = (torch.cosine_similarity(source_embedding, target_embedding) + 1) * 0.5
 		loss_reconstructions = []
 
 		for index, face_similarity in enumerate(face_similarities):
 			if face_similarity.item() > 0.9:
-				loss_mse = self.mse_loss(swap_tensor[index], target_tensor[index])
+				loss_mse = self.mse_loss(swap_tensor[index].unsqueeze(0), target_tensor[index].unsqueeze(0))
 				loss_ssim = calc_structural_similarity(swap_tensor[index].unsqueeze(0), target_tensor[index].unsqueeze(0))
 				loss_reconstruction = (loss_mse + loss_ssim) * 0.5
 				loss_reconstructions.append(loss_reconstruction)
