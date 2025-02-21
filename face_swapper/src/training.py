@@ -143,10 +143,10 @@ def create_trainer() -> Trainer:
 
 def train() -> None:
 	dataset_file_pattern = CONFIG.get('training.dataset', 'file_pattern')
-	same_person_probability = CONFIG.getfloat('training.dataset', 'same_person_probability')
+	dataset_equal_probability = CONFIG.getfloat('training.dataset', 'equal_probability')
 	output_resume_path = CONFIG.get('training.output', 'resume_path')
 
-	dataset = DynamicDataset(dataset_file_pattern, same_person_probability)
+	dataset = DynamicDataset(dataset_file_pattern, dataset_equal_probability)
 	training_loader, validation_loader = create_loaders(dataset)
 	face_swapper_trainer = FaceSwapperTrainer()
 	trainer = create_trainer()
