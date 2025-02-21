@@ -1,6 +1,7 @@
 import numpy
 import torch
 from torch import Tensor, nn
+from pytorch_msssim import ssim
 
 from .types import EmbedderModule, Embedding, Padding, VisionFrame, VisionTensor
 
@@ -41,6 +42,13 @@ def calc_id_embedding(id_embedder : EmbedderModule, vision_tensor : VisionTensor
 	crop_vision_tensor[:, :, 112 - padding[1]:, :] = 0
 	crop_vision_tensor[:, :, :, :padding[2]] = 0
 	crop_vision_tensor[:, :, :, 112 - padding[3]:] = 0
-	source_embedding = id_embedder(crop_vision_tensor)
+	with torch.no_grad():
+		source_embedding = id_embedder(crop_vision_tensor)
 	source_embedding = nn.functional.normalize(source_embedding, p = 2)
 	return source_embedding
+
+
+def calc_structural_similarity(swap_tensor : VisionTensor, target_tensor : VisionTensor) -> Tensor:
+	swap_data_range = float(torch.max(swap_tensor) - torch.min(swap_tensor))
+	structural_similarity = 1 - ssim(swap_tensor, target_tensor, data_range = swap_data_range).mean()
+	return structural_similarity

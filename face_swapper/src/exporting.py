@@ -21,7 +21,7 @@ def export() -> None:
 	model = Generator()
 	model.load_state_dict(state_dict)
 	model.eval()
-	model.ir_version = ir_version
+	model.ir_version = torch.tensor(ir_version)
 	source_tensor = torch.randn(1, 512)
 	target_tensor = torch.randn(1, 3, 256, 256)
 	torch.onnx.export(model, (source_tensor, target_tensor), target_path, input_names = [ 'source', 'target' ], output_names = [ 'output' ], opset_version = opset_version)
