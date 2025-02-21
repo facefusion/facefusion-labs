@@ -9,7 +9,7 @@ from torchvision import transforms
 from .types import Batch
 
 
-class DataLoader(Dataset[Tensor]):
+class DynamicDataset(Dataset[Tensor]):
 	def __init__(self, file_pattern : str, same_person_probability : float) -> None:
 		self.same_person_probability = same_person_probability
 		self.file_paths = glob.glob(file_pattern)
