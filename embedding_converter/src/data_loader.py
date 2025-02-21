@@ -3,8 +3,8 @@ import random
 
 import cv2
 import torch
-import transforms from torchvision
 from torch.utils.data import Dataset
+from torchvision import transforms
 
 from .types import Batch, Paths
 

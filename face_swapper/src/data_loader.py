@@ -5,8 +5,8 @@ from typing import Tuple
 
 import cv2
 import torch
-import transforms from torchvision
 from torch.utils.data import TensorDataset
+from torchvision import transforms
 
 from .types import Batch, ImagePathList, ImagePathSet
 
