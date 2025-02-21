@@ -19,7 +19,7 @@ class DataLoaderVGG(TensorDataset):
 		self.transforms = self.compose_transforms()
 
 	def __getitem__(self, index : int) -> Batch:
-		source_image_path = self.image_paths.get(index)
+		source_image_path = self.image_paths[index]
 
 		if random.random() > self.same_person_probability:
 			return self.prepare_same_person(source_image_path)
