@@ -1,6 +1,6 @@
 import configparser
 import os
-from typing import Tuple
+from typing import Any, Tuple
 
 import lightning
 import torch
@@ -10,7 +10,7 @@ from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
 from torch import Tensor, nn
 from torch.optim import Optimizer
-from torch.utils.data import DataLoader as TorchDataLoader, Subset
+from torch.utils.data import DataLoader as TorchDataLoader, Dataset, random_split
 
 from .data_loader import DataLoader
 from .helper import calc_id_embedding
@@ -42,7 +42,7 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 		return generator_optimizer, discriminator_optimizer
 
 	def training_step(self, batch : Batch, batch_index : int) -> Tensor:
-		source_tensor, target_tensor, is_same_person = batch
+		source_tensor, target_tensor = batch
 		generator_optimizer, discriminator_optimizer = self.optimizers() #type:ignore[attr-defined]
 		source_embedding = calc_id_embedding(self.id_embedder, source_tensor, (0, 0, 0, 0))
 		swap_tensor = self.generator(source_embedding, target_tensor)
@@ -75,7 +75,7 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 		return generator_losses.get('loss_generator')
 
 	def validation_step(self, batch : Batch, batch_index : int) -> Tensor:
-		source_tensor, target_tensor, _ = batch
+		source_tensor, target_tensor = batch
 		source_embedding = calc_id_embedding(self.id_embedder, source_tensor, (0, 0, 0, 0))
 		output_tensor = self.generator(source_embedding, target_tensor)
 		output_embedding = calc_id_embedding(self.id_embedder, output_tensor, (0, 0, 0, 0))
@@ -91,7 +91,25 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 			preview_items.append(torch.cat([ source_tensor, target_tensor, output_tensor] , dim = 2))
 
 		preview_grid = torchvision.utils.make_grid(torch.cat(preview_items, dim = 1).unsqueeze(0), normalize = True, scale_each = True)
-		self.logger.experiment.add_image('preview', preview_grid, self.global_step)
+		self.logger.experiment.add_image('preview', preview_grid, self.global_step) # type:ignore[attr-defined]
+
+
+def create_loaders(dataset : Dataset[Any]): # type:ignore[type-arg]
+	batch_size = CONFIG.getint('training.loader', 'batch_size')
+	num_workers = CONFIG.getint('training.loader', 'num_workers')
+
+	training_dataset, validate_dataset = split_dataset(dataset)
+	training_loader = TorchDataLoader(training_dataset, batch_size = batch_size, shuffle = True, num_workers = num_workers, drop_last = True, pin_memory = True, persistent_workers = True)
+	validation_loader = TorchDataLoader(validate_dataset, batch_size = batch_size, shuffle = False, num_workers = num_workers, drop_last = False, pin_memory = True, persistent_workers = True)
+	return training_loader, validation_loader # type:ignore[return-value]
+
+
+def split_dataset(dataset : Dataset[Any]) -> Tuple[Dataset[Any], Dataset[Any]]:
+	loader_split_ratio = CONFIG.getfloat('training.loader', 'split_ratio')
+	training_size = int(loader_split_ratio * len(dataset)) # type:ignore[operator, arg-type]
+	validation_size = len(dataset) - training_size # type:ignore[arg-type]
+	training_dataset, validate_dataset = random_split(dataset, [training_size, validation_size])
+	return training_dataset, validate_dataset
 
 
 def create_trainer() -> Trainer:
@@ -106,7 +124,7 @@ def create_trainer() -> Trainer:
 		logger = logger,
 		log_every_n_steps = 10,
 		max_epochs = trainer_max_epochs,
-		precision = trainer_precision,
+		precision = trainer_precision, # type:ignore[arg-type]
 		callbacks =
 		[
 			ModelCheckpoint(
@@ -123,17 +141,12 @@ def create_trainer() -> Trainer:
 
 
 def train() -> None:
-	dataset_path = CONFIG.get('preparing.dataset', 'dataset_path')
-	dataset_image_pattern = CONFIG.get('preparing.dataset', 'image_pattern')
-	dataset_directory_pattern = CONFIG.get('preparing.dataset', 'directory_pattern')
-	same_person_probability = CONFIG.getfloat('preparing.dataset', 'same_person_probability')
-	batch_size = CONFIG.getint('training.loader', 'batch_size')
-	num_workers = CONFIG.getint('training.loader', 'num_workers')
+	dataset_file_pattern = CONFIG.get('training.dataset', 'file_pattern')
+	same_person_probability = CONFIG.getfloat('training.dataset', 'same_person_probability')
 	output_resume_path = CONFIG.get('training.output', 'resume_path')
 
-	dataset = DataLoader(dataset_path, dataset_image_pattern, dataset_directory_pattern, same_person_probability)
-	training_loader = TorchDataLoader(dataset, batch_size = batch_size, shuffle = True, num_workers = num_workers, drop_last = True, pin_memory = True, persistent_workers = True)
-	validation_loader = TorchDataLoader(Subset(dataset, range(1000)), batch_size = batch_size, num_workers = num_workers, drop_last = True, pin_memory = True, persistent_workers = True)
+	dataset = DataLoader(dataset_file_pattern, same_person_probability)
+	training_loader, validation_loader = create_loaders(dataset)
 	face_swapper_trainer = FaceSwapperTrainer()
 	trainer = create_trainer()
 
