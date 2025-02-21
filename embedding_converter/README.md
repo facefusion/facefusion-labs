@@ -27,7 +27,7 @@ This `config.ini` utilizes the MegaFace dataset to train the Embedding Converter
 
 ```
 [training.dataset]
-dataset_file_pattern = .datasets/images/{}/*.*g
+file_pattern = .datasets/images/{}/*.*g
 ```
 
 ```

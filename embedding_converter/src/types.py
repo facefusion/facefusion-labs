@@ -1,4 +1,4 @@
-from typing import Any, TypeAlias
+from typing import Any, Dict, TypeAlias
 
 from numpy.typing import NDArray
 from torch import Tensor
@@ -6,3 +6,5 @@ from torch import Tensor
 Batch : TypeAlias = Tensor
 Embedding : TypeAlias = Tensor
 VisionFrame : TypeAlias = NDArray[Any]
+
+OptimizerConfig : TypeAlias = Dict[str, Any]

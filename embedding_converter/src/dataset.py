@@ -2,14 +2,15 @@ import glob
 import random
 
 import cv2
-import torch
+from torch import Tensor
+
 from torch.utils.data import Dataset
 from torchvision import transforms
 
 from .types import Batch
 
 
-class DataLoaderRecognition(Dataset[torch.Tensor]):
+class DynamicDataset(Dataset[Tensor]):
 	def __init__(self, dataset_file_pattern : str) -> None:
 		self.image_paths = glob.glob(dataset_file_pattern)
 		self.transforms = self.compose_transforms()
