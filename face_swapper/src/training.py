@@ -129,7 +129,7 @@ def train() -> None:
 	same_person_probability = CONFIG.getfloat('preparing.dataset', 'same_person_probability')
 	batch_size = CONFIG.getint('training.loader', 'batch_size')
 	num_workers = CONFIG.getint('training.loader', 'num_workers')
-	resume_file_path = CONFIG.get('training.output', 'resume_file_path')
+	output_resume_path = CONFIG.get('training.output', 'resume_path')
 
 	dataset = DataLoader(dataset_path, dataset_image_pattern, dataset_directory_pattern, same_person_probability)
 	training_loader = TorchDataLoader(dataset, batch_size = batch_size, shuffle = True, num_workers = num_workers, drop_last = True, pin_memory = True, persistent_workers = True)
@@ -137,7 +137,7 @@ def train() -> None:
 	face_swapper_trainer = FaceSwapperTrainer()
 	trainer = create_trainer()
 
-	if os.path.isfile(resume_file_path):
-		trainer.fit(face_swapper_trainer, training_loader, validation_loader, ckpt_path = resume_file_path)
+	if os.path.isfile(output_resume_path):
+		trainer.fit(face_swapper_trainer, training_loader, validation_loader, ckpt_path = output_resume_path)
 	else:
 		trainer.fit(face_swapper_trainer, training_loader, validation_loader)

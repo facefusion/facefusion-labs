@@ -119,7 +119,7 @@ def create_trainer() -> Trainer:
 
 def train() -> None:
 	dataset_file_pattern = CONFIG.get('training.dataset', 'file_pattern')
-	resume_file_path = CONFIG.get('training.output', 'resume_file_path')
+	output_resume_path = CONFIG.get('training.output', 'resume_path')
 
 	dataset = DynamicDataset(dataset_file_pattern)
 	training_loader, validation_loader = create_loaders(dataset)
@@ -128,7 +128,7 @@ def train() -> None:
 	tuner = Tuner(trainer)
 	tuner.lr_find(embedding_converter_trainer, training_loader, validation_loader)
 
-	if os.path.exists(resume_file_path):
-		trainer.fit(embedding_converter_trainer, training_loader, validation_loader, ckpt_path = resume_file_path)
+	if os.path.exists(output_resume_path):
+		trainer.fit(embedding_converter_trainer, training_loader, validation_loader, ckpt_path = output_resume_path)
 	else:
 		trainer.fit(embedding_converter_trainer, training_loader, validation_loader)
