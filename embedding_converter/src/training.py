@@ -24,7 +24,6 @@ class EmbeddingConverterTrainer(lightning.LightningModule):
 		super(EmbeddingConverterTrainer, self).__init__()
 		source_path = CONFIG.get('training.model', 'source_path')
 		target_path = CONFIG.get('training.model', 'target_path')
-		learning_rate = CONFIG.getfloat('training.trainer', 'learning_rate')
 
 		self.embedding_converter = EmbeddingConverter()
 		self.source_embedder = torch.jit.load(source_path) # type:ignore[no-untyped-call]
@@ -32,7 +31,6 @@ class EmbeddingConverterTrainer(lightning.LightningModule):
 		self.source_embedder.eval()
 		self.target_embedder.eval()
 		self.mse_loss = nn.MSELoss()
-		self.lr = learning_rate
 
 	def forward(self, source_embedding : Embedding) -> Embedding:
 		return self.embedding_converter(source_embedding)
