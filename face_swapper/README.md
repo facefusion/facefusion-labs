@@ -28,7 +28,7 @@ This `config.ini` utilizes the MegaFace dataset to train the Face Swapper model.
 ```
 [training.dataset]
 file_pattern = .datasets/vggface2/**/*.jpg
-equal_probability = 0.2
+batch_ratio = 0.2
 ```
 
 ```

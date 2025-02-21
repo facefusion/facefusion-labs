@@ -10,15 +10,15 @@ from .types import Batch
 
 
 class DynamicDataset(Dataset[Tensor]):
-	def __init__(self, file_pattern : str, equal_probability : float) -> None:
+	def __init__(self, file_pattern : str, batch_ratio : float) -> None:
 		self.file_paths = glob.glob(file_pattern)
 		self.transforms = self.compose_transforms()
-		self.equal_probability = equal_probability
+		self.batch_ratio = batch_ratio
 
 	def __getitem__(self, index : int) -> Batch:
 		source_image_path = self.file_paths[index]
 
-		if random.random() < self.equal_probability:
+		if random.random() < self.batch_ratio:
 			return self.prepare_equal_batch(source_image_path)
 
 		return self.prepare_different_batch(source_image_path)
