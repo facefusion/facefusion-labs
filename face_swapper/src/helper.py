@@ -1,6 +1,3 @@
-import platform
-
-import cv2
 import numpy
 import torch
 from torch import Tensor, nn
