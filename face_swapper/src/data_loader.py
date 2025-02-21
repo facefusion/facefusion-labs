@@ -39,7 +39,8 @@ class DataLoader(TensorDataset):
 			image_path_set[directory_path] = image_paths
 		return image_paths, image_path_set
 
-	def compose_transforms(self) -> transforms:
+	@staticmethod
+	def compose_transforms() -> transforms:
 		return transforms.Compose(
 		[
 			transforms.ToPILImage(),

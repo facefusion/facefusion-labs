@@ -22,7 +22,8 @@ class DataLoaderRecognition(Dataset[torch.Tensor]):
 	def __len__(self) -> int:
 		return len(self.image_paths)
 
-	def compose_transforms(self) -> transforms:
+	@staticmethod
+	def compose_transforms() -> transforms:
 		return transforms.Compose(
 		[
 			transforms.ToPILImage(),
