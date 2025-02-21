@@ -7,4 +7,4 @@ Batch : TypeAlias = Tensor
 Embedding : TypeAlias = Tensor
 VisionFrame : TypeAlias = NDArray[Any]
 
-OptimizerConfig : TypeAlias = Dict[str, Any]
+OptimizerConfig : TypeAlias = Any
