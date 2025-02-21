@@ -84,7 +84,7 @@ preview_frequency = 250
 [training.output]
 directory_path = .outputs
 file_pattern = face-swapper_{epoch}_{step}
-resume_file_path = .outputs/last.ckpt
+resume_path = .outputs/last.ckpt
 ```
 
 ```
