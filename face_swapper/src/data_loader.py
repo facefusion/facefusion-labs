@@ -11,7 +11,7 @@ from torchvision import transforms
 from .types import Batch, ImagePathList, ImagePathSet
 
 
-class DataLoaderVGG(TensorDataset):
+class DataLoader(TensorDataset):
 	def __init__(self, dataset_path : str, dataset_image_pattern : str, dataset_directory_pattern : str, same_person_probability : float) -> None:
 		self.same_person_probability = same_person_probability
 		self.directory_paths = glob.glob(dataset_directory_pattern.format(dataset_path))
