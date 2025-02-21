@@ -35,7 +35,7 @@ batch_ratio = 0.2
 [training.loader]
 batch_size = 8
 num_workers = 8
-split_ratio = 0.95
+split_ratio = 0.9995
 ```
 
 ```
