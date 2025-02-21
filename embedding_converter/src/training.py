@@ -24,13 +24,15 @@ class EmbeddingConverterTrainer(lightning.LightningModule):
 		super(EmbeddingConverterTrainer, self).__init__()
 		source_path = CONFIG.get('training.model', 'source_path')
 		target_path = CONFIG.get('training.model', 'target_path')
-		self.lr = CONFIG.getfloat('training.trainer', 'learning_rate')
+		learning_rate = CONFIG.getfloat('training.trainer', 'learning_rate')
+
 		self.embedding_converter = EmbeddingConverter()
 		self.source_embedder = torch.jit.load(source_path) # type:ignore[no-untyped-call]
 		self.target_embedder = torch.jit.load(target_path) # type:ignore[no-untyped-call]
 		self.source_embedder.eval()
 		self.target_embedder.eval()
 		self.mse_loss = nn.MSELoss()
+		self.lr = learning_rate
 
 	def forward(self, source_embedding : Embedding) -> Embedding:
 		return self.embedding_converter(source_embedding)
@@ -84,8 +86,8 @@ def create_loaders(dataset : Dataset[Tensor]) -> Tuple[DataLoader[Tensor], DataL
 def split_dataset(dataset : Dataset[Tensor]) -> Tuple[Dataset[Tensor], Dataset[Tensor]]:
 	loader_split_ratio = CONFIG.getfloat('training.loader', 'split_ratio')
 	dataset_size = len(dataset) # type:ignore[arg-type]
-	training_size = dataset_size * loader_split_ratio
-	validation_size = dataset_size - training_size
+	training_size = int(dataset_size * loader_split_ratio)
+	validation_size = int(dataset_size - training_size)
 	training_dataset, validate_dataset = random_split(dataset, [ training_size, validation_size ])
 	return training_dataset, validate_dataset
 

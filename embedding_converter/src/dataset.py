@@ -11,17 +11,17 @@ from .types import Batch
 
 
 class DynamicDataset(Dataset[Tensor]):
-	def __init__(self, dataset_file_pattern : str) -> None:
-		self.image_paths = glob.glob(dataset_file_pattern)
+	def __init__(self, file_pattern : str) -> None:
+		self.file_paths = glob.glob(file_pattern)
 		self.transforms = self.compose_transforms()
 
 	def __getitem__(self, index : int) -> Batch:
-		image_path = random.choice(self.image_paths)
+		image_path = random.choice(self.file_paths)
 		vision_frame = cv2.imread(image_path)
 		return self.transforms(vision_frame)
 
 	def __len__(self) -> int:
-		return len(self.image_paths)
+		return len(self.file_paths)
 
 	@staticmethod
 	def compose_transforms() -> transforms:
