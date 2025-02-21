@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from .types import Batch, Paths
+from .types import Batch
 
 
 class DataLoaderRecognition(Dataset[torch.Tensor]):
