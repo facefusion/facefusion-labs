@@ -1,22 +1,8 @@
-import platform
-
-import cv2
 import numpy
 import torch
 from torch import Tensor, nn
 
 from .types import EmbedderModule, Embedding, Padding, VisionFrame, VisionTensor
-
-
-def is_windows() -> bool:
-	return platform.system().lower() == 'windows'
-
-
-def read_image(image_path : str) -> VisionFrame:
-	if is_windows():
-		image_buffer = numpy.fromfile(image_path, dtype = numpy.uint8)
-		return cv2.imdecode(image_buffer, cv2.IMREAD_COLOR)
-	return cv2.imread(image_path)
 
 
 def convert_to_vision_tensor(vision_frame : VisionFrame) -> VisionTensor:

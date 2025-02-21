@@ -3,7 +3,7 @@ import configparser
 import cv2
 import torch
 
-from .helper import calc_id_embedding, convert_to_vision_frame, convert_to_vision_tensor, read_image
+from .helper import calc_id_embedding, convert_to_vision_frame, convert_to_vision_tensor
 from .models.generator import Generator
 from .types import EmbedderModule, GeneratorModule, VisionFrame
 
@@ -34,7 +34,7 @@ def infer() -> None:
 	id_embedder = torch.jit.load(id_embedder_path, map_location = 'cpu')  # type:ignore[no-untyped-call]
 	id_embedder.eval()
 
-	source_vision_frame = read_image(source_path)
-	target_vision_frame = read_image(target_path)
+	source_vision_frame = cv2.imread(source_path)
+	target_vision_frame = cv2.imread(target_path)
 	output_vision_frame = run_swap(generator, id_embedder, source_vision_frame, target_vision_frame)
 	cv2.imwrite(output_path, output_vision_frame)

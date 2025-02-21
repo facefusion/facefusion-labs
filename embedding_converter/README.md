@@ -27,12 +27,12 @@ This `config.ini` utilizes the MegaFace dataset to train the Embedding Converter
 
 ```
 [training.dataset]
-dataset_file_pattern = .datasets/images/{}/*.*g
+file_pattern = .datasets/megaface/**/*.jpg
 ```
 
 ```
 [training.loader]
-split_ratio = 0.8
+split_ratio = 0.95
 batch_size = 256
 num_workers = 8
 ```
@@ -53,7 +53,7 @@ max_epochs = 4096
 [training.output]
 directory_path = .outputs
 file_pattern = arcface_converter_simswap_{epoch}_{step}
-resume_file_path = .outputs/last.ckpt
+resume_path = .outputs/last.ckpt
 ```
 
 ```
