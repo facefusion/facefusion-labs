@@ -8,7 +8,6 @@ from torchvision import models
 class UNet(nn.Module):
 	def __init__(self) -> None:
 		super(UNet, self).__init__()
-		self.resnet = models.resnet34(pretrained = True)
 		self.down_samples = self.create_down_samples(self)
 		self.up_samples = self.create_up_samples()
 
@@ -16,18 +15,11 @@ class UNet(nn.Module):
 	def create_down_samples(self : nn.Module) -> nn.ModuleList:
 		return nn.ModuleList(
 		[
-			nn.Sequential(
-				self.resnet.conv1,
-				self.resnet.bn1,
-				self.resnet.relu,
-				nn.Conv2d(64, 32, kernel_size = 1, bias = False),
-				nn.BatchNorm2d(32),
-				nn.LeakyReLU(0.1, inplace = True)
-			),
+			DownSample(3, 32),
 			DownSample(32, 64),
-			self.resnet.layer2,
-			self.resnet.layer3,
-			self.resnet.layer4,
+			DownSample(64, 128),
+			DownSample(128, 256),
+			DownSample(256, 512),
 			DownSample(512, 1024),
 			DownSample(1024, 1024)
 		])
@@ -63,6 +55,34 @@ class UNet(nn.Module):
 
 		output_tensor = nn.functional.interpolate(temp_tensor, scale_factor = 2, mode = 'bilinear', align_corners = False)
 		return bottleneck_tensor, *up_features, output_tensor
+
+
+class UNetPro(UNet):
+	def __init__(self) -> None:
+		super(UNetPro, self).__init__()
+		self.resnet = models.resnet34(pretrained = True)
+		self.down_samples = self.create_down_samples(self)
+		self.up_samples = self.create_up_samples()
+
+	@staticmethod
+	def create_down_samples(self : nn.Module) -> nn.ModuleList:
+		return nn.ModuleList(
+		[
+			nn.Sequential(
+				self.resnet.conv1,
+				self.resnet.bn1,
+				self.resnet.relu,
+				nn.Conv2d(64, 32, kernel_size = 1, bias = False),
+				nn.BatchNorm2d(32),
+				nn.LeakyReLU(0.1, inplace = True)
+			),
+			DownSample(32, 64),
+			self.resnet.layer2,
+			self.resnet.layer3,
+			self.resnet.layer4,
+			DownSample(512, 1024),
+			DownSample(1024, 1024)
+		])
 
 
 class UpSample(nn.Module):
