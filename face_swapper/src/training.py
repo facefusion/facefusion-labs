@@ -88,7 +88,7 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 		generator_loss = weighted_adversarial_loss + weighted_reconstruction_loss + weighted_identity_loss
 
 		self.log('generator_loss_new', generator_loss, prog_bar = True)
-		self.log('adversarial_loss_new', adversarial_loss, prog_bar = True)
+		self.log('loss_adversarial_new', adversarial_loss, prog_bar = True)
 		self.log('loss_reconstruction_new', reconstruction_loss)
 		self.log('loss_identity_new', identity_loss)
 		return generator_loss_set.get('loss_generator')

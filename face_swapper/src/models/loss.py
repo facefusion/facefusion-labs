@@ -150,7 +150,7 @@ class AdversarialLoss(torch.nn.Module):
 		temp_tensors = []
 
 		for discriminator_output_tensor in discriminator_output_tensors:
-			temp_tensor = torch.relu(1 - discriminator_output_tensor[0]).mean()
+			temp_tensor = torch.relu(1 - discriminator_output_tensor[0]).mean(dim = [ 1, 2, 3 ]).mean()
 			temp_tensors.append(temp_tensor)
 
 		loss = torch.stack(temp_tensors).mean()
