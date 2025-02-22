@@ -31,7 +31,7 @@ def infer() -> None:
 	generator = Generator()
 	generator.load_state_dict(state_dict)
 	generator.eval()
-	id_embedder = torch.jit.load(id_embedder_path)  # type:ignore[no-untyped-call]
+	id_embedder = torch.jit.load(id_embedder_path, map_location = 'cpu') # type:ignore[no-untyped-call]
 	id_embedder.eval()
 
 	source_vision_frame = cv2.imread(source_path)
