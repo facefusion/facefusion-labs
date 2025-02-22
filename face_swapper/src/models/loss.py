@@ -3,10 +3,11 @@ from typing import List, Tuple
 
 import torch
 from pytorch_msssim import ssim
+from sqlalchemy.dialects.mssql.information_schema import identity_columns
 from torch import Tensor, nn
 
 from ..helper import calc_embedding, hinge_fake_loss, hinge_real_loss
-from ..types import Batch, DiscriminatorLossSet, DiscriminatorOutputs, FaceLandmark203, GeneratorLossSet, LossTensor, SwapAttributes, TargetAttributes, VisionTensor
+from ..types import Attributes, Batch, DiscriminatorLossSet, DiscriminatorOutputs, FaceLandmark203, GeneratorLossSet, LossTensor, SwapAttributes, TargetAttributes, VisionTensor
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -153,9 +154,27 @@ class AdversarialLoss(torch.nn.Module):
 			temp_tensor = torch.relu(1 - discriminator_output_tensor[0]).mean(dim = [ 1, 2, 3 ]).mean()
 			temp_tensors.append(temp_tensor)
 
-		loss = torch.stack(temp_tensors).mean()
-		weighted_loss = loss * adversarial_weight
-		return loss, weighted_loss
+		adversarial_loss = torch.stack(temp_tensors).mean()
+		weighted_adversarial_loss = adversarial_loss * adversarial_weight
+		return adversarial_loss, weighted_adversarial_loss
+
+
+class AttributeLoss(torch.nn.Module):
+	def __init__(self) -> None:
+		super(AttributeLoss, self).__init__()
+
+	def calc(self, target_attributes : Attributes, output_attributes : Attributes) -> Tuple[Tensor, Tensor]:
+		batch_size = CONFIG.getint('training.loader', 'batch_size')
+		attribute_weight = CONFIG.getfloat('training.losses', 'attribute_weight')
+		temp_tensors = []
+
+		for target_attribute, output_attribute in zip(target_attributes, output_attributes):
+			temp_tensor = torch.mean(torch.pow(output_attribute - target_attribute, 2).reshape(batch_size, -1), dim = 1).mean()
+			temp_tensors.append(temp_tensor)
+
+		attribute_loss = torch.stack(temp_tensors).mean() * 0.5
+		weighted_attribute_loss = attribute_loss * attribute_weight
+		return attribute_loss, weighted_attribute_loss
 
 
 class ReconstructionLoss(torch.nn.Module):
@@ -165,20 +184,20 @@ class ReconstructionLoss(torch.nn.Module):
 	def calc(self, source_tensor : Tensor, target_tensor : Tensor, output_tensor : Tensor) -> Tuple[Tensor, Tensor]:
 		batch_size = CONFIG.getint('training.loader', 'batch_size')
 		reconstruction_weight = CONFIG.getfloat('training.losses', 'reconstruction_weight')
-		loss = torch.pow(output_tensor - target_tensor, 2).reshape(batch_size, -1)
-		loss = torch.mean(loss, dim = 1) * 0.5
+		reconstruction_loss = torch.pow(output_tensor - target_tensor, 2).reshape(batch_size, -1)
+		reconstruction_loss = torch.mean(reconstruction_loss, dim = 1) * 0.5
 
 		if torch.equal(source_tensor, target_tensor):
-			loss = torch.sum(loss * torch.tensor(0)) / (torch.tensor(0).sum() + 1e-4)
+			reconstruction_loss = torch.sum(reconstruction_loss * torch.tensor(0)) / (torch.tensor(0).sum() + 1e-4)
 		else:
-			loss = torch.sum(loss * torch.tensor(1)) / (torch.tensor(1).sum() + 1e-4)
+			reconstruction_loss = torch.sum(reconstruction_loss * torch.tensor(1)) / (torch.tensor(1).sum() + 1e-4)
 
 		data_range = float(torch.max(output_tensor) - torch.min(output_tensor))
 		similarity = 1 - ssim(output_tensor, target_tensor, data_range = data_range).mean()
 
-		loss = (loss + similarity) * 0.5
-		weighted_loss = loss * reconstruction_weight
-		return loss, weighted_loss
+		reconstruction_loss = (reconstruction_loss + similarity) * 0.5
+		weighted_reconstruction_loss = reconstruction_loss * reconstruction_weight
+		return reconstruction_loss, weighted_reconstruction_loss
 
 
 class IdentityLoss(torch.nn.Module):
@@ -192,6 +211,6 @@ class IdentityLoss(torch.nn.Module):
 		identity_weight = CONFIG.getfloat('training.losses', 'identity_weight')
 		output_embedding = calc_embedding(self.embedder, output_tensor, (30, 0, 10, 10))
 		source_embedding = calc_embedding(self.embedder, source_tensor, (30, 0, 10, 10))
-		loss = (1 - torch.cosine_similarity(source_embedding, output_embedding)).mean()
-		weighted_loss = loss * identity_weight
-		return loss, weighted_loss
+		identity_loss = (1 - torch.cosine_similarity(source_embedding, output_embedding)).mean()
+		weighted_identity_loss = identity_loss * identity_weight
+		return identity_loss, weighted_identity_loss

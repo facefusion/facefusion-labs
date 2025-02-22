@@ -40,9 +40,9 @@ class EmbeddingConverterTrainer(lightning.LightningModule):
 			source_embedding = self.source_embedder(batch)
 			target_embedding = self.target_embedder(batch)
 		output_embedding = self(source_embedding)
-		loss_training = self.mse_loss(output_embedding, target_embedding)
-		self.log('loss_training', loss_training, prog_bar = True)
-		return loss_training
+		training_loss = self.mse_loss(output_embedding, target_embedding)
+		self.log('training_loss', training_loss, prog_bar = True)
+		return training_loss
 
 	def validation_step(self, batch : Batch, batch_index : int) -> Tensor:
 		with torch.no_grad():
@@ -63,7 +63,7 @@ class EmbeddingConverterTrainer(lightning.LightningModule):
 			'lr_scheduler':
 			{
 				'scheduler': scheduler,
-				'monitor': 'loss_training',
+				'monitor': 'training_loss',
 				'interval': 'epoch',
 				'frequency': 1
 			}
@@ -102,7 +102,7 @@ def create_trainer() -> Trainer:
 		callbacks =
 		[
 			ModelCheckpoint(
-				monitor = 'loss_training',
+				monitor = 'training_loss',
 				dirpath = output_directory_path,
 				filename = output_file_pattern,
 				every_n_epochs = 10,

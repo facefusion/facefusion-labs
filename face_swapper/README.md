@@ -65,8 +65,8 @@ kernel_size = 4
 [training.losses]
 adversarial_weight = 1.5
 attribute_weight = 10
-reconstruction_weight = 15
-identity_weight = 15
+reconstruction_weight = 20
+identity_weight = 20
 pose_weight = 0
 gaze_weight = 0
 ```
