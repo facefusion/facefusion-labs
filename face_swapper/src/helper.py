@@ -34,13 +34,13 @@ def hinge_fake_loss(input_tensor : Tensor) -> Tensor:
 	return fake_loss
 
 
-def calc_id_embedding(id_embedder : EmbedderModule, vision_tensor : VisionTensor, padding : Padding) -> Embedding:
-	crop_vision_tensor = vision_tensor[:, :, 15 : 241, 15 : 241]
-	crop_vision_tensor = nn.functional.interpolate(crop_vision_tensor, size = (112, 112), mode = 'area')
-	crop_vision_tensor[:, :, :padding[0], :] = 0
-	crop_vision_tensor[:, :, 112 - padding[1]:, :] = 0
-	crop_vision_tensor[:, :, :, :padding[2]] = 0
-	crop_vision_tensor[:, :, :, 112 - padding[3]:] = 0
-	source_embedding = id_embedder(crop_vision_tensor)
-	source_embedding = nn.functional.normalize(source_embedding, p = 2)
-	return source_embedding
+def calc_embedding(embedder : EmbedderModule, input_tensor : Tensor, padding : Padding) -> Embedding:
+	crop_tensor = input_tensor[:, :, 15: 241, 15: 241]
+	crop_tensor = nn.functional.interpolate(crop_tensor, size = (112, 112), mode = 'area')
+	crop_tensor[:, :, :padding[0], :] = 0
+	crop_tensor[:, :, 112 - padding[1]:, :] = 0
+	crop_tensor[:, :, :, :padding[2]] = 0
+	crop_tensor[:, :, :, 112 - padding[3]:] = 0
+	embedding = embedder(crop_tensor)
+	embedding = nn.functional.normalize(embedding, p = 2)
+	return embedding

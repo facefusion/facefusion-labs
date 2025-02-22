@@ -5,7 +5,7 @@ import torch
 from pytorch_msssim import ssim
 from torch import Tensor, nn
 
-from ..helper import calc_id_embedding, hinge_fake_loss, hinge_real_loss
+from ..helper import calc_embedding, hinge_fake_loss, hinge_real_loss
 from ..types import Batch, DiscriminatorLossSet, DiscriminatorOutputs, FaceLandmark203, GeneratorLossSet, LossTensor, SwapAttributes, TargetAttributes, VisionTensor
 
 CONFIG = configparser.ConfigParser()
@@ -14,15 +14,15 @@ CONFIG.read('config.ini')
 
 class FaceSwapperLoss:
 	def __init__(self) -> None:
-		id_embedder_path = CONFIG.get('training.model', 'id_embedder_path')
+		embedder_path = CONFIG.get('training.model', 'embedder_path')
 		landmarker_path = CONFIG.get('training.model', 'landmarker_path')
 		motion_extractor_path = CONFIG.get('training.model', 'motion_extractor_path')
 		self.batch_size = CONFIG.getint('training.loader', 'batch_size')
 		self.mse_loss = nn.MSELoss()
-		self.id_embedder = torch.jit.load(id_embedder_path, map_location = 'cpu') # type:ignore[no-untyped-call]
+		self.embedder = torch.jit.load(embedder_path, map_location = 'cpu') # type:ignore[no-untyped-call]
 		self.landmarker = torch.jit.load(landmarker_path, map_location = 'cpu') # type:ignore[no-untyped-call]
 		self.motion_extractor = torch.jit.load(motion_extractor_path, map_location = 'cpu') # type:ignore[no-untyped-call]
-		self.id_embedder.eval()
+		self.embedder.eval()
 		self.landmarker.eval()
 		self.motion_extractor.eval()
 
@@ -105,8 +105,8 @@ class FaceSwapperLoss:
 		return loss_reconstruction
 
 	def calc_identity_loss(self, source_tensor : VisionTensor, swap_tensor : VisionTensor) -> LossTensor:
-		swap_embedding = calc_id_embedding(self.id_embedder, swap_tensor, (30, 0, 10, 10))
-		source_embedding = calc_id_embedding(self.id_embedder, source_tensor, (30, 0, 10, 10))
+		swap_embedding = calc_embedding(self.embedder, swap_tensor, (30, 0, 10, 10))
+		source_embedding = calc_embedding(self.embedder, source_tensor, (30, 0, 10, 10))
 		loss_identity = (1 - torch.cosine_similarity(source_embedding, swap_embedding)).mean()
 		return loss_identity
 
@@ -139,3 +139,17 @@ class FaceSwapperLoss:
 		pitch, yaw, roll, translation, expression, scale, _ = self.motion_extractor(vision_tensor_norm)
 		rotation = torch.cat([ pitch, yaw, roll ], dim = 1)
 		return translation, scale, rotation
+
+
+class IdentityLoss(torch.nn.Module):
+	def __init__(self) -> None:
+		super(IdentityLoss, self).__init__()
+		embedder_path = CONFIG.get('training.model', 'embedder_path')
+		self.embedder = torch.jit.load(embedder_path, map_location = 'cpu') # type:ignore[no-untyped-call]
+		self.embedder.eval()
+
+	def calc_loss(self, source_tensor : Tensor, output_tensor : Tensor) -> Tensor:
+		output_embedding = calc_embedding(self.embedder, output_tensor, (30, 0, 10, 10))
+		source_embedding = calc_embedding(self.embedder, source_tensor, (30, 0, 10, 10))
+		loss = (1 - torch.cosine_similarity(source_embedding, output_embedding)).mean()
+		return loss

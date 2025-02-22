@@ -13,10 +13,10 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader, Dataset, random_split
 
 from .dataset import DynamicDataset
-from .helper import calc_id_embedding
+from .helper import calc_embedding
 from .models.discriminator import Discriminator
 from .models.generator import Generator
-from .models.loss import FaceSwapperLoss
+from .models.loss import FaceSwapperLoss, IdentityLoss
 from .types import Batch, Embedding, VisionTensor
 
 CONFIG = configparser.ConfigParser()
@@ -27,9 +27,12 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 	def __init__(self) -> None:
 		super().__init__()
 		FaceSwapperLoss.__init__(self)
+		automatic_optimization = CONFIG.getboolean('training.trainer', 'automatic_optimization')
+
 		self.generator = Generator()
 		self.discriminator = Discriminator()
-		self.automatic_optimization = CONFIG.getboolean('training.trainer', 'automatic_optimization')
+		self.identity_loss = IdentityLoss()
+		self.automatic_optimization = automatic_optimization
 
 	def forward(self, target_tensor : VisionTensor, source_embedding : Embedding) -> Tensor:
 		output_tensor = self.generator(source_embedding, target_tensor)
@@ -42,43 +45,57 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 		return generator_optimizer, discriminator_optimizer
 
 	def training_step(self, batch : Batch, batch_index : int) -> Tensor:
+		preview_frequency = CONFIG.getfloat('training.trainer', 'preview_frequency')
+
 		source_tensor, target_tensor = batch
 		generator_optimizer, discriminator_optimizer = self.optimizers() #type:ignore[attr-defined]
-		source_embedding = calc_id_embedding(self.id_embedder, source_tensor, (0, 0, 0, 0))
-		swap_tensor = self.generator(source_embedding, target_tensor)
+		source_embedding = calc_embedding(self.embedder, source_tensor, (0, 0, 0, 0))
 		target_attributes = self.generator.get_attributes(target_tensor)
-		swap_attributes = self.generator.get_attributes(swap_tensor)
-		fake_discriminator_outputs = self.discriminator(swap_tensor)
+		generator_output_tensor = self.generator(source_embedding, target_tensor)
+		generator_output_attributes = self.generator.get_attributes(generator_output_tensor)
+		discriminator_output_tensor = self.discriminator(generator_output_tensor)
 
-		generator_losses = self.calc_generator_loss(swap_tensor, target_attributes, swap_attributes, fake_discriminator_outputs, batch)
+		generator_loss_set = self.calc_generator_loss(generator_output_tensor, target_attributes, generator_output_attributes, discriminator_output_tensor, batch)
 		generator_optimizer.zero_grad()
-		self.manual_backward(generator_losses.get('loss_generator'))
+		self.manual_backward(generator_loss_set.get('loss_generator'))
 		generator_optimizer.step()
 
-		real_discriminator_outputs = self.discriminator(source_tensor)
-		fake_discriminator_outputs = self.discriminator(swap_tensor.detach())
+		discriminator_source_tensor = self.discriminator(source_tensor)
+		discriminator_output_tensor = self.discriminator(generator_output_tensor.detach())
 
-		discriminator_losses = self.calc_discriminator_loss(real_discriminator_outputs, fake_discriminator_outputs)
+		discriminator_loss_set = self.calc_discriminator_loss(discriminator_source_tensor, discriminator_output_tensor)
 		discriminator_optimizer.zero_grad()
-		self.manual_backward(discriminator_losses.get('loss_discriminator'))
+		self.manual_backward(discriminator_loss_set.get('loss_discriminator'))
 		discriminator_optimizer.step()
 
-		if self.global_step % CONFIG.getint('training.trainer', 'preview_frequency') == 0:
-			self.generate_preview(source_tensor, target_tensor, swap_tensor)
+		if self.global_step % preview_frequency == 0:
+			self.generate_preview(source_tensor, target_tensor, generator_output_tensor)
 
-		self.log('loss_generator', generator_losses.get('loss_generator'), prog_bar = True)
-		self.log('loss_discriminator', discriminator_losses.get('loss_discriminator'), prog_bar = True)
-		self.log('loss_adversarial', generator_losses.get('loss_adversarial'))
-		self.log('loss_attribute', generator_losses.get('loss_attribute'))
-		self.log('loss_identity', generator_losses.get('loss_identity'))
-		self.log('loss_reconstruction', generator_losses.get('loss_reconstruction'))
-		return generator_losses.get('loss_generator')
+		self.log('loss_generator', generator_loss_set.get('loss_generator'), prog_bar = True)
+		self.log('loss_discriminator', discriminator_loss_set.get('loss_discriminator'), prog_bar = True)
+		self.log('loss_adversarial', generator_loss_set.get('loss_adversarial'))
+		self.log('loss_attribute', generator_loss_set.get('loss_attribute'))
+		self.log('loss_identity', generator_loss_set.get('loss_identity'), prog_bar = True)
+		self.log('loss_reconstruction', generator_loss_set.get('loss_reconstruction'))
+
+		identity_loss = self.identity_loss.calc_loss(generator_output_tensor, source_tensor)
+		generator_loss = self.calc_generator_loss_new(identity_loss)
+
+		self.log('loss_generator_new', generator_loss, prog_bar = True)
+		self.log('loss_identity_new', identity_loss, prog_bar = True)
+		return generator_loss_set.get('loss_generator')
+
+	def calc_generator_loss_new(self, identity_loss : Tensor) -> Tensor:
+		weight_identity = CONFIG.getfloat('training.losses', 'weight_identity')
+		generator_loss = identity_loss * weight_identity
+
+		return generator_loss
 
 	def validation_step(self, batch : Batch, batch_index : int) -> Tensor:
 		source_tensor, target_tensor = batch
-		source_embedding = calc_id_embedding(self.id_embedder, source_tensor, (0, 0, 0, 0))
+		source_embedding = calc_embedding(self.embedder, source_tensor, (0, 0, 0, 0))
 		output_tensor = self.generator(source_embedding, target_tensor)
-		output_embedding = calc_id_embedding(self.id_embedder, output_tensor, (0, 0, 0, 0))
+		output_embedding = calc_embedding(self.embedder, output_tensor, (0, 0, 0, 0))
 		validation = (nn.functional.cosine_similarity(source_embedding, output_embedding).mean() + 1) * 0.5
 		self.log('validation', validation)
 		return validation
