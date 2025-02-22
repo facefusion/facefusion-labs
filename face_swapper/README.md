@@ -47,6 +47,7 @@ motion_extractor_path = .models/motion_extractor.pt
 
 ```
 [training.model.generator]
+encoder_type = unet-pro
 num_blocks = 2
 id_channels = 512
 ```
