@@ -17,7 +17,7 @@ def export() -> None:
 	opset_version = CONFIG.getint('exporting', 'opset_version')
 
 	makedirs(directory_path, exist_ok = True)
-	model = EmbeddingConverterTrainer.load_from_checkpoint(source_path)
+	model = EmbeddingConverterTrainer.load_from_checkpoint(source_path, map_location = 'cpu')
 	model.eval()
 	model.ir_version = torch.tensor(ir_version)
 	input_tensor = (torch.randn(1, 512), )
