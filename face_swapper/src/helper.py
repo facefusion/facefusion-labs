@@ -22,18 +22,6 @@ def convert_to_vision_frame(vision_tensor : VisionTensor) -> VisionFrame:
 	return vision_frame
 
 
-def hinge_real_loss(input_tensor : Tensor) -> Tensor:
-	real_loss = torch.relu(1 - input_tensor)
-	real_loss = real_loss.mean(dim = [ 1, 2, 3 ])
-	return real_loss
-
-
-def hinge_fake_loss(input_tensor : Tensor) -> Tensor:
-	fake_loss = torch.relu(input_tensor + 1)
-	fake_loss = fake_loss.mean(dim = [ 1, 2, 3 ])
-	return fake_loss
-
-
 def calc_embedding(embedder : EmbedderModule, input_tensor : Tensor, padding : Padding) -> Embedding:
 	crop_tensor = input_tensor[:, :, 15: 241, 15: 241]
 	crop_tensor = nn.functional.interpolate(crop_tensor, size = (112, 112), mode = 'area')

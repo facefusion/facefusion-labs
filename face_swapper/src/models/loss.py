@@ -5,11 +5,23 @@ import torch
 from pytorch_msssim import ssim
 from torch import Tensor, nn
 
-from ..helper import calc_embedding, hinge_fake_loss, hinge_real_loss
+from ..helper import calc_embedding
 from ..types import Attributes, Batch, DiscriminatorLossSet, DiscriminatorOutputs, FaceLandmark203, GeneratorLossSet, LossTensor, SwapAttributes, TargetAttributes, VisionTensor
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
+
+
+def hinge_real_loss(input_tensor : Tensor) -> Tensor:
+	real_loss = torch.relu(1 - input_tensor)
+	real_loss = real_loss.mean(dim = [ 1, 2, 3 ])
+	return real_loss
+
+
+def hinge_fake_loss(input_tensor : Tensor) -> Tensor:
+	fake_loss = torch.relu(input_tensor + 1)
+	fake_loss = fake_loss.mean(dim = [ 1, 2, 3 ])
+	return fake_loss
 
 
 class FaceSwapperLoss:
@@ -50,6 +62,16 @@ class FaceSwapperLoss:
 		generator_loss_set['loss_generator'] += generator_loss_set.get('loss_pose') * weight_pose
 		generator_loss_set['loss_generator'] += generator_loss_set.get('loss_gaze') * weight_gaze
 		return generator_loss_set
+
+	def hinge_real_loss(input_tensor: Tensor) -> Tensor:
+		real_loss = torch.relu(1 - input_tensor)
+		real_loss = real_loss.mean(dim = [1, 2, 3])
+		return real_loss
+
+	def hinge_fake_loss(input_tensor: Tensor) -> Tensor:
+		fake_loss = torch.relu(input_tensor + 1)
+		fake_loss = fake_loss.mean(dim = [1, 2, 3])
+		return fake_loss
 
 	def calc_discriminator_loss(self, real_discriminator_outputs : DiscriminatorOutputs, fake_discriminator_outputs : DiscriminatorOutputs) -> DiscriminatorLossSet:
 		discriminator_loss_set = {}
@@ -131,9 +153,31 @@ class FaceSwapperLoss:
 		return translation, scale, rotation
 
 
-class AdversarialLoss(torch.nn.Module):
+class DiscriminatorLoss(nn.Module):
 	def __init__(self) -> None:
-		super(AdversarialLoss, self).__init__()
+		super().__init__()
+
+	def calc(self, discriminator_source_tensors : List[Tensor], discriminator_output_tensors : List[Tensor]) -> Tensor:
+		temp1_tensors = []
+		temp2_tensors = []
+
+		for discriminator_output_tensor in discriminator_output_tensors:
+			temp1_tensor = torch.relu(discriminator_output_tensor[0] + 1).mean(dim = [ 1, 2, 3 ])
+			temp1_tensors.append(temp1_tensor)
+
+		for discriminator_source_tensor in discriminator_source_tensors:
+			temp2_tensor = torch.relu(1 - discriminator_source_tensor[0]).mean(dim = [ 1, 2, 3 ])
+			temp2_tensors.append(temp2_tensor)
+
+		discriminator1_loss = torch.stack(temp1_tensors).mean()
+		discriminator2_loss = torch.stack(temp2_tensors).mean()
+		discriminator_loss = (discriminator1_loss + discriminator2_loss) * 0.5
+		return discriminator_loss
+
+
+class AdversarialLoss(nn.Module):
+	def __init__(self) -> None:
+		super().__init__()
 
 	def calc(self, discriminator_output_tensors : List[Tensor]) -> Tuple[Tensor, Tensor]:
 		adversarial_weight = CONFIG.getfloat('training.losses', 'adversarial_weight')
@@ -148,9 +192,9 @@ class AdversarialLoss(torch.nn.Module):
 		return adversarial_loss, weighted_adversarial_loss
 
 
-class AttributeLoss(torch.nn.Module):
+class AttributeLoss(nn.Module):
 	def __init__(self) -> None:
-		super(AttributeLoss, self).__init__()
+		super().__init__()
 
 	def calc(self, target_attributes : Attributes, output_attributes : Attributes) -> Tuple[Tensor, Tensor]:
 		batch_size = CONFIG.getint('training.loader', 'batch_size')
@@ -166,9 +210,9 @@ class AttributeLoss(torch.nn.Module):
 		return attribute_loss, weighted_attribute_loss
 
 
-class ReconstructionLoss(torch.nn.Module):
+class ReconstructionLoss(nn.Module):
 	def __init__(self) -> None:
-		super(ReconstructionLoss, self).__init__()
+		super().__init__()
 
 	def calc(self, source_tensor : Tensor, target_tensor : Tensor, output_tensor : Tensor) -> Tuple[Tensor, Tensor]:
 		batch_size = CONFIG.getint('training.loader', 'batch_size')
@@ -189,9 +233,9 @@ class ReconstructionLoss(torch.nn.Module):
 		return reconstruction_loss, weighted_reconstruction_loss
 
 
-class IdentityLoss(torch.nn.Module):
+class IdentityLoss(nn.Module):
 	def __init__(self) -> None:
-		super(IdentityLoss, self).__init__()
+		super().__init__()
 		embedder_path = CONFIG.get('training.model', 'embedder_path')
 		self.embedder = torch.jit.load(embedder_path, map_location = 'cpu') # type:ignore[no-untyped-call]
 
@@ -204,9 +248,9 @@ class IdentityLoss(torch.nn.Module):
 		return identity_loss, weighted_identity_loss
 
 
-class PoseLoss(torch.nn.Module):
+class PoseLoss(nn.Module):
 	def __init__(self) -> None:
-		super(PoseLoss, self).__init__()
+		super().__init__()
 		motion_extractor_path = CONFIG.get('training.model', 'motion_extractor_path')
 		self.motion_extractor = torch.jit.load(motion_extractor_path, map_location = 'cpu') # type:ignore[no-untyped-call]
 		self.mse_loss = nn.MSELoss()
@@ -232,9 +276,9 @@ class PoseLoss(torch.nn.Module):
 		return translation, scale, rotation
 
 
-class GazeLoss(torch.nn.Module):
+class GazeLoss(nn.Module):
 	def __init__(self) -> None:
-		super(GazeLoss, self).__init__()
+		super().__init__()
 		landmarker_path = CONFIG.get('training.model', 'landmarker_path')
 		self.landmarker = torch.jit.load(landmarker_path, map_location = 'cpu') # type:ignore[no-untyped-call]
 		self.mse_loss = nn.MSELoss()
