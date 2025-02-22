@@ -26,17 +26,16 @@ Setup
 This `config.ini` utilizes the MegaFace dataset to train the Face Swapper model.
 
 ```
-[preparing.dataset]
-dataset_path = .datasets/vggface2
-directory_pattern = {}/*
-image_pattern = {}/*.*g
-same_person_probability = 0.2
+[training.dataset]
+file_pattern = .datasets/vggface2/**/*.jpg
+batch_ratio = 0.2
 ```
 
 ```
 [training.loader]
 batch_size = 8
 num_workers = 8
+split_ratio = 0.9995
 ```
 
 ```
@@ -63,10 +62,10 @@ kernel_size = 4
 
 ```
 [training.losses]
-weight_adversarial = 1
-weight_identity = 20
+weight_adversarial = 1.5
+weight_identity = 15
 weight_attribute = 10
-weight_reconstruction = 10
+weight_reconstruction = 15
 weight_pose = 0
 weight_gaze = 0
 ```

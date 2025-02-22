@@ -19,21 +19,22 @@ class FaceSwapperLoss:
 		motion_extractor_path = CONFIG.get('training.model', 'motion_extractor_path')
 		self.batch_size = CONFIG.getint('training.loader', 'batch_size')
 		self.mse_loss = nn.MSELoss()
-		self.id_embedder = torch.jit.load(id_embedder_path, map_location = 'cpu')  # type:ignore[no-untyped-call]
-		self.landmarker = torch.jit.load(landmarker_path, map_location = 'cpu')  # type:ignore[no-untyped-call]
-		self.motion_extractor = torch.jit.load(motion_extractor_path, map_location = 'cpu')  # type:ignore[no-untyped-call]
+		self.id_embedder = torch.jit.load(id_embedder_path)  # type:ignore[no-untyped-call]
+		self.landmarker = torch.jit.load(landmarker_path)  # type:ignore[no-untyped-call]
+		self.motion_extractor = torch.jit.load(motion_extractor_path)  # type:ignore[no-untyped-call]
 		self.id_embedder.eval()
 		self.landmarker.eval()
 		self.motion_extractor.eval()
 
 	def calc_generator_loss(self, swap_tensor : VisionTensor, target_attributes : TargetAttributes, swap_attributes : SwapAttributes, discriminator_outputs : DiscriminatorOutputs, batch : Batch) -> GeneratorLossSet:
-		source_tensor, target_tensor, is_same_person = batch
 		weight_adversarial = CONFIG.getfloat('training.losses', 'weight_adversarial')
 		weight_identity = CONFIG.getfloat('training.losses', 'weight_identity')
 		weight_attribute = CONFIG.getfloat('training.losses', 'weight_attribute')
 		weight_reconstruction = CONFIG.getfloat('training.losses', 'weight_reconstruction')
 		weight_pose = CONFIG.getfloat('training.losses', 'weight_pose')
 		weight_gaze = CONFIG.getfloat('training.losses', 'weight_gaze')
+		source_tensor, target_tensor = batch
+		is_same_person = torch.tensor(0) if torch.equal(source_tensor, target_tensor) else torch.tensor(1)
 		generator_loss_set =\
 		{
 			'loss_adversarial': self.calc_adversarial_loss(discriminator_outputs),
