@@ -16,7 +16,7 @@ from .dataset import DynamicDataset
 from .helper import calc_embedding
 from .models.discriminator import Discriminator
 from .models.generator import Generator
-from .models.loss import AdversarialLoss, AttributeLoss, FaceSwapperLoss, IdentityLoss, ReconstructionLoss
+from .models.loss import AdversarialLoss, AttributeLoss, FaceSwapperLoss, IdentityLoss, PoseLoss, ReconstructionLoss
 from .types import Batch, Embedding, VisionTensor
 
 CONFIG = configparser.ConfigParser()
@@ -35,6 +35,7 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 		self.attribute_loss = AttributeLoss()
 		self.reconstruction_loss = ReconstructionLoss()
 		self.identity_loss = IdentityLoss()
+		self.pose_loss = PoseLoss()
 		self.automatic_optimization = automatic_optimization
 
 	def forward(self, target_tensor : VisionTensor, source_embedding : Embedding) -> Tensor:
@@ -77,9 +78,10 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 		self.log('loss_generator', generator_loss_set.get('loss_generator'), prog_bar = True)
 		self.log('loss_discriminator', discriminator_loss_set.get('loss_discriminator'))
 		self.log('loss_adversarial', generator_loss_set.get('loss_adversarial'), prog_bar = True)
-		self.log('loss_attribute', generator_loss_set.get('loss_attribute'), prog_bar = True)
+		self.log('loss_attribute', generator_loss_set.get('loss_attribute'))
 		self.log('loss_identity', generator_loss_set.get('loss_identity'))
 		self.log('loss_reconstruction', generator_loss_set.get('loss_reconstruction'))
+		self.log('loss_pose', generator_loss_set.get('loss_pose'), prog_bar = True)
 
 		###############################################
 
@@ -87,13 +89,15 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 		attribute_loss, weighted_attribute_loss = self.attribute_loss.calc(target_attributes, generator_output_attributes)
 		reconstruction_loss, weighted_reconstruction_loss = self.reconstruction_loss.calc(source_tensor, target_tensor, generator_output_tensor)
 		identity_loss, weighted_identity_loss = self.identity_loss.calc(generator_output_tensor, source_tensor)
-		generator_loss = weighted_adversarial_loss + weighted_attribute_loss + weighted_reconstruction_loss + weighted_identity_loss
+		pose_loss, weighted_pose_loss = self.pose_loss.calc(target_tensor, generator_output_tensor)
+		generator_loss = weighted_adversarial_loss + weighted_attribute_loss + weighted_reconstruction_loss + weighted_identity_loss + weighted_pose_loss
 
 		self.log('generator_loss_new', generator_loss, prog_bar = True)
 		self.log('adversarial_loss_new', adversarial_loss)
-		self.log('attribute_loss_new', attribute_loss, prog_bar = True)
+		self.log('attribute_loss_new', attribute_loss)
 		self.log('reconstruction_loss_new', reconstruction_loss)
 		self.log('identity_loss_new', identity_loss)
+		self.log('pose_loss_new', pose_loss, prog_bar = True)
 		return generator_loss_set.get('loss_generator')
 
 	def validation_step(self, batch : Batch, batch_index : int) -> Tensor:
@@ -107,12 +111,14 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 
 	def generate_preview(self, source_tensor : VisionTensor, target_tensor : VisionTensor, output_tensor : VisionTensor) -> None:
 		preview_limit = 8
-		preview_items = []
+		preview_cells = []
 
 		for source_tensor, target_tensor, output_tensor in zip(source_tensor[:preview_limit], target_tensor[:preview_limit], output_tensor[:preview_limit]):
-			preview_items.append(torch.cat([ source_tensor, target_tensor, output_tensor] , dim = 2))
+			preview_cell = torch.cat([ source_tensor, target_tensor, output_tensor] , dim = 2)
+			preview_cells.append(preview_cell)
 
-		preview_grid = torchvision.utils.make_grid(torch.cat(preview_items, dim = 1).unsqueeze(0), normalize = True, scale_each = True)
+		preview_cells = torch.cat(preview_cells, dim = 1).unsqueeze(0)
+		preview_grid = torchvision.utils.make_grid(preview_cells, normalize = True, scale_each = True)
 		self.logger.experiment.add_image('preview', preview_grid, self.global_step) # type:ignore[attr-defined]
 
 
