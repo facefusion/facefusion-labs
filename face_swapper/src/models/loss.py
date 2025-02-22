@@ -3,7 +3,6 @@ from typing import List, Tuple
 
 import torch
 from pytorch_msssim import ssim
-from sqlalchemy.dialects.mssql.information_schema import identity_columns
 from torch import Tensor, nn
 
 from ..helper import calc_embedding, hinge_fake_loss, hinge_real_loss
@@ -44,15 +43,8 @@ class FaceSwapperLoss:
 			'loss_reconstruction': self.calc_reconstruction_loss(swap_tensor, target_tensor, is_same_person)
 		}
 
-		if weight_pose > 0:
-			generator_loss_set['loss_pose'] = self.calc_pose_loss(swap_tensor, target_tensor)
-		else:
-			generator_loss_set['loss_pose'] = torch.tensor(0).to(swap_tensor.device).to(swap_tensor.dtype)
-
-		if weight_gaze > 0:
-			generator_loss_set['loss_gaze'] = self.calc_gaze_loss(swap_tensor, target_tensor)
-		else:
-			generator_loss_set['loss_gaze'] = torch.tensor(0).to(swap_tensor.device).to(swap_tensor.dtype)
+		generator_loss_set['loss_pose'] = self.calc_pose_loss(swap_tensor, target_tensor)
+		generator_loss_set['loss_gaze'] = self.calc_gaze_loss(swap_tensor, target_tensor)
 
 		generator_loss_set['loss_generator'] = generator_loss_set.get('loss_adversarial') * weight_adversarial
 		generator_loss_set['loss_generator'] += generator_loss_set.get('loss_identity') * weight_identity
@@ -214,3 +206,31 @@ class IdentityLoss(torch.nn.Module):
 		identity_loss = (1 - torch.cosine_similarity(source_embedding, output_embedding)).mean()
 		weighted_identity_loss = identity_loss * identity_weight
 		return identity_loss, weighted_identity_loss
+
+
+class PoseLoss(torch.nn.Module):
+	def __init__(self) -> None:
+		super(PoseLoss, self).__init__()
+		motion_extractor_path = CONFIG.get('training.model', 'motion_extractor_path')
+		self.motion_extractor = torch.jit.load(motion_extractor_path, map_location = 'cpu') # type:ignore[no-untyped-call]
+		self.mse_loss = nn.MSELoss()
+
+	def calc(self, target_tensor : Tensor, output_tensor : Tensor, ) -> Tuple[Tensor, Tensor]:
+		pose_weight = CONFIG.getfloat('training.losses', 'pose_weight')
+		output_motion_features = self.get_motion_features(output_tensor)
+		target_motion_features = self.get_motion_features(target_tensor)
+		temp_tensors = []
+
+		for target_motion_feature, output_motion_feature in zip(target_motion_features, output_motion_features):
+			temp_tensor = self.mse_loss(target_motion_feature, output_motion_feature)
+			temp_tensors.append(temp_tensor)
+
+		pose_loss = torch.stack(temp_tensors).mean()
+		weighted_pose_loss = pose_loss * pose_weight
+		return pose_loss, weighted_pose_loss
+
+	def get_motion_features(self, input_tensor : Tensor) -> Tuple[Tensor, Tensor, Tensor]:
+		vision_tensor_norm = (input_tensor + 1) * 0.5
+		pitch, yaw, roll, translation, expression, scale, _ = self.motion_extractor(vision_tensor_norm)
+		rotation = torch.cat([ pitch, yaw, roll ], dim = 1)
+		return translation, scale, rotation
