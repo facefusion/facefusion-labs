@@ -28,8 +28,6 @@ class EmbeddingConverterTrainer(lightning.LightningModule):
 		self.embedding_converter = EmbeddingConverter()
 		self.source_embedder = torch.jit.load(source_path, map_location = 'cpu') # type:ignore[no-untyped-call]
 		self.target_embedder = torch.jit.load(target_path, map_location = 'cpu') # type:ignore[no-untyped-call]
-		self.source_embedder.eval()
-		self.target_embedder.eval()
 		self.mse_loss = nn.MSELoss()
 
 	def forward(self, source_embedding : Embedding) -> Embedding:
