@@ -16,7 +16,7 @@ from .dataset import DynamicDataset
 from .helper import calc_embedding
 from .models.discriminator import Discriminator
 from .models.generator import Generator
-from .models.loss import FaceSwapperLoss, IdentityLoss, ReconstructionLoss
+from .models.loss import AdversarialLoss, FaceSwapperLoss, IdentityLoss, ReconstructionLoss
 from .types import Batch, Embedding, VisionTensor
 
 CONFIG = configparser.ConfigParser()
@@ -31,6 +31,7 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 
 		self.generator = Generator()
 		self.discriminator = Discriminator()
+		self.adversarial_loss = AdversarialLoss()
 		self.reconstruction_loss = ReconstructionLoss()
 		self.identity_loss = IdentityLoss()
 		self.automatic_optimization = automatic_optimization
@@ -54,17 +55,17 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 		target_attributes = self.generator.get_attributes(target_tensor)
 		generator_output_tensor = self.generator(source_embedding, target_tensor)
 		generator_output_attributes = self.generator.get_attributes(generator_output_tensor)
-		discriminator_output_tensor = self.discriminator(generator_output_tensor)
+		discriminator_output_tensors = self.discriminator(generator_output_tensor)
 
-		generator_loss_set = self.calc_generator_loss(generator_output_tensor, target_attributes, generator_output_attributes, discriminator_output_tensor, batch)
+		generator_loss_set = self.calc_generator_loss(generator_output_tensor, target_attributes, generator_output_attributes, discriminator_output_tensors, batch)
 		generator_optimizer.zero_grad()
 		self.manual_backward(generator_loss_set.get('loss_generator'))
 		generator_optimizer.step()
 
 		discriminator_source_tensor = self.discriminator(source_tensor)
-		discriminator_output_tensor = self.discriminator(generator_output_tensor.detach())
+		discriminator_output_tensors = self.discriminator(generator_output_tensor.detach())
 
-		discriminator_loss_set = self.calc_discriminator_loss(discriminator_source_tensor, discriminator_output_tensor)
+		discriminator_loss_set = self.calc_discriminator_loss(discriminator_source_tensor, discriminator_output_tensors)
 		discriminator_optimizer.zero_grad()
 		self.manual_backward(discriminator_loss_set.get('loss_discriminator'))
 		discriminator_optimizer.step()
@@ -74,29 +75,23 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 
 		self.log('loss_generator', generator_loss_set.get('loss_generator'), prog_bar = True)
 		self.log('loss_discriminator', discriminator_loss_set.get('loss_discriminator'), prog_bar = True)
-		self.log('loss_adversarial', generator_loss_set.get('loss_adversarial'))
+		self.log('loss_adversarial', generator_loss_set.get('loss_adversarial'), prog_bar = True)
 		self.log('loss_attribute', generator_loss_set.get('loss_attribute'))
-		self.log('loss_identity', generator_loss_set.get('loss_identity'), prog_bar = True)
-		self.log('loss_reconstruction', generator_loss_set.get('loss_reconstruction'), prog_bar = True)
+		self.log('loss_identity', generator_loss_set.get('loss_identity'))
+		self.log('loss_reconstruction', generator_loss_set.get('loss_reconstruction'))
 
-		reconstruction_loss = self.reconstruction_loss.calc(source_tensor, target_tensor, generator_output_tensor)
-		identity_loss = self.identity_loss.calc(generator_output_tensor, source_tensor)
-		generator_loss = self.calc_generator_loss_new(reconstruction_loss, identity_loss)
+		###############################################
+
+		adversarial_loss, weighted_adversarial_loss = self.adversarial_loss.calc(discriminator_output_tensors)
+		reconstruction_loss, weighted_reconstruction_loss = self.reconstruction_loss.calc(source_tensor, target_tensor, generator_output_tensor)
+		identity_loss, weighted_identity_loss = self.identity_loss.calc(generator_output_tensor, source_tensor)
+		generator_loss = weighted_adversarial_loss+ weighted_reconstruction_loss + weighted_identity_loss
 
 		self.log('generator_loss_new', generator_loss, prog_bar = True)
-		self.log('loss_reconstruction_new', reconstruction_loss, prog_bar = True)
-		self.log('loss_identity_new', identity_loss, prog_bar = True)
+		self.log('adversarial_loss_new', adversarial_loss, prog_bar = True)
+		self.log('loss_reconstruction_new', reconstruction_loss)
+		self.log('loss_identity_new', identity_loss)
 		return generator_loss_set.get('loss_generator')
-
-	@staticmethod
-	def calc_generator_loss_new(reconstruction_loss : Tensor, identity_loss : Tensor) -> Tensor:
-		reconstruction_weight = CONFIG.getfloat('training.losses', 'reconstruction_weight')
-		identity_weight = CONFIG.getfloat('training.losses', 'identity_weight')
-
-		generator_loss = reconstruction_loss * reconstruction_weight
-		generator_loss += identity_loss * identity_weight
-
-		return generator_loss
 
 	def validation_step(self, batch : Batch, batch_index : int) -> Tensor:
 		source_tensor, target_tensor = batch

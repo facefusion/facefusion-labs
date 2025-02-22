@@ -1,5 +1,6 @@
 import configparser
-from typing import Tuple
+from typing import List, Tuple
+from warnings import deprecated
 
 import torch
 from pytorch_msssim import ssim
@@ -78,6 +79,7 @@ class FaceSwapperLoss:
 		discriminator_loss_set['loss_discriminator'] = (loss_true + loss_fake) * 0.5
 		return discriminator_loss_set
 
+	@deprecated
 	def calc_adversarial_loss(self, discriminator_outputs : DiscriminatorOutputs) -> LossTensor:
 		loss_adversarials = []
 
@@ -96,6 +98,7 @@ class FaceSwapperLoss:
 		loss_attribute = torch.stack(loss_attributes).mean() * 0.5
 		return loss_attribute
 
+	@deprecated
 	def calc_reconstruction_loss(self, swap_tensor : VisionTensor, target_tensor : VisionTensor, is_same_person : Tensor) -> LossTensor:
 		loss_reconstruction = torch.pow(swap_tensor - target_tensor, 2).reshape(self.batch_size, -1)
 		loss_reconstruction = torch.mean(loss_reconstruction, dim = 1) * 0.5
@@ -104,6 +107,7 @@ class FaceSwapperLoss:
 		loss_reconstruction = (loss_reconstruction + loss_ssim) * 0.5
 		return loss_reconstruction
 
+	@deprecated
 	def calc_identity_loss(self, source_tensor : VisionTensor, swap_tensor : VisionTensor) -> LossTensor:
 		swap_embedding = calc_embedding(self.embedder, swap_tensor, (30, 0, 10, 10))
 		source_embedding = calc_embedding(self.embedder, source_tensor, (30, 0, 10, 10))
@@ -141,25 +145,44 @@ class FaceSwapperLoss:
 		return translation, scale, rotation
 
 
+class AdversarialLoss(torch.nn.Module):
+	def __init__(self) -> None:
+		super(AdversarialLoss, self).__init__()
+
+	def calc(self, discriminator_output_tensors : List[Tensor]) -> Tuple[Tensor, Tensor]:
+		adversarial_weight = CONFIG.getfloat('training.losses', 'adversarial_weight')
+		temp_tensors = []
+
+		for discriminator_output_tensor in discriminator_output_tensors:
+			temp_tensor = torch.relu(1 - discriminator_output_tensor[0]).mean()
+			temp_tensors.append(temp_tensor)
+
+		loss = torch.stack(temp_tensors).mean()
+		weighted_loss = loss * adversarial_weight
+		return loss, weighted_loss
+
+
 class ReconstructionLoss(torch.nn.Module):
 	def __init__(self) -> None:
 		super(ReconstructionLoss, self).__init__()
 
-	def calc(self, source_tensor : Tensor, target_tensor : Tensor, output_tensor : Tensor) -> Tensor:
+	def calc(self, source_tensor : Tensor, target_tensor : Tensor, output_tensor : Tensor) -> Tuple[Tensor, Tensor]:
 		batch_size = CONFIG.getint('training.loader', 'batch_size')
-		loss_tensor = torch.pow(output_tensor - target_tensor, 2).reshape(batch_size, -1)
-		loss_tensor = torch.mean(loss_tensor, dim = 1) * 0.5
+		reconstruction_weight = CONFIG.getfloat('training.losses', 'reconstruction_weight')
+		loss = torch.pow(output_tensor - target_tensor, 2).reshape(batch_size, -1)
+		loss = torch.mean(loss, dim = 1) * 0.5
 
 		if torch.equal(source_tensor, target_tensor):
-			loss_tensor = torch.sum(loss_tensor * torch.tensor(0)) / (torch.tensor(0).sum() + 1e-4)
+			loss = torch.sum(loss * torch.tensor(0)) / (torch.tensor(0).sum() + 1e-4)
 		else:
-			loss_tensor = torch.sum(loss_tensor * torch.tensor(1)) / (torch.tensor(1).sum() + 1e-4)
+			loss = torch.sum(loss * torch.tensor(1)) / (torch.tensor(1).sum() + 1e-4)
 
 		data_range = float(torch.max(output_tensor) - torch.min(output_tensor))
 		similarity = 1 - ssim(output_tensor, target_tensor, data_range = data_range).mean()
 
-		loss_tensor = (loss_tensor + similarity) * 0.5
-		return loss_tensor
+		loss = (loss + similarity) * 0.5
+		weighted_loss = loss * reconstruction_weight
+		return loss, weighted_loss
 
 
 class IdentityLoss(torch.nn.Module):
@@ -169,8 +192,10 @@ class IdentityLoss(torch.nn.Module):
 		self.embedder = torch.jit.load(embedder_path, map_location = 'cpu') # type:ignore[no-untyped-call]
 		self.embedder.eval()
 
-	def calc(self, source_tensor : Tensor, output_tensor : Tensor) -> Tensor:
+	def calc(self, source_tensor : Tensor, output_tensor : Tensor) -> Tuple[Tensor, Tensor]:
+		identity_weight = CONFIG.getfloat('training.losses', 'identity_weight')
 		output_embedding = calc_embedding(self.embedder, output_tensor, (30, 0, 10, 10))
 		source_embedding = calc_embedding(self.embedder, source_tensor, (30, 0, 10, 10))
-		loss_tensor = (1 - torch.cosine_similarity(source_embedding, output_embedding)).mean()
-		return loss_tensor
+		loss = (1 - torch.cosine_similarity(source_embedding, output_embedding)).mean()
+		weighted_loss = loss * identity_weight
+		return loss, weighted_loss
