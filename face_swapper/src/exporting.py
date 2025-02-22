@@ -17,7 +17,7 @@ def export() -> None:
 	opset_version = CONFIG.getint('exporting', 'opset_version')
 
 	makedirs(directory_path, exist_ok = True)
-	state_dict = torch.load(source_path).get('state_dict').get('generator')
+	state_dict = torch.load(source_path, map_location = 'cpu').get('state_dict').get('generator')
 	model = Generator()
 	model.load_state_dict(state_dict)
 	model.eval()
