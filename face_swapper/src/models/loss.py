@@ -19,9 +19,9 @@ class FaceSwapperLoss:
 		motion_extractor_path = CONFIG.get('training.model', 'motion_extractor_path')
 		self.batch_size = CONFIG.getint('training.loader', 'batch_size')
 		self.mse_loss = nn.MSELoss()
-		self.id_embedder = torch.jit.load(id_embedder_path, map_location = 'cpu')  # type:ignore[no-untyped-call]
-		self.landmarker = torch.jit.load(landmarker_path, map_location = 'cpu')  # type:ignore[no-untyped-call]
-		self.motion_extractor = torch.jit.load(motion_extractor_path, map_location = 'cpu')  # type:ignore[no-untyped-call]
+		self.id_embedder = torch.jit.load(id_embedder_path)  # type:ignore[no-untyped-call]
+		self.landmarker = torch.jit.load(landmarker_path)  # type:ignore[no-untyped-call]
+		self.motion_extractor = torch.jit.load(motion_extractor_path)  # type:ignore[no-untyped-call]
 		self.id_embedder.eval()
 		self.landmarker.eval()
 		self.motion_extractor.eval()

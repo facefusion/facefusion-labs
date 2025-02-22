@@ -27,11 +27,11 @@ def infer() -> None:
 	target_path = CONFIG.get('inferencing', 'target_path')
 	output_path = CONFIG.get('inferencing', 'output_path')
 
-	state_dict = torch.load(generator_path, map_location = 'cpu').get('state_dict').get('generator')
+	state_dict = torch.load(generator_path).get('state_dict').get('generator')
 	generator = Generator()
 	generator.load_state_dict(state_dict)
 	generator.eval()
-	id_embedder = torch.jit.load(id_embedder_path, map_location = 'cpu')  # type:ignore[no-untyped-call]
+	id_embedder = torch.jit.load(id_embedder_path)  # type:ignore[no-untyped-call]
 	id_embedder.eval()
 
 	source_vision_frame = cv2.imread(source_path)
