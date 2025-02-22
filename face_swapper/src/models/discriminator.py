@@ -11,7 +11,7 @@ CONFIG.read('config.ini')
 
 class Discriminator(nn.Module):
 	def __init__(self) -> None:
-		super(Discriminator, self).__init__()
+		super().__init__()
 		self.avg_pool = nn.AvgPool2d(kernel_size = 3, stride = 2, padding = (1, 1), count_include_pad = False)
 		self.discriminators = self.create_discriminators()
 

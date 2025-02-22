@@ -7,7 +7,7 @@ from torchvision import models
 
 class UNet(nn.Module):
 	def __init__(self) -> None:
-		super(UNet, self).__init__()
+		super().__init__()
 		self.down_samples = self.create_down_samples(self)
 		self.up_samples = self.create_up_samples()
 
@@ -87,7 +87,7 @@ class UNetPro(UNet):
 
 class UpSample(nn.Module):
 	def __init__(self, input_channels : int, output_channels : int) -> None:
-		super(UpSample, self).__init__()
+		super().__init__()
 		self.conv_transpose = nn.ConvTranspose2d(in_channels = input_channels, out_channels = output_channels, kernel_size = 4, stride = 2, padding = 1, bias = False)
 		self.batch_norm = nn.BatchNorm2d(output_channels)
 		self.leaky_relu = nn.LeakyReLU(0.1, inplace = True)
@@ -102,7 +102,7 @@ class UpSample(nn.Module):
 
 class DownSample(nn.Module):
 	def __init__(self, input_channels : int, output_channels : int) -> None:
-		super(DownSample, self).__init__()
+		super().__init__()
 		self.conv = nn.Conv2d(in_channels = input_channels, out_channels = output_channels, kernel_size = 4, stride = 2, padding = 1, bias = False)
 		self.batch_norm = nn.BatchNorm2d(output_channels)
 		self.leaky_relu = nn.LeakyReLU(0.1, inplace = True)

@@ -5,7 +5,7 @@ from torch import Tensor, nn
 
 class NLD(nn.Module):
 	def __init__(self, input_channels : int, num_filters : int, num_layers : int, kernel_size : int) -> None:
-		super(NLD, self).__init__()
+		super().__init__()
 		self.nld = self.create_nld(input_channels, num_filters, num_layers, kernel_size)
 
 	@staticmethod
