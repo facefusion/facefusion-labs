@@ -40,7 +40,7 @@ split_ratio = 0.9995
 
 ```
 [training.model]
-id_embedder_path = .models/id_embedder.pt
+embedder_path = .models/arcface.pt
 landmarker_path = .models/landmarker.pt
 motion_extractor_path = .models/motion_extractor.pt
 ```
@@ -99,7 +99,7 @@ opset_version = 15
 ```
 [inferencing]
 generator_path = .outputs/last.ckpt
-id_embedder_path = .models/id_embedder.pt
+embedder_path = .models/arcface.pt
 source_path = .assets/source.jpg
 target_path = .assets/target.jpg
 output_path = .outputs/output.jpg
