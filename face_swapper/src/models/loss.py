@@ -22,9 +22,6 @@ class FaceSwapperLoss:
 		self.embedder = torch.jit.load(embedder_path, map_location = 'cpu') # type:ignore[no-untyped-call]
 		self.landmarker = torch.jit.load(landmarker_path, map_location = 'cpu') # type:ignore[no-untyped-call]
 		self.motion_extractor = torch.jit.load(motion_extractor_path, map_location = 'cpu') # type:ignore[no-untyped-call]
-		self.embedder.eval()
-		self.landmarker.eval()
-		self.motion_extractor.eval()
 
 	def calc_generator_loss(self, swap_tensor : VisionTensor, target_attributes : TargetAttributes, swap_attributes : SwapAttributes, discriminator_outputs : DiscriminatorOutputs, batch : Batch) -> GeneratorLossSet:
 		weight_adversarial = CONFIG.getfloat('training.losses', 'weight_adversarial')
@@ -197,7 +194,6 @@ class IdentityLoss(torch.nn.Module):
 		super(IdentityLoss, self).__init__()
 		embedder_path = CONFIG.get('training.model', 'embedder_path')
 		self.embedder = torch.jit.load(embedder_path, map_location = 'cpu') # type:ignore[no-untyped-call]
-		self.embedder.eval()
 
 	def calc(self, source_tensor : Tensor, output_tensor : Tensor) -> Tuple[Tensor, Tensor]:
 		identity_weight = CONFIG.getfloat('training.losses', 'identity_weight')
@@ -234,3 +230,29 @@ class PoseLoss(torch.nn.Module):
 		pitch, yaw, roll, translation, expression, scale, _ = self.motion_extractor(vision_tensor_norm)
 		rotation = torch.cat([ pitch, yaw, roll ], dim = 1)
 		return translation, scale, rotation
+
+
+class GazeLoss(torch.nn.Module):
+	def __init__(self) -> None:
+		super(GazeLoss, self).__init__()
+		landmarker_path = CONFIG.get('training.model', 'landmarker_path')
+		self.landmarker = torch.jit.load(landmarker_path, map_location = 'cpu') # type:ignore[no-untyped-call]
+		self.mse_loss = nn.MSELoss()
+
+	def calc(self, target_tensor : VisionTensor, output_tensor : Tensor, ) -> Tuple[Tensor, Tensor]:
+		gaze_weight = CONFIG.getfloat('training.losses', 'gaze_weight')
+		output_face_landmark = self.detect_face_landmark(output_tensor)
+		target_face_landmark = self.detect_face_landmark(target_tensor)
+
+		left_gaze_loss = self.mse_loss(output_face_landmark[:, 198], target_face_landmark[:, 198])
+		right_gaze_loss = self.mse_loss(output_face_landmark[:, 197], target_face_landmark[:, 197])
+
+		gaze_loss = left_gaze_loss + right_gaze_loss
+		weighted_gaze_loss = gaze_loss * gaze_weight
+		return gaze_loss, weighted_gaze_loss
+
+	def detect_face_landmark(self, input_tensor : Tensor) -> FaceLandmark203:
+		input_tensor = (input_tensor + 1) * 0.5
+		input_tensor = nn.functional.interpolate(input_tensor, size = (224, 224), mode = 'bilinear')
+		face_landmarks_203 = self.landmarker(input_tensor)[2].view(-1, 203, 2)
+		return face_landmarks_203

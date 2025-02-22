@@ -16,7 +16,7 @@ from .dataset import DynamicDataset
 from .helper import calc_embedding
 from .models.discriminator import Discriminator
 from .models.generator import Generator
-from .models.loss import AdversarialLoss, AttributeLoss, FaceSwapperLoss, IdentityLoss, PoseLoss, ReconstructionLoss
+from .models.loss import AdversarialLoss, AttributeLoss, FaceSwapperLoss, GazeLoss, IdentityLoss, PoseLoss, ReconstructionLoss
 from .types import Batch, Embedding, VisionTensor
 
 CONFIG = configparser.ConfigParser()
@@ -36,6 +36,7 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 		self.reconstruction_loss = ReconstructionLoss()
 		self.identity_loss = IdentityLoss()
 		self.pose_loss = PoseLoss()
+		self.gaze_loss = GazeLoss()
 		self.automatic_optimization = automatic_optimization
 
 	def forward(self, target_tensor : VisionTensor, source_embedding : Embedding) -> Tensor:
@@ -77,11 +78,12 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 
 		self.log('loss_generator', generator_loss_set.get('loss_generator'), prog_bar = True)
 		self.log('loss_discriminator', discriminator_loss_set.get('loss_discriminator'))
-		self.log('loss_adversarial', generator_loss_set.get('loss_adversarial'), prog_bar = True)
+		self.log('loss_adversarial', generator_loss_set.get('loss_adversarial'))
 		self.log('loss_attribute', generator_loss_set.get('loss_attribute'))
 		self.log('loss_identity', generator_loss_set.get('loss_identity'))
 		self.log('loss_reconstruction', generator_loss_set.get('loss_reconstruction'))
-		self.log('loss_pose', generator_loss_set.get('loss_pose'), prog_bar = True)
+		self.log('loss_pose', generator_loss_set.get('loss_pose'))
+		self.log('loss_gaze', generator_loss_set.get('loss_gaze'), prog_bar = True)
 
 		###############################################
 
@@ -90,6 +92,7 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 		reconstruction_loss, weighted_reconstruction_loss = self.reconstruction_loss.calc(source_tensor, target_tensor, generator_output_tensor)
 		identity_loss, weighted_identity_loss = self.identity_loss.calc(generator_output_tensor, source_tensor)
 		pose_loss, weighted_pose_loss = self.pose_loss.calc(target_tensor, generator_output_tensor)
+		gaze_loss, weighted_gaze_loss = self.gaze_loss.calc(target_tensor, generator_output_tensor)
 		generator_loss = weighted_adversarial_loss + weighted_attribute_loss + weighted_reconstruction_loss + weighted_identity_loss + weighted_pose_loss
 
 		self.log('generator_loss_new', generator_loss, prog_bar = True)
@@ -97,7 +100,8 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 		self.log('attribute_loss_new', attribute_loss)
 		self.log('reconstruction_loss_new', reconstruction_loss)
 		self.log('identity_loss_new', identity_loss)
-		self.log('pose_loss_new', pose_loss, prog_bar = True)
+		self.log('pose_loss_new', pose_loss)
+		self.log('gaze_loss_new', gaze_loss, prog_bar = True)
 		return generator_loss_set.get('loss_generator')
 
 	def validation_step(self, batch : Batch, batch_index : int) -> Tensor:
