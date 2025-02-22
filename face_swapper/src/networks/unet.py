@@ -59,7 +59,7 @@ class UNet(nn.Module):
 
 class UNetPro(UNet):
 	def __init__(self) -> None:
-		super(UNetPro, self).__init__()
+		super(UNet, self).__init__()
 		self.resnet = models.resnet34(pretrained = True)
 		self.down_samples = self.create_down_samples(self)
 		self.up_samples = self.create_up_samples()
