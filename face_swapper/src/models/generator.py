@@ -2,7 +2,7 @@ import configparser
 
 from torch import Tensor, nn
 
-from ..networks.attribute_modulator import AADGenerator
+from ..networks.aienet import AADGenerator
 from ..networks.unet import UNet, UNetPro
 from ..types import Attributes, Embedding
 
@@ -14,14 +14,15 @@ class Generator(nn.Module):
 	def __init__(self) -> None:
 		super().__init__()
 		encoder_type = CONFIG.get('training.model.generator', 'encoder_type')
-		num_blocks = CONFIG.getint('training.model.generator', 'num_blocks')
 		identity_channels = CONFIG.getint('training.model.generator', 'identity_channels')
+		output_channels = CONFIG.getint('training.model.generator', 'output_channels')
+		num_blocks = CONFIG.getint('training.model.generator', 'num_blocks')
 
 		if encoder_type == 'unet':
 			self.encoder = UNet()
 		if encoder_type == 'unet-pro':
 			self.encoder = UNetPro()
-		self.generator = AADGenerator(identity_channels, num_blocks)
+		self.generator = AADGenerator(identity_channels, output_channels, num_blocks)
 		self.encoder.apply(init_weight)
 		self.generator.apply(init_weight)
 

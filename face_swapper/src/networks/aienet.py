@@ -5,9 +5,9 @@ from ..types import Attributes, Embedding
 
 
 class AADGenerator(nn.Module):
-	def __init__(self, identity_channels : int, num_blocks : int) -> None:
+	def __init__(self, identity_channels : int, output_channels : int, num_blocks : int) -> None:
 		super().__init__()
-		self.upsample = PixelShuffleUpsample(identity_channels, 1024 * 4)
+		self.pixel_shuffle_up_sample = PixelShuffleUpSample(identity_channels, output_channels)
 		self.res_block_1 = AADResBlock(1024, 1024, 1024, identity_channels, num_blocks)
 		self.res_block_2 = AADResBlock(1024, 1024, 2048, identity_channels, num_blocks)
 		self.res_block_3 = AADResBlock(1024, 1024, 1024, identity_channels, num_blocks)
@@ -18,7 +18,7 @@ class AADGenerator(nn.Module):
 		self.res_block_8 = AADResBlock(64, 3, 64, identity_channels, num_blocks)
 
 	def forward(self, target_attributes : Attributes, source_embedding : Embedding) -> Tensor:
-		feature_map = self.upsample(source_embedding)
+		feature_map = self.pixel_shuffle_up_sample(source_embedding)
 		feature_map_1 = nn.functional.interpolate(self.res_block_1(feature_map, target_attributes[0], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
 		feature_map_2 = nn.functional.interpolate(self.res_block_2(feature_map_1, target_attributes[1], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
 		feature_map_3 = nn.functional.interpolate(self.res_block_3(feature_map_2, target_attributes[2], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
@@ -32,7 +32,7 @@ class AADGenerator(nn.Module):
 
 class AADLayer(nn.Module):
 	def __init__(self, input_channels : int, attribute_channels : int, identity_channels : int) -> None:
-		super(AADLayer, self).__init__()
+		super().__init__()
 		self.input_channels = input_channels
 		self.conv_beta = nn.Conv2d(attribute_channels, input_channels, kernel_size = 1)
 		self.conv_gamma = nn.Conv2d(attribute_channels, input_channels, kernel_size = 1)
@@ -109,10 +109,10 @@ class AADResBlock(nn.Module):
 		return output_feature
 
 
-class PixelShuffleUpsample(nn.Module):
+class PixelShuffleUpSample(nn.Module):
 	def __init__(self, input_channels : int, output_channels : int) -> None:
 		super().__init__()
-		self.conv = nn.Conv2d(in_channels = input_channels, out_channels = output_channels, kernel_size = 3, padding = 1)
+		self.conv = nn.Conv2d(input_channels, output_channels, kernel_size = 3, padding = 1)
 		self.pixel_shuffle = nn.PixelShuffle(upscale_factor = 2)
 
 	def forward(self, input_tensor : Tensor) -> Tensor:
