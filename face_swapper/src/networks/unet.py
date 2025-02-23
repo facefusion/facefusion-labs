@@ -93,11 +93,11 @@ class UpSample(nn.Module):
 		self.leaky_relu = nn.LeakyReLU(0.1, inplace = True)
 
 	def forward(self, input_tensor : Tensor, skip_tensor : Tensor) -> Tensor:
-		temp_tensor = self.conv_transpose(input_tensor)
-		temp_tensor = self.batch_norm(temp_tensor)
-		temp_tensor = self.leaky_relu(temp_tensor)
-		temp_tensor = torch.cat((temp_tensor, skip_tensor), dim = 1)
-		return temp_tensor
+		output_tensor = self.conv_transpose(input_tensor)
+		output_tensor = self.batch_norm(output_tensor)
+		output_tensor = self.leaky_relu(output_tensor)
+		output_tensor = torch.cat((output_tensor, skip_tensor), dim = 1)
+		return output_tensor
 
 
 class DownSample(nn.Module):
@@ -108,7 +108,7 @@ class DownSample(nn.Module):
 		self.leaky_relu = nn.LeakyReLU(0.1, inplace = True)
 
 	def forward(self, input_tensor : Tensor) -> Tensor:
-		temp_tensor = self.conv(input_tensor)
-		temp_tensor = self.batch_norm(temp_tensor)
-		temp_tensor = self.leaky_relu(temp_tensor)
-		return temp_tensor
+		output_tensor = self.conv(input_tensor)
+		output_tensor = self.batch_norm(output_tensor)
+		output_tensor = self.leaky_relu(output_tensor)
+		return output_tensor
