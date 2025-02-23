@@ -62,12 +62,12 @@ class FaceSwapperTrainer(lightning.LightningModule):
 		generator_output_attributes = self.generator.get_attributes(generator_output_tensor)
 		discriminator_output_tensors = self.discriminator(generator_output_tensor)
 
-		adversarial_loss, weighted_adversarial_loss = self.adversarial_loss.calc(discriminator_output_tensors)
-		attribute_loss, weighted_attribute_loss = self.attribute_loss.calc(target_attributes, generator_output_attributes)
-		reconstruction_loss, weighted_reconstruction_loss = self.reconstruction_loss.calc(source_tensor, target_tensor, generator_output_tensor)
-		identity_loss, weighted_identity_loss = self.identity_loss.calc(generator_output_tensor, source_tensor)
-		pose_loss, weighted_pose_loss = self.pose_loss.calc(target_tensor, generator_output_tensor)
-		gaze_loss, weighted_gaze_loss = self.gaze_loss.calc(target_tensor, generator_output_tensor)
+		adversarial_loss, weighted_adversarial_loss = self.adversarial_loss(discriminator_output_tensors)
+		attribute_loss, weighted_attribute_loss = self.attribute_loss(target_attributes, generator_output_attributes)
+		reconstruction_loss, weighted_reconstruction_loss = self.reconstruction_loss(source_tensor, target_tensor, generator_output_tensor)
+		identity_loss, weighted_identity_loss = self.identity_loss(generator_output_tensor, source_tensor)
+		pose_loss, weighted_pose_loss = self.pose_loss(target_tensor, generator_output_tensor)
+		gaze_loss, weighted_gaze_loss = self.gaze_loss(target_tensor, generator_output_tensor)
 		generator_loss = weighted_adversarial_loss + weighted_attribute_loss + weighted_reconstruction_loss + weighted_identity_loss + weighted_pose_loss
 
 		generator_optimizer.zero_grad()
@@ -76,7 +76,7 @@ class FaceSwapperTrainer(lightning.LightningModule):
 
 		discriminator_source_tensors = self.discriminator(source_tensor)
 		discriminator_output_tensors = self.discriminator(generator_output_tensor.detach())
-		discriminator_loss = self.discriminator_loss.calc(discriminator_source_tensors, discriminator_output_tensors)
+		discriminator_loss = self.discriminator_loss(discriminator_source_tensors, discriminator_output_tensors)
 
 		discriminator_optimizer.zero_grad()
 		self.manual_backward(discriminator_loss)
