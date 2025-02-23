@@ -9,7 +9,7 @@ class NLD(nn.Module):
 		self.nld = self.create_nld(input_channels, num_filters, num_layers, kernel_size)
 
 	@staticmethod
-	def create_nld(input_channels : int, num_filters : int, num_layers: int, kernel_size : int) -> nn.Sequential:
+	def create_nld(input_channels : int, num_filters : int, num_layers : int, kernel_size : int) -> nn.Sequential:
 		padding = math.ceil((kernel_size - 1) / 2)
 		current_filters = num_filters
 		layers =\
