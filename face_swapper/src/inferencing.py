@@ -3,7 +3,7 @@ import configparser
 import cv2
 import torch
 
-from .helper import calc_embedding, convert_to_vision_frame, convert_to_tensor
+from .helper import calc_embedding, convert_to_tensor, convert_to_vision_frame
 from .models.generator import Generator
 from .types import EmbedderModule, GeneratorModule, VisionFrame
 
