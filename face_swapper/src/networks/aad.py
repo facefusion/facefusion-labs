@@ -63,24 +63,6 @@ class AdaptiveFeatureModulation(nn.Module):
 		return primary_layers
 
 	@staticmethod
-	def _create_primary_layers(input_channels : int, output_channels : int, attribute_channels : int, identity_channels : int, num_blocks : int) -> nn.ModuleList:
-		primary_layers = nn.ModuleList()
-
-		for index in range(num_blocks):
-			primary_layers.extend(
-			[
-				FeatureModulation(input_channels, attribute_channels, identity_channels),
-				nn.ReLU(inplace = True)
-			])
-
-			if index < num_blocks - 1:
-				primary_layers.append(nn.Conv2d(input_channels, input_channels, kernel_size = 3, padding = 1, bias = False))
-			else:
-				primary_layers.append(nn.Conv2d(input_channels, output_channels, kernel_size = 3, padding = 1, bias = False))
-
-		return primary_layers
-
-	@staticmethod
 	def create_shortcut_layers(input_channels : int, output_channels : int, attribute_channels : int, identity_channels : int) -> nn.ModuleList:
 		shortcut_layers = nn.ModuleList()
 
