@@ -12,7 +12,7 @@ CONFIG.read('config.ini')
 
 class Generator(nn.Module):
 	def __init__(self) -> None:
-		super(Generator, self).__init__()
+		super().__init__()
 		encoder_type = CONFIG.get('training.model.generator', 'encoder_type')
 		id_channels = CONFIG.getint('training.model.generator', 'id_channels')
 		num_blocks = CONFIG.getint('training.model.generator', 'num_blocks')

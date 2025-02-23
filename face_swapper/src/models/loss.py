@@ -1,141 +1,164 @@
 import configparser
-from typing import Tuple
+from typing import List, Tuple
 
 import torch
 from pytorch_msssim import ssim
 from torch import Tensor, nn
 
-from ..helper import calc_id_embedding, hinge_fake_loss, hinge_real_loss
-from ..types import Batch, DiscriminatorLossSet, DiscriminatorOutputs, FaceLandmark203, GeneratorLossSet, LossTensor, SwapAttributes, TargetAttributes, VisionTensor
+from ..helper import calc_embedding
+from ..types import Attributes, FaceLandmark203
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 
 
-class FaceSwapperLoss:
+class DiscriminatorLoss(nn.Module):
 	def __init__(self) -> None:
-		id_embedder_path = CONFIG.get('training.model', 'id_embedder_path')
-		landmarker_path = CONFIG.get('training.model', 'landmarker_path')
-		motion_extractor_path = CONFIG.get('training.model', 'motion_extractor_path')
-		self.batch_size = CONFIG.getint('training.loader', 'batch_size')
+		super().__init__()
+
+	def forward(self, discriminator_source_tensors : List[Tensor], discriminator_output_tensors : List[Tensor]) -> Tensor:
+		positive_tensors = []
+		negative_tensors = []
+
+		for discriminator_output_tensor in discriminator_output_tensors:
+			positive_tensor = torch.relu(discriminator_output_tensor[0] + 1).mean(dim = [ 1, 2, 3 ])
+			positive_tensors.append(positive_tensor)
+
+		for discriminator_source_tensor in discriminator_source_tensors:
+			negative_tensor = torch.relu(1 - discriminator_source_tensor[0]).mean(dim = [ 1, 2, 3 ])
+			negative_tensors.append(negative_tensor)
+
+		positive_loss = torch.stack(positive_tensors).mean()
+		negative_loss = torch.stack(negative_tensors).mean()
+		discriminator_loss = (positive_loss + negative_loss) * 0.5
+		return discriminator_loss
+
+
+class AdversarialLoss(nn.Module):
+	def __init__(self) -> None:
+		super().__init__()
+
+	def forward(self, discriminator_output_tensors : List[Tensor]) -> Tuple[Tensor, Tensor]:
+		adversarial_weight = CONFIG.getfloat('training.losses', 'adversarial_weight')
+		temp_tensors = []
+
+		for discriminator_output_tensor in discriminator_output_tensors:
+			temp_tensor = torch.relu(1 - discriminator_output_tensor[0]).mean(dim = [ 1, 2, 3 ]).mean()
+			temp_tensors.append(temp_tensor)
+
+		adversarial_loss = torch.stack(temp_tensors).mean()
+		weighted_adversarial_loss = adversarial_loss * adversarial_weight
+		return adversarial_loss, weighted_adversarial_loss
+
+
+class AttributeLoss(nn.Module):
+	def __init__(self) -> None:
+		super().__init__()
+
+	def forward(self, target_attributes : Attributes, output_attributes : Attributes) -> Tuple[Tensor, Tensor]:
+		batch_size = CONFIG.getint('training.loader', 'batch_size')
+		attribute_weight = CONFIG.getfloat('training.losses', 'attribute_weight')
+		temp_tensors = []
+
+		for target_attribute, output_attribute in zip(target_attributes, output_attributes):
+			temp_tensor = torch.mean(torch.pow(output_attribute - target_attribute, 2).reshape(batch_size, -1), dim = 1).mean()
+			temp_tensors.append(temp_tensor)
+
+		attribute_loss = torch.stack(temp_tensors).mean() * 0.5
+		weighted_attribute_loss = attribute_loss * attribute_weight
+		return attribute_loss, weighted_attribute_loss
+
+
+class ReconstructionLoss(nn.Module):
+	def __init__(self) -> None:
+		super().__init__()
 		self.mse_loss = nn.MSELoss()
-		self.id_embedder = torch.jit.load(id_embedder_path, map_location = 'cpu') # type:ignore[no-untyped-call]
-		self.landmarker = torch.jit.load(landmarker_path, map_location = 'cpu') # type:ignore[no-untyped-call]
+
+	def forward(self, source_tensor : Tensor, target_tensor : Tensor, output_tensor : Tensor) -> Tuple[Tensor, Tensor]:
+		reconstruction_weight = CONFIG.getfloat('training.losses', 'reconstruction_weight')
+		temp_tensors = []
+
+		for _source_tensor, _target_tensor in zip(source_tensor, target_tensor):
+			temp_tensor = self.mse_loss(_source_tensor, _target_tensor)
+
+			if torch.equal(_source_tensor, _target_tensor):
+				temp_tensors.append(temp_tensor)
+			else:
+				temp_tensors.append(temp_tensor * 0)
+
+		reconstruction_loss = torch.stack(temp_tensors).mean() * 0.5
+		data_range = float(torch.max(output_tensor) - torch.min(output_tensor))
+		similarity = 1 - ssim(output_tensor, target_tensor, data_range = data_range).mean()
+
+		reconstruction_loss = (reconstruction_loss + similarity) * 0.5
+		weighted_reconstruction_loss = reconstruction_loss * reconstruction_weight
+		return reconstruction_loss, weighted_reconstruction_loss
+
+
+class IdentityLoss(nn.Module):
+	def __init__(self) -> None:
+		super().__init__()
+		embedder_path = CONFIG.get('training.model', 'embedder_path')
+		self.embedder = torch.jit.load(embedder_path, map_location = 'cpu') # type:ignore[no-untyped-call]
+
+	def forward(self, source_tensor : Tensor, output_tensor : Tensor) -> Tuple[Tensor, Tensor]:
+		identity_weight = CONFIG.getfloat('training.losses', 'identity_weight')
+		output_embedding = calc_embedding(self.embedder, output_tensor, (30, 0, 10, 10))
+		source_embedding = calc_embedding(self.embedder, source_tensor, (30, 0, 10, 10))
+		identity_loss = (1 - torch.cosine_similarity(source_embedding, output_embedding)).mean()
+		weighted_identity_loss = identity_loss * identity_weight
+		return identity_loss, weighted_identity_loss
+
+
+class PoseLoss(nn.Module):
+	def __init__(self) -> None:
+		super().__init__()
+		motion_extractor_path = CONFIG.get('training.model', 'motion_extractor_path')
 		self.motion_extractor = torch.jit.load(motion_extractor_path, map_location = 'cpu') # type:ignore[no-untyped-call]
-		self.id_embedder.eval()
-		self.landmarker.eval()
-		self.motion_extractor.eval()
+		self.mse_loss = nn.MSELoss()
 
-	def calc_generator_loss(self, swap_tensor : VisionTensor, target_attributes : TargetAttributes, swap_attributes : SwapAttributes, discriminator_outputs : DiscriminatorOutputs, batch : Batch) -> GeneratorLossSet:
-		weight_adversarial = CONFIG.getfloat('training.losses', 'weight_adversarial')
-		weight_identity = CONFIG.getfloat('training.losses', 'weight_identity')
-		weight_attribute = CONFIG.getfloat('training.losses', 'weight_attribute')
-		weight_reconstruction = CONFIG.getfloat('training.losses', 'weight_reconstruction')
-		weight_pose = CONFIG.getfloat('training.losses', 'weight_pose')
-		weight_gaze = CONFIG.getfloat('training.losses', 'weight_gaze')
-		source_tensor, target_tensor = batch
-		is_same_person = torch.tensor(0) if torch.equal(source_tensor, target_tensor) else torch.tensor(1)
-		generator_loss_set =\
-		{
-			'loss_adversarial': self.calc_adversarial_loss(discriminator_outputs),
-			'loss_identity': self.calc_identity_loss(source_tensor, swap_tensor),
-			'loss_attribute': self.calc_attribute_loss(target_attributes, swap_attributes),
-			'loss_reconstruction': self.calc_reconstruction_loss(swap_tensor, target_tensor, is_same_person)
-		}
+	def forward(self, target_tensor : Tensor, output_tensor : Tensor, ) -> Tuple[Tensor, Tensor]:
+		pose_weight = CONFIG.getfloat('training.losses', 'pose_weight')
+		output_motion_features = self.get_motion_features(output_tensor)
+		target_motion_features = self.get_motion_features(target_tensor)
+		temp_tensors = []
 
-		if weight_pose > 0:
-			generator_loss_set['loss_pose'] = self.calc_pose_loss(swap_tensor, target_tensor)
-		else:
-			generator_loss_set['loss_pose'] = torch.tensor(0).to(swap_tensor.device).to(swap_tensor.dtype)
+		for target_motion_feature, output_motion_feature in zip(target_motion_features, output_motion_features):
+			temp_tensor = self.mse_loss(target_motion_feature, output_motion_feature)
+			temp_tensors.append(temp_tensor)
 
-		if weight_gaze > 0:
-			generator_loss_set['loss_gaze'] = self.calc_gaze_loss(swap_tensor, target_tensor)
-		else:
-			generator_loss_set['loss_gaze'] = torch.tensor(0).to(swap_tensor.device).to(swap_tensor.dtype)
+		pose_loss = torch.stack(temp_tensors).mean()
+		weighted_pose_loss = pose_loss * pose_weight
+		return pose_loss, weighted_pose_loss
 
-		generator_loss_set['loss_generator'] = generator_loss_set.get('loss_adversarial') * weight_adversarial
-		generator_loss_set['loss_generator'] += generator_loss_set.get('loss_identity') * weight_identity
-		generator_loss_set['loss_generator'] += generator_loss_set.get('loss_attribute') * weight_attribute
-		generator_loss_set['loss_generator'] += generator_loss_set.get('loss_reconstruction') * weight_reconstruction
-		generator_loss_set['loss_generator'] += generator_loss_set.get('loss_pose') * weight_pose
-		generator_loss_set['loss_generator'] += generator_loss_set.get('loss_gaze') * weight_gaze
-		return generator_loss_set
-
-	def calc_discriminator_loss(self, real_discriminator_outputs : DiscriminatorOutputs, fake_discriminator_outputs : DiscriminatorOutputs) -> DiscriminatorLossSet:
-		discriminator_loss_set = {}
-		loss_fakes = []
-
-		for fake_discriminator_output in fake_discriminator_outputs:
-			loss_fakes.append(hinge_fake_loss(fake_discriminator_output[0]))
-
-		loss_trues = []
-
-		for true_discriminator_output in real_discriminator_outputs:
-			loss_trues.append(hinge_real_loss(true_discriminator_output[0]))
-
-		loss_fake = torch.stack(loss_fakes).mean()
-		loss_true = torch.stack(loss_trues).mean()
-		discriminator_loss_set['loss_discriminator'] = (loss_true + loss_fake) * 0.5
-		return discriminator_loss_set
-
-	def calc_adversarial_loss(self, discriminator_outputs : DiscriminatorOutputs) -> LossTensor:
-		loss_adversarials = []
-
-		for discriminator_output in discriminator_outputs:
-			loss_adversarials.append(hinge_real_loss(discriminator_output[0]).mean())
-
-		loss_adversarial = torch.stack(loss_adversarials).mean()
-		return loss_adversarial
-
-	def calc_attribute_loss(self, target_attributes : TargetAttributes, swap_attributes : SwapAttributes) -> LossTensor:
-		loss_attributes = []
-
-		for swap_attribute, target_attribute in zip(swap_attributes, target_attributes):
-			loss_attributes.append(torch.mean(torch.pow(swap_attribute - target_attribute, 2).reshape(self.batch_size, -1), dim = 1).mean())
-
-		loss_attribute = torch.stack(loss_attributes).mean() * 0.5
-		return loss_attribute
-
-	def calc_reconstruction_loss(self, swap_tensor : VisionTensor, target_tensor : VisionTensor, is_same_person : Tensor) -> LossTensor:
-		loss_reconstruction = torch.pow(swap_tensor - target_tensor, 2).reshape(self.batch_size, -1)
-		loss_reconstruction = torch.mean(loss_reconstruction, dim = 1) * 0.5
-		loss_reconstruction = torch.sum(loss_reconstruction * is_same_person) / (is_same_person.sum() + 1e-4)
-		loss_ssim = 1 - ssim(swap_tensor, target_tensor, data_range = float(torch.max(swap_tensor) - torch.min(swap_tensor))).mean()
-		loss_reconstruction = (loss_reconstruction + loss_ssim) * 0.5
-		return loss_reconstruction
-
-	def calc_identity_loss(self, source_tensor : VisionTensor, swap_tensor : VisionTensor) -> LossTensor:
-		swap_embedding = calc_id_embedding(self.id_embedder, swap_tensor, (30, 0, 10, 10))
-		source_embedding = calc_id_embedding(self.id_embedder, source_tensor, (30, 0, 10, 10))
-		loss_identity = (1 - torch.cosine_similarity(source_embedding, swap_embedding)).mean()
-		return loss_identity
-
-	def calc_pose_loss(self, swap_tensor : VisionTensor, target_tensor : VisionTensor) -> LossTensor:
-		swap_motion_features = self.get_pose_features(swap_tensor)
-		target_motion_features = self.get_pose_features(target_tensor)
-		loss_pose = torch.tensor(0).to(swap_tensor.device).to(swap_tensor.dtype)
-
-		for swap_motion_feature, target_motion_feature in zip(swap_motion_features, target_motion_features):
-			loss_pose += self.mse_loss(swap_motion_feature, target_motion_feature)
-
-		return loss_pose
-
-	def calc_gaze_loss(self, swap_tensor : VisionTensor, target_tensor : VisionTensor) -> LossTensor:
-		swap_landmark = self.get_face_landmarks(swap_tensor)
-		target_landmark = self.get_face_landmarks(target_tensor)
-		left_gaze_loss = self.mse_loss(swap_landmark[:, 198], target_landmark[:, 198])
-		right_gaze_loss = self.mse_loss(swap_landmark[:, 197], target_landmark[:, 197])
-		gaze_loss = left_gaze_loss + right_gaze_loss
-		return gaze_loss
-
-	def get_face_landmarks(self, vision_tensor : VisionTensor) -> FaceLandmark203:
-		vision_tensor_norm = (vision_tensor + 1) * 0.5
-		vision_tensor_norm = nn.functional.interpolate(vision_tensor_norm, size = (224, 224), mode = 'bilinear')
-		landmarks = self.landmarker(vision_tensor_norm)[2].view(-1, 203, 2)
-		return landmarks
-
-	def get_pose_features(self, vision_tensor : Tensor) -> Tuple[Tensor, Tensor, Tensor]:
-		vision_tensor_norm = (vision_tensor + 1) * 0.5
-		pitch, yaw, roll, translation, expression, scale, _ = self.motion_extractor(vision_tensor_norm)
+	def get_motion_features(self, input_tensor : Tensor) -> Tuple[Tensor, Tensor, Tensor]:
+		input_tensor = (input_tensor + 1) * 0.5
+		pitch, yaw, roll, translation, expression, scale, _ = self.motion_extractor(input_tensor)
 		rotation = torch.cat([ pitch, yaw, roll ], dim = 1)
 		return translation, scale, rotation
+
+
+class GazeLoss(nn.Module):
+	def __init__(self) -> None:
+		super().__init__()
+		landmarker_path = CONFIG.get('training.model', 'landmarker_path')
+		self.landmarker = torch.jit.load(landmarker_path, map_location = 'cpu') # type:ignore[no-untyped-call]
+		self.mse_loss = nn.MSELoss()
+
+	def forward(self, target_tensor : Tensor, output_tensor : Tensor, ) -> Tuple[Tensor, Tensor]:
+		gaze_weight = CONFIG.getfloat('training.losses', 'gaze_weight')
+		output_face_landmark = self.detect_face_landmark(output_tensor)
+		target_face_landmark = self.detect_face_landmark(target_tensor)
+
+		left_gaze_loss = self.mse_loss(output_face_landmark[:, 198], target_face_landmark[:, 198])
+		right_gaze_loss = self.mse_loss(output_face_landmark[:, 197], target_face_landmark[:, 197])
+
+		gaze_loss = left_gaze_loss + right_gaze_loss
+		weighted_gaze_loss = gaze_loss * gaze_weight
+		return gaze_loss, weighted_gaze_loss
+
+	def detect_face_landmark(self, input_tensor : Tensor) -> FaceLandmark203:
+		input_tensor = (input_tensor + 1) * 0.5
+		input_tensor = nn.functional.interpolate(input_tensor, size = (224, 224), mode = 'bilinear')
+		face_landmarks_203 = self.landmarker(input_tensor)[2].view(-1, 203, 2)
+		return face_landmarks_203

@@ -4,7 +4,7 @@ from torch import Tensor, nn
 
 class EmbeddingConverter(nn.Module):
 	def __init__(self) -> None:
-		super(EmbeddingConverter, self).__init__()
+		super().__init__()
 		self.layers = self.create_layers()
 		self.leaky_relu = nn.LeakyReLU()
 

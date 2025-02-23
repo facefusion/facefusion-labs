@@ -1,12 +1,12 @@
 import torch
 from torch import Tensor, nn
 
-from ..types import Embedding, TargetAttributes
+from ..types import Attributes, Embedding
 
 
 class AADGenerator(nn.Module):
 	def __init__(self, id_channels : int, num_blocks : int) -> None:
-		super(AADGenerator, self).__init__()
+		super().__init__()
 		self.upsample = PixelShuffleUpsample(id_channels, 1024 * 4)
 		self.res_block_1 = AADResBlock(1024, 1024, 1024, id_channels, num_blocks)
 		self.res_block_2 = AADResBlock(1024, 1024, 2048, id_channels, num_blocks)
@@ -17,7 +17,7 @@ class AADGenerator(nn.Module):
 		self.res_block_7 = AADResBlock(128, 64, 64, id_channels, num_blocks)
 		self.res_block_8 = AADResBlock(64, 3, 64, id_channels, num_blocks)
 
-	def forward(self, target_attributes : TargetAttributes, source_embedding : Embedding) -> Tensor:
+	def forward(self, target_attributes : Attributes, source_embedding : Embedding) -> Tensor:
 		feature_map = self.upsample(source_embedding)
 		feature_map_1 = nn.functional.interpolate(self.res_block_1(feature_map, target_attributes[0], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
 		feature_map_2 = nn.functional.interpolate(self.res_block_2(feature_map_1, target_attributes[1], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
@@ -56,13 +56,13 @@ class AADLayer(nn.Module):
 
 class AADSequential(nn.Module):
 	def __init__(self, *args : nn.Module) -> None:
-		super(AADSequential, self).__init__()
+		super().__init__()
 		self.layers = nn.ModuleList(args)
 
-	def forward(self, feature_map : Tensor, attribute_embedding : Embedding, id_embedding : Embedding) -> Tensor:
+	def forward(self, feature_map : Tensor, attribute_embedding : Embedding, identity_embedding : Embedding) -> Tensor:
 		for layer in self.layers:
 			if isinstance(layer, AADLayer):
-				feature_map = layer(feature_map, attribute_embedding, id_embedding)
+				feature_map = layer(feature_map, attribute_embedding, identity_embedding)
 			else:
 				feature_map = layer(feature_map)
 		return feature_map
@@ -70,7 +70,7 @@ class AADSequential(nn.Module):
 
 class AADResBlock(nn.Module):
 	def __init__(self, input_channels : int, output_channels : int, attribute_channels : int, id_channels : int, num_blocks : int) -> None:
-		super(AADResBlock, self).__init__()
+		super().__init__()
 		self.input_channels = input_channels
 		self.output_channels = output_channels
 		self.prepare_primary_add_blocks(input_channels, attribute_channels, id_channels, output_channels, num_blocks)
@@ -111,7 +111,7 @@ class AADResBlock(nn.Module):
 
 class PixelShuffleUpsample(nn.Module):
 	def __init__(self, input_channels : int, output_channels : int) -> None:
-		super(PixelShuffleUpsample, self).__init__()
+		super().__init__()
 		self.conv = nn.Conv2d(in_channels = input_channels, out_channels = output_channels, kernel_size = 3, padding = 1)
 		self.pixel_shuffle = nn.PixelShuffle(upscale_factor = 2)
 

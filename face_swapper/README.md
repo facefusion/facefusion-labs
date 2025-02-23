@@ -40,7 +40,7 @@ split_ratio = 0.9995
 
 ```
 [training.model]
-id_embedder_path = .models/id_embedder.pt
+embedder_path = .models/arcface.pt
 landmarker_path = .models/landmarker.pt
 motion_extractor_path = .models/motion_extractor.pt
 ```
@@ -63,12 +63,12 @@ kernel_size = 4
 
 ```
 [training.losses]
-weight_adversarial = 1.5
-weight_identity = 15
-weight_attribute = 10
-weight_reconstruction = 15
-weight_pose = 0
-weight_gaze = 0
+adversarial_weight = 1.5
+attribute_weight = 10
+reconstruction_weight = 20
+identity_weight = 20
+pose_weight = 0
+gaze_weight = 0
 ```
 
 ```
@@ -99,7 +99,7 @@ opset_version = 15
 ```
 [inferencing]
 generator_path = .outputs/last.ckpt
-id_embedder_path = .models/id_embedder.pt
+embedder_path = .models/arcface.pt
 source_path = .assets/source.jpg
 target_path = .assets/target.jpg
 output_path = .outputs/output.jpg
