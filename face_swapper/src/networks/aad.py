@@ -4,7 +4,7 @@ from torch import Tensor, nn
 from ..types import Attributes, Embedding
 
 
-class AIENet(nn.Module):
+class AAD(nn.Module):
 	def __init__(self, identity_channels : int, output_channels : int, num_blocks : int) -> None:
 		super().__init__()
 		self.pixel_shuffle_up_sample = PixelShuffleUpSample(identity_channels, output_channels)

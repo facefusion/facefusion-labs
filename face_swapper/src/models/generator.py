@@ -2,7 +2,7 @@ import configparser
 
 from torch import Tensor, nn
 
-from ..networks.aienet import AIENet
+from ..networks.aad import AAD
 from ..networks.unet import UNet, UNetPro
 from ..types import Attributes, Embedding
 
@@ -22,7 +22,7 @@ class Generator(nn.Module):
 			self.encoder = UNet()
 		if encoder_type == 'unet-pro':
 			self.encoder = UNetPro()
-		self.generator = AIENet(identity_channels, output_channels, num_blocks)
+		self.generator = AAD(identity_channels, output_channels, num_blocks)
 		self.encoder.apply(init_weight)
 		self.generator.apply(init_weight)
 
