@@ -5,17 +5,17 @@ from ..types import Attributes, Embedding
 
 
 class AADGenerator(nn.Module):
-	def __init__(self, id_channels : int, num_blocks : int) -> None:
+	def __init__(self, identity_channels : int, num_blocks : int) -> None:
 		super().__init__()
-		self.upsample = PixelShuffleUpsample(id_channels, 1024 * 4)
-		self.res_block_1 = AADResBlock(1024, 1024, 1024, id_channels, num_blocks)
-		self.res_block_2 = AADResBlock(1024, 1024, 2048, id_channels, num_blocks)
-		self.res_block_3 = AADResBlock(1024, 1024, 1024, id_channels, num_blocks)
-		self.res_block_4 = AADResBlock(1024, 512, 512, id_channels, num_blocks)
-		self.res_block_5 = AADResBlock(512, 256, 256, id_channels, num_blocks)
-		self.res_block_6 = AADResBlock(256, 128, 128, id_channels, num_blocks)
-		self.res_block_7 = AADResBlock(128, 64, 64, id_channels, num_blocks)
-		self.res_block_8 = AADResBlock(64, 3, 64, id_channels, num_blocks)
+		self.upsample = PixelShuffleUpsample(identity_channels, 1024 * 4)
+		self.res_block_1 = AADResBlock(1024, 1024, 1024, identity_channels, num_blocks)
+		self.res_block_2 = AADResBlock(1024, 1024, 2048, identity_channels, num_blocks)
+		self.res_block_3 = AADResBlock(1024, 1024, 1024, identity_channels, num_blocks)
+		self.res_block_4 = AADResBlock(1024, 512, 512, identity_channels, num_blocks)
+		self.res_block_5 = AADResBlock(512, 256, 256, identity_channels, num_blocks)
+		self.res_block_6 = AADResBlock(256, 128, 128, identity_channels, num_blocks)
+		self.res_block_7 = AADResBlock(128, 64, 64, identity_channels, num_blocks)
+		self.res_block_8 = AADResBlock(64, 3, 64, identity_channels, num_blocks)
 
 	def forward(self, target_attributes : Attributes, source_embedding : Embedding) -> Tensor:
 		feature_map = self.upsample(source_embedding)
@@ -31,26 +31,26 @@ class AADGenerator(nn.Module):
 
 
 class AADLayer(nn.Module):
-	def __init__(self, input_channels : int, attr_channels : int, id_channels : int) -> None:
+	def __init__(self, input_channels : int, attribute_channels : int, identity_channels : int) -> None:
 		super(AADLayer, self).__init__()
 		self.input_channels = input_channels
-		self.conv_beta = nn.Conv2d(attr_channels, input_channels, kernel_size = 1)
-		self.conv_gamma = nn.Conv2d(attr_channels, input_channels, kernel_size = 1)
-		self.fc_beta = nn.Linear(id_channels, input_channels)
-		self.fc_gamma = nn.Linear(id_channels, input_channels)
+		self.conv_beta = nn.Conv2d(attribute_channels, input_channels, kernel_size = 1)
+		self.conv_gamma = nn.Conv2d(attribute_channels, input_channels, kernel_size = 1)
+		self.fc_beta = nn.Linear(identity_channels, input_channels)
+		self.fc_gamma = nn.Linear(identity_channels, input_channels)
 		self.instance_norm = nn.InstanceNorm2d(input_channels)
 		self.conv_mask = nn.Conv2d(input_channels, 1, kernel_size = 1)
 
-	def forward(self, feature_map : Tensor, attribute_embedding : Embedding, id_embedding : Embedding) -> Tensor:
+	def forward(self, feature_map : Tensor, attribute_embedding : Embedding, identity_embedding : Embedding) -> Tensor:
 		feature_map = self.instance_norm(feature_map)
 		gamma_attribute = self.conv_gamma(attribute_embedding)
 		beta_attribute = self.conv_beta(attribute_embedding)
 		attribute_modulation = gamma_attribute * feature_map + beta_attribute
-		id_gamma = self.fc_gamma(id_embedding).reshape(feature_map.shape[0], self.input_channels, 1, 1).expand_as(feature_map)
-		id_beta = self.fc_beta(id_embedding).reshape(feature_map.shape[0], self.input_channels, 1, 1).expand_as(feature_map)
-		id_modulation = id_gamma * feature_map + id_beta
+		identity_gamma = self.fc_gamma(identity_embedding).reshape(feature_map.shape[0], self.input_channels, 1, 1).expand_as(feature_map)
+		identity_beta = self.fc_beta(identity_embedding).reshape(feature_map.shape[0], self.input_channels, 1, 1).expand_as(feature_map)
+		identity_modulation = identity_gamma * feature_map + identity_beta
 		feature_mask = torch.sigmoid(self.conv_mask(feature_map))
-		feature_blend = (1 - feature_mask) * attribute_modulation + feature_mask * id_modulation
+		feature_blend = (1 - feature_mask) * attribute_modulation + feature_mask * identity_modulation
 		return feature_blend
 
 
@@ -69,41 +69,41 @@ class AADSequential(nn.Module):
 
 
 class AADResBlock(nn.Module):
-	def __init__(self, input_channels : int, output_channels : int, attribute_channels : int, id_channels : int, num_blocks : int) -> None:
+	def __init__(self, input_channels : int, output_channels : int, attribute_channels : int, identity_channels : int, num_blocks : int) -> None:
 		super().__init__()
 		self.input_channels = input_channels
 		self.output_channels = output_channels
-		self.prepare_primary_add_blocks(input_channels, attribute_channels, id_channels, output_channels, num_blocks)
-		self.prepare_auxiliary_add_blocks(input_channels, attribute_channels, id_channels, output_channels)
+		self.prepare_primary_add_blocks(input_channels, attribute_channels, identity_channels, output_channels, num_blocks)
+		self.prepare_auxiliary_add_blocks(input_channels, attribute_channels, identity_channels, output_channels)
 
-	def prepare_primary_add_blocks(self, input_channels : int, attribute_channels : int, id_channels : int, output_channels : int, num_blocks : int) -> None:
+	def prepare_primary_add_blocks(self, input_channels : int, attribute_channels : int, identity_channels : int, output_channels : int, num_blocks : int) -> None:
 		primary_add_blocks = []
 
 		for index in range(num_blocks):
 			intermediate_channels = input_channels if index < (num_blocks - 1) else output_channels
 			primary_add_blocks.extend(
 				[
-					AADLayer(input_channels, attribute_channels, id_channels),
+					AADLayer(input_channels, attribute_channels, identity_channels),
 					nn.ReLU(inplace = True),
 					nn.Conv2d(input_channels, intermediate_channels, kernel_size = 3, padding = 1, bias = False)
 				]
 			)
 		self.primary_add_blocks = AADSequential(*primary_add_blocks)
 
-	def prepare_auxiliary_add_blocks(self, input_channels : int, attribute_channels : int, id_channels : int, output_channels : int) -> None:
+	def prepare_auxiliary_add_blocks(self, input_channels : int, attribute_channels : int, identity_channels : int, output_channels : int) -> None:
 		if input_channels > output_channels:
 			auxiliary_add_blocks = AADSequential(
-				AADLayer(input_channels, attribute_channels, id_channels),
+				AADLayer(input_channels, attribute_channels, identity_channels),
 				nn.ReLU(inplace = True),
 				nn.Conv2d(input_channels, output_channels, kernel_size = 3, padding = 1, bias = False)
 			)
 			self.auxiliary_add_blocks = auxiliary_add_blocks
 
-	def forward(self, feature_map : Tensor, attribute_embedding : Embedding, id_embedding : Embedding) -> Tensor:
-		primary_feature = self.primary_add_blocks(feature_map, attribute_embedding, id_embedding)
+	def forward(self, feature_map : Tensor, attribute_embedding : Embedding, identity_embedding : Embedding) -> Tensor:
+		primary_feature = self.primary_add_blocks(feature_map, attribute_embedding, identity_embedding)
 
 		if self.input_channels > self.output_channels:
-			feature_map = self.auxiliary_add_blocks(feature_map, attribute_embedding, id_embedding)
+			feature_map = self.auxiliary_add_blocks(feature_map, attribute_embedding, identity_embedding)
 
 		output_feature = primary_feature + feature_map
 		return output_feature
