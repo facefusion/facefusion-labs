@@ -2,19 +2,19 @@ import numpy
 import torch
 from torch import Tensor, nn
 
-from .types import EmbedderModule, Embedding, Padding, VisionFrame, VisionTensor
+from .types import EmbedderModule, Embedding, Padding, VisionFrame
 
 
-def convert_to_vision_tensor(vision_frame : VisionFrame) -> VisionTensor:
-	vision_tensor = torch.from_numpy(vision_frame[:, :, ::-1].transpose(2, 0, 1).astype(numpy.float32))
-	vision_tensor = vision_tensor / 255.0
-	vision_tensor = (vision_tensor - 0.5) * 2
-	vision_tensor = vision_tensor.unsqueeze(0)
-	return vision_tensor
+def convert_to_tensor(vision_frame : VisionFrame) -> Tensor:
+	output_tensor = torch.from_numpy(vision_frame[:, :, ::-1].transpose(2, 0, 1).astype(numpy.float32))
+	output_tensor = output_tensor / 255.0
+	output_tensor = (output_tensor - 0.5) * 2
+	output_tensor = output_tensor.unsqueeze(0)
+	return output_tensor
 
 
-def convert_to_vision_frame(vision_tensor : VisionTensor) -> VisionFrame:
-	vision_frame = vision_tensor.detach().cpu().numpy()[0]
+def convert_to_vision_frame(input_tensor : Tensor) -> VisionFrame:
+	vision_frame = input_tensor.detach().cpu().numpy()[0]
 	vision_frame = vision_frame.transpose(1, 2, 0)
 	vision_frame = (vision_frame + 1) * 127.5
 	vision_frame = vision_frame.clip(0, 255).astype(numpy.uint8)

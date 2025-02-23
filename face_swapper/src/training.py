@@ -16,18 +16,18 @@ from .dataset import DynamicDataset
 from .helper import calc_embedding
 from .models.discriminator import Discriminator
 from .models.generator import Generator
-from .models.loss import AdversarialLoss, AttributeLoss, DiscriminatorLoss, FaceSwapperLoss, GazeLoss, IdentityLoss, PoseLoss, ReconstructionLoss
-from .types import Batch, Embedding, VisionTensor
+from .models.loss import AdversarialLoss, AttributeLoss, DiscriminatorLoss, GazeLoss, IdentityLoss, PoseLoss, ReconstructionLoss
+from .types import Batch, Embedding
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 
 
-class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
+class FaceSwapperTrainer(lightning.LightningModule):
 	def __init__(self) -> None:
 		super().__init__()
-		FaceSwapperLoss.__init__(self)
 		automatic_optimization = CONFIG.getboolean('training.trainer', 'automatic_optimization')
+		embedder_path = CONFIG.get('training.model', 'embedder_path')
 
 		self.generator = Generator()
 		self.discriminator = Discriminator()
@@ -38,9 +38,10 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 		self.identity_loss = IdentityLoss()
 		self.pose_loss = PoseLoss()
 		self.gaze_loss = GazeLoss()
+		self.embedder = torch.jit.load(embedder_path, map_location = 'cpu') # type:ignore[no-untyped-call]
 		self.automatic_optimization = automatic_optimization
 
-	def forward(self, target_tensor : VisionTensor, source_embedding : Embedding) -> Tensor:
+	def forward(self, target_tensor : Tensor, source_embedding : Embedding) -> Tensor:
 		output_tensor = self.generator(source_embedding, target_tensor)
 		return output_tensor
 
@@ -61,34 +62,6 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 		generator_output_attributes = self.generator.get_attributes(generator_output_tensor)
 		discriminator_output_tensors = self.discriminator(generator_output_tensor)
 
-		generator_loss_set = self.calc_generator_loss(generator_output_tensor, target_attributes, generator_output_attributes, discriminator_output_tensors, batch)
-		generator_optimizer.zero_grad()
-		self.manual_backward(generator_loss_set.get('loss_generator'))
-		generator_optimizer.step()
-
-		discriminator_source_tensors = self.discriminator(source_tensor)
-		discriminator_output_tensors = self.discriminator(generator_output_tensor.detach())
-
-		discriminator_loss_set = self.calc_discriminator_loss(discriminator_source_tensors, discriminator_output_tensors)
-		discriminator_optimizer.zero_grad()
-		self.manual_backward(discriminator_loss_set.get('loss_discriminator'))
-		discriminator_optimizer.step()
-
-		if self.global_step % preview_frequency == 0:
-			self.generate_preview(source_tensor, target_tensor, generator_output_tensor)
-
-		self.log('loss_generator', generator_loss_set.get('loss_generator'), prog_bar = True)
-		self.log('loss_discriminator', discriminator_loss_set.get('loss_discriminator'), prog_bar = True)
-		self.log('loss_adversarial', generator_loss_set.get('loss_adversarial'))
-		self.log('loss_attribute', generator_loss_set.get('loss_attribute'))
-		self.log('loss_identity', generator_loss_set.get('loss_identity'))
-		self.log('loss_reconstruction', generator_loss_set.get('loss_reconstruction'))
-		self.log('loss_pose', generator_loss_set.get('loss_pose'))
-		self.log('loss_gaze', generator_loss_set.get('loss_gaze'))
-
-		###############################################
-
-		discriminator_loss = self.discriminator_loss.calc(discriminator_source_tensors, discriminator_output_tensors)
 		adversarial_loss, weighted_adversarial_loss = self.adversarial_loss.calc(discriminator_output_tensors)
 		attribute_loss, weighted_attribute_loss = self.attribute_loss.calc(target_attributes, generator_output_attributes)
 		reconstruction_loss, weighted_reconstruction_loss = self.reconstruction_loss.calc(source_tensor, target_tensor, generator_output_tensor)
@@ -97,15 +70,30 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 		gaze_loss, weighted_gaze_loss = self.gaze_loss.calc(target_tensor, generator_output_tensor)
 		generator_loss = weighted_adversarial_loss + weighted_attribute_loss + weighted_reconstruction_loss + weighted_identity_loss + weighted_pose_loss
 
-		self.log('generator_loss_new', generator_loss, prog_bar = True)
-		self.log('discriminator_loss_new', discriminator_loss, prog_bar = True)
-		self.log('adversarial_loss_new', adversarial_loss)
-		self.log('attribute_loss_new', attribute_loss)
-		self.log('reconstruction_loss_new', reconstruction_loss)
-		self.log('identity_loss_new', identity_loss)
-		self.log('pose_loss_new', pose_loss)
-		self.log('gaze_loss_new', gaze_loss)
-		return generator_loss_set.get('loss_generator')
+		generator_optimizer.zero_grad()
+		self.manual_backward(generator_loss)
+		generator_optimizer.step()
+
+		discriminator_source_tensors = self.discriminator(source_tensor)
+		discriminator_output_tensors = self.discriminator(generator_output_tensor.detach())
+		discriminator_loss = self.discriminator_loss.calc(discriminator_source_tensors, discriminator_output_tensors)
+
+		discriminator_optimizer.zero_grad()
+		self.manual_backward(discriminator_loss)
+		discriminator_optimizer.step()
+
+		if self.global_step % preview_frequency == 0:
+			self.generate_preview(source_tensor, target_tensor, generator_output_tensor)
+
+		self.log('generator_loss', generator_loss, prog_bar = True)
+		self.log('discriminator_loss', discriminator_loss, prog_bar = True)
+		self.log('adversarial_loss', adversarial_loss)
+		self.log('attribute_loss', attribute_loss)
+		self.log('reconstruction_loss', reconstruction_loss)
+		self.log('identity_loss', identity_loss)
+		self.log('pose_loss', pose_loss)
+		self.log('gaze_loss', gaze_loss)
+		return generator_loss
 
 	def validation_step(self, batch : Batch, batch_index : int) -> Tensor:
 		source_tensor, target_tensor = batch
@@ -116,7 +104,7 @@ class FaceSwapperTrainer(lightning.LightningModule, FaceSwapperLoss):
 		self.log('validation', validation)
 		return validation
 
-	def generate_preview(self, source_tensor : VisionTensor, target_tensor : VisionTensor, output_tensor : VisionTensor) -> None:
+	def generate_preview(self, source_tensor : Tensor, target_tensor : Tensor, output_tensor : Tensor) -> None:
 		preview_limit = 8
 		preview_cells = []
 

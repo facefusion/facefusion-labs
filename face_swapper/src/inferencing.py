@@ -3,7 +3,7 @@ import configparser
 import cv2
 import torch
 
-from .helper import calc_embedding, convert_to_vision_frame, convert_to_vision_tensor
+from .helper import calc_embedding, convert_to_vision_frame, convert_to_tensor
 from .models.generator import Generator
 from .types import EmbedderModule, GeneratorModule, VisionFrame
 
@@ -12,11 +12,11 @@ CONFIG.read('config.ini')
 
 
 def run_swap(generator : GeneratorModule, embedder : EmbedderModule, source_vision_frame : VisionFrame, target_vision_frame : VisionFrame) -> VisionFrame:
-	source_vision_tensor = convert_to_vision_tensor(source_vision_frame)
-	target_vision_tensor = convert_to_vision_tensor(target_vision_frame)
-	source_embedding = calc_embedding(embedder, source_vision_tensor, (0, 0, 0, 0))
-	output_vision_tensor = generator(source_embedding, target_vision_tensor)[0]
-	output_vision_frame = convert_to_vision_frame(output_vision_tensor)
+	source_tensor = convert_to_tensor(source_vision_frame)
+	target_tensor = convert_to_tensor(target_vision_frame)
+	source_embedding = calc_embedding(embedder, source_tensor, (0, 0, 0, 0))
+	output_tensor = generator(source_embedding, target_tensor)[0]
+	output_vision_frame = convert_to_vision_frame(output_tensor)
 	return output_vision_frame
 
 

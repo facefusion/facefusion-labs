@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor, nn
 
-from ..types import Embedding, TargetAttributes
+from ..types import Attributes, Embedding
 
 
 class AADGenerator(nn.Module):
@@ -17,7 +17,7 @@ class AADGenerator(nn.Module):
 		self.res_block_7 = AADResBlock(128, 64, 64, id_channels, num_blocks)
 		self.res_block_8 = AADResBlock(64, 3, 64, id_channels, num_blocks)
 
-	def forward(self, target_attributes : TargetAttributes, source_embedding : Embedding) -> Tensor:
+	def forward(self, target_attributes : Attributes, source_embedding : Embedding) -> Tensor:
 		feature_map = self.upsample(source_embedding)
 		feature_map_1 = nn.functional.interpolate(self.res_block_1(feature_map, target_attributes[0], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
 		feature_map_2 = nn.functional.interpolate(self.res_block_2(feature_map_1, target_attributes[1], source_embedding), scale_factor = 2, mode = 'bilinear', align_corners = False)
@@ -59,10 +59,10 @@ class AADSequential(nn.Module):
 		super().__init__()
 		self.layers = nn.ModuleList(args)
 
-	def forward(self, feature_map : Tensor, attribute_embedding : Embedding, id_embedding : Embedding) -> Tensor:
+	def forward(self, feature_map : Tensor, attribute_embedding : Embedding, identity_embedding : Embedding) -> Tensor:
 		for layer in self.layers:
 			if isinstance(layer, AADLayer):
-				feature_map = layer(feature_map, attribute_embedding, id_embedding)
+				feature_map = layer(feature_map, attribute_embedding, identity_embedding)
 			else:
 				feature_map = layer(feature_map)
 		return feature_map
