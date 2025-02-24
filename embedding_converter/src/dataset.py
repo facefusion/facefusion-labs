@@ -2,7 +2,7 @@ import glob
 
 from torch import Tensor
 from torch.utils.data import Dataset
-from torchvision import transforms, io
+from torchvision import io, transforms
 
 from .types import Batch
 
