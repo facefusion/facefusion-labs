@@ -1,23 +1,21 @@
 import configparser
 
-import cv2
 import torch
+from torch import Tensor
+from torchvision import io
 
-from .helper import calc_embedding, convert_to_tensor, convert_to_vision_frame
+from .helper import calc_embedding
 from .models.generator import Generator
-from .types import EmbedderModule, GeneratorModule, VisionFrame
+from .types import EmbedderModule, GeneratorModule
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 
 
-def run_swap(generator : GeneratorModule, embedder : EmbedderModule, source_vision_frame : VisionFrame, target_vision_frame : VisionFrame) -> VisionFrame:
-	source_tensor = convert_to_tensor(source_vision_frame)
-	target_tensor = convert_to_tensor(target_vision_frame)
+def run_swap(generator : GeneratorModule, embedder : EmbedderModule, source_tensor : Tensor, target_tensor : Tensor) -> Tensor:
 	source_embedding = calc_embedding(embedder, source_tensor, (0, 0, 0, 0))
 	output_tensor = generator(source_embedding, target_tensor)[0]
-	output_vision_frame = convert_to_vision_frame(output_tensor)
-	return output_vision_frame
+	return output_tensor
 
 
 def infer() -> None:
@@ -34,7 +32,7 @@ def infer() -> None:
 	embedder = torch.jit.load(embedder_path, map_location = 'cpu') # type:ignore[no-untyped-call]
 	embedder.eval()
 
-	source_vision_frame = cv2.imread(source_path)
-	target_vision_frame = cv2.imread(target_path)
-	output_vision_frame = run_swap(generator, embedder, source_vision_frame, target_vision_frame)
-	cv2.imwrite(output_path, output_vision_frame)
+	source_tensor = io.read_image(source_path)
+	target_tensor = io.read_image(target_path)
+	output_tensor = run_swap(generator, embedder, source_tensor, target_tensor)
+	io.write_jpeg(output_tensor, output_path)
