@@ -11,7 +11,7 @@ from lightning.pytorch.tuner import Tuner
 from torch import Tensor, nn
 from torch.utils.data import DataLoader, Dataset, random_split
 
-from .dataset import DynamicDataset
+from .dataset import StaticDataset
 from .models.embedding_converter import EmbeddingConverter
 from .types import Batch, Embedding, OptimizerConfig
 
@@ -24,11 +24,13 @@ class EmbeddingConverterTrainer(lightning.LightningModule):
 		super(EmbeddingConverterTrainer, self).__init__()
 		source_path = CONFIG.get('training.model', 'source_path')
 		target_path = CONFIG.get('training.model', 'target_path')
+		learning_rate = CONFIG.getfloat('training.trainer', 'learning_rate')
 
 		self.embedding_converter = EmbeddingConverter()
 		self.source_embedder = torch.jit.load(source_path, map_location = 'cpu') # type:ignore[no-untyped-call]
 		self.target_embedder = torch.jit.load(target_path, map_location = 'cpu') # type:ignore[no-untyped-call]
 		self.mse_loss = nn.MSELoss()
+		self.lr = learning_rate
 
 	def forward(self, source_embedding : Embedding) -> Embedding:
 		return self.embedding_converter(source_embedding)
@@ -115,7 +117,7 @@ def train() -> None:
 	dataset_file_pattern = CONFIG.get('training.dataset', 'file_pattern')
 	output_resume_path = CONFIG.get('training.output', 'resume_path')
 
-	dataset = DynamicDataset(dataset_file_pattern)
+	dataset = StaticDataset(dataset_file_pattern)
 	training_loader, validation_loader = create_loaders(dataset)
 	embedding_converter_trainer = EmbeddingConverterTrainer()
 	trainer = create_trainer()
