@@ -3,6 +3,7 @@ import configparser
 from torch import Tensor, nn
 
 from ..networks.aad import AAD
+from ..networks.mask import MaskNet
 from ..networks.unet import UNet, UNetPro
 from ..types import Attributes, Embedding
 
@@ -23,12 +24,15 @@ class Generator(nn.Module):
 		if encoder_type == 'unet-pro':
 			self.encoder = UNetPro()
 		self.generator = AAD(identity_channels, output_channels, num_blocks)
+		self.masker = MaskNet()
 		self.encoder.apply(init_weight)
 		self.generator.apply(init_weight)
 
 	def forward(self, source_embedding : Embedding, target_tensor : Tensor) -> Tensor:
 		target_attributes = self.get_attributes(target_tensor)
+		mask_tensor = self.masker(target_attributes[-1])
 		output_tensor = self.generator(source_embedding, target_attributes)
+		output_tensor = output_tensor * mask_tensor + target_tensor * (1 - mask_tensor)
 		return output_tensor
 
 	def get_attributes(self, input_tensor : Tensor) -> Attributes:
