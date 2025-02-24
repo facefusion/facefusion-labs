@@ -77,7 +77,6 @@ gaze_weight = 0
 learning_rate = 0.0004
 max_epochs = 50
 precision = 16-mixed
-automatic_optimization = false
 preview_frequency = 250
 ```
 

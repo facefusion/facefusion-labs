@@ -47,6 +47,7 @@ target_path = .models/arcface_simswap.pt
 [training.trainer]
 learning_rate = 0.001
 max_epochs = 4096
+precision = 16-mixed
 ```
 
 ```
