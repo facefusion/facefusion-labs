@@ -1,6 +1,5 @@
-from typing import Any, Tuple, TypeAlias
+from typing import Tuple, TypeAlias
 
-from numpy.typing import NDArray
 from torch import Tensor
 from torch.nn import Module
 
@@ -11,8 +10,6 @@ Embedding : TypeAlias = Tensor
 FaceLandmark203 : TypeAlias = Tensor
 
 Padding : TypeAlias = Tuple[int, int, int, int]
-
-VisionFrame : TypeAlias = NDArray[Any]
 
 GeneratorModule : TypeAlias = Module
 EmbedderModule : TypeAlias = Module
