@@ -142,7 +142,6 @@ def create_trainer() -> Trainer:
 	trainer_precision = CONFIG.get('training.trainer', 'precision')
 	logger = TensorBoardLogger('.logs', name = 'face_swapper')
 
-	os.makedirs(output_directory_path, exist_ok = True)
 	return Trainer(
 		logger = logger,
 		log_every_n_steps = 10,
