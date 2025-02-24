@@ -3,7 +3,7 @@ import configparser
 from torch import Tensor, nn
 
 from ..networks.aad import AAD
-from ..networks.mask import MaskNet
+from ..networks.masknet import MaskNet
 from ..networks.unet import UNet, UNetPro
 from ..types import Attributes, Embedding
 
