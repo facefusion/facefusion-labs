@@ -15,8 +15,8 @@ class DynamicDataset(Dataset[Tensor]):
 		self.transforms = self.compose_transforms()
 
 	def __getitem__(self, index : int) -> Batch:
-		image_path = random.choice(self.file_paths)
-		vision_frame = cv2.imread(image_path)
+		file_path = random.choice(self.file_paths)
+		vision_frame = cv2.imread(file_path)
 		return self.transforms(vision_frame)
 
 	def __len__(self) -> int:

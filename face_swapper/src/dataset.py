@@ -16,12 +16,12 @@ class DynamicDataset(Dataset[Tensor]):
 		self.batch_ratio = batch_ratio
 
 	def __getitem__(self, index : int) -> Batch:
-		source_image_path = self.file_paths[index]
+		file_path = self.file_paths[index]
 
 		if random.random() < self.batch_ratio:
-			return self.prepare_equal_batch(source_image_path)
+			return self.prepare_equal_batch(file_path)
 
-		return self.prepare_different_batch(source_image_path)
+		return self.prepare_different_batch(file_path)
 
 	def __len__(self) -> int:
 		return len(self.file_paths)
