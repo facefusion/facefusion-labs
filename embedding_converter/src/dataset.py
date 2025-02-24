@@ -1,5 +1,4 @@
 import glob
-import random
 
 import cv2
 from torch import Tensor
