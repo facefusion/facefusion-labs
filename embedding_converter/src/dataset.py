@@ -30,6 +30,6 @@ class DynamicDataset(Dataset[Tensor]):
 			transforms.Resize((112, 112), interpolation = transforms.InterpolationMode.BICUBIC),
 			transforms.ColorJitter(brightness = 0.2, contrast = 0.2, saturation = 0.2, hue = 0.1),
 			transforms.ToTensor(),
-			transforms.Lambda(lambda temp_tensor : temp_tensor[[2, 1, 0], :, :]),
+			transforms.Lambda(lambda temp_tensor: temp_tensor[[2, 1, 0], :, :]),
 			transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 		])
