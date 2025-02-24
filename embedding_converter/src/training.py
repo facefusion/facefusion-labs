@@ -79,9 +79,9 @@ def create_loaders(dataset : Dataset[Tensor]) -> Tuple[DataLoader[Tensor], DataL
 
 
 def split_dataset(dataset : Dataset[Tensor]) -> Tuple[Dataset[Tensor], Dataset[Tensor]]:
-	loader_split_ratio = CONFIG.getfloat('training.loader', 'split_ratio')
+	split_ratio = CONFIG.getfloat('training.loader', 'split_ratio')
 	dataset_size = len(dataset) # type:ignore[arg-type]
-	training_size = int(dataset_size * loader_split_ratio)
+	training_size = int(dataset_size * split_ratio)
 	validation_size = int(dataset_size - training_size)
 	training_dataset, validate_dataset = random_split(dataset, [ training_size, validation_size ])
 	return training_dataset, validate_dataset
