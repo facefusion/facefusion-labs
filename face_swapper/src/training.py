@@ -26,7 +26,6 @@ CONFIG.read('config.ini')
 class FaceSwapperTrainer(lightning.LightningModule):
 	def __init__(self) -> None:
 		super().__init__()
-		automatic_optimization = CONFIG.getboolean('training.trainer', 'automatic_optimization')
 		embedder_path = CONFIG.get('training.model', 'embedder_path')
 
 		self.generator = Generator()
@@ -39,7 +38,7 @@ class FaceSwapperTrainer(lightning.LightningModule):
 		self.pose_loss = PoseLoss()
 		self.gaze_loss = GazeLoss()
 		self.embedder = torch.jit.load(embedder_path, map_location = 'cpu') # type:ignore[no-untyped-call]
-		self.automatic_optimization = automatic_optimization
+		self.automatic_optimization = False
 
 	def forward(self, target_tensor : Tensor, source_embedding : Embedding) -> Tensor:
 		output_tensor = self.generator(source_embedding, target_tensor)
