@@ -9,13 +9,13 @@ from torchvision import transforms
 from .types import Batch
 
 
-class DynamicDataset(Dataset[Tensor]):
+class StaticDataset(Dataset[Tensor]):
 	def __init__(self, file_pattern : str) -> None:
 		self.file_paths = glob.glob(file_pattern)
 		self.transforms = self.compose_transforms()
 
 	def __getitem__(self, index : int) -> Batch:
-		file_path = random.choice(self.file_paths)
+		file_path = self.file_paths[index]
 		vision_frame = cv2.imread(file_path)
 		return self.transforms(vision_frame)
 
