@@ -26,7 +26,7 @@ def infer() -> None:
 	output_path = CONFIG.get('inferencing', 'output_path')
 
 	state_dict = torch.load(generator_path).get('state_dict').get('generator')
-	generator = Generator()
+	generator, _ = Generator()
 	generator.load_state_dict(state_dict)
 	generator.eval()
 	embedder = torch.jit.load(embedder_path, map_location = 'cpu') # type:ignore[no-untyped-call]

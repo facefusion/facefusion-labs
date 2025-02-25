@@ -24,4 +24,4 @@ def export() -> None:
 	model.ir_version = torch.tensor(ir_version)
 	source_tensor = torch.randn(1, 512)
 	target_tensor = torch.randn(1, 3, 256, 256)
-	torch.onnx.export(model, (source_tensor, target_tensor), target_path, input_names = [ 'source', 'target' ], output_names = [ 'output' ], opset_version = opset_version)
+	torch.onnx.export(model, (source_tensor, target_tensor), target_path, input_names = [ 'source', 'target' ], output_names = [ 'output', 'mask' ], opset_version = opset_version)

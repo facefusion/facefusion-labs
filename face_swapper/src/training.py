@@ -40,9 +40,9 @@ class FaceSwapperTrainer(lightning.LightningModule):
 		self.embedder = torch.jit.load(embedder_path, map_location = 'cpu') # type:ignore[no-untyped-call]
 		self.automatic_optimization = False
 
-	def forward(self, target_tensor : Tensor, source_embedding : Embedding) -> Tensor:
-		output_tensor = self.generator(source_embedding, target_tensor)
-		return output_tensor
+	def forward(self, target_tensor : Tensor, source_embedding : Embedding) -> Tuple[Tensor, Tensor]:
+		output_tensor, mask_tensor = self.generator(source_embedding, target_tensor)
+		return output_tensor, mask_tensor
 
 	def configure_optimizers(self) -> Tuple[Optimizer, Optimizer]:
 		learning_rate = CONFIG.getfloat('training.trainer', 'learning_rate')
@@ -57,7 +57,7 @@ class FaceSwapperTrainer(lightning.LightningModule):
 		generator_optimizer, discriminator_optimizer = self.optimizers() #type:ignore[attr-defined]
 		source_embedding = calc_embedding(self.embedder, source_tensor, (0, 0, 0, 0))
 		target_attributes = self.generator.get_attributes(target_tensor)
-		generator_output_tensor = self.generator(source_embedding, target_tensor)
+		generator_output_tensor, generator_mask_tensor = self.generator(source_embedding, target_tensor)
 		generator_output_attributes = self.generator.get_attributes(generator_output_tensor)
 		discriminator_output_tensors = self.discriminator(generator_output_tensor)
 
@@ -82,7 +82,7 @@ class FaceSwapperTrainer(lightning.LightningModule):
 		discriminator_optimizer.step()
 
 		if self.global_step % preview_frequency == 0:
-			self.generate_preview(source_tensor, target_tensor, generator_output_tensor)
+			self.generate_preview(source_tensor, target_tensor, generator_output_tensor, generator_mask_tensor)
 
 		self.log('generator_loss', generator_loss, prog_bar = True)
 		self.log('discriminator_loss', discriminator_loss, prog_bar = True)
@@ -97,18 +97,19 @@ class FaceSwapperTrainer(lightning.LightningModule):
 	def validation_step(self, batch : Batch, batch_index : int) -> Tensor:
 		source_tensor, target_tensor = batch
 		source_embedding = calc_embedding(self.embedder, source_tensor, (0, 0, 0, 0))
-		output_tensor = self.generator(source_embedding, target_tensor)
+		output_tensor, _ = self.generator(source_embedding, target_tensor)
 		output_embedding = calc_embedding(self.embedder, output_tensor, (0, 0, 0, 0))
 		validation = (nn.functional.cosine_similarity(source_embedding, output_embedding).mean() + 1) * 0.5
 		self.log('validation', validation)
 		return validation
 
-	def generate_preview(self, source_tensor : Tensor, target_tensor : Tensor, output_tensor : Tensor) -> None:
+	def generate_preview(self, source_tensor : Tensor, target_tensor : Tensor, output_tensor : Tensor, mask_tensor : Tensor) -> None:
 		preview_limit = 8
 		preview_cells = []
+		mask_tensor = mask_tensor.repeat(1, 3, 1, 1)
 
-		for source_tensor, target_tensor, output_tensor in zip(source_tensor[:preview_limit], target_tensor[:preview_limit], output_tensor[:preview_limit]):
-			preview_cell = torch.cat([ source_tensor, target_tensor, output_tensor] , dim = 2)
+		for source_tensor, target_tensor, output_tensor, mask_tensor in zip(source_tensor[:preview_limit], target_tensor[:preview_limit], output_tensor[:preview_limit], mask_tensor[:preview_limit]):
+			preview_cell = torch.cat([ source_tensor, target_tensor, output_tensor, mask_tensor] , dim = 2)
 			preview_cells.append(preview_cell)
 
 		preview_cells = torch.cat(preview_cells, dim = 1).unsqueeze(0)
