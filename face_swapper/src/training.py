@@ -9,7 +9,6 @@ from lightning import Trainer
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
 from torch import Tensor, nn
-from torch.optim import Optimizer
 from torch.utils.data import DataLoader, Dataset, random_split
 
 from .dataset import DynamicDataset
