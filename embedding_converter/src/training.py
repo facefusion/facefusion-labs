@@ -53,8 +53,7 @@ class EmbeddingConverterTrainer(lightning.LightningModule):
 		learning_rate = CONFIG.getfloat('training.trainer', 'learning_rate')
 		optimizer = torch.optim.Adam(self.parameters(), lr = learning_rate)
 		scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
-
-		return\
+		config =\
 		{
 			'optimizer': optimizer,
 			'lr_scheduler':
@@ -65,6 +64,8 @@ class EmbeddingConverterTrainer(lightning.LightningModule):
 				'frequency': 1
 			}
 		}
+
+		return config
 
 
 def create_loaders(dataset : Dataset[Tensor]) -> Tuple[DataLoader[Tensor], DataLoader[Tensor]]:
