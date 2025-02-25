@@ -17,7 +17,7 @@ from .helper import calc_embedding
 from .models.discriminator import Discriminator
 from .models.generator import Generator
 from .models.loss import AdversarialLoss, AttributeLoss, DiscriminatorLoss, GazeLoss, IdentityLoss, PoseLoss, ReconstructionLoss
-from .types import Batch, Embedding
+from .types import Batch, Embedding, OptimizerConfig
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -44,11 +44,36 @@ class FaceSwapperTrainer(lightning.LightningModule):
 		output_tensor = self.generator(source_embedding, target_tensor)
 		return output_tensor
 
-	def configure_optimizers(self) -> Tuple[Optimizer, Optimizer]:
+	def configure_optimizers(self) -> Tuple[OptimizerConfig, OptimizerConfig]:
 		learning_rate = CONFIG.getfloat('training.trainer', 'learning_rate')
 		generator_optimizer = torch.optim.Adam(self.generator.parameters(), lr = learning_rate, betas = (0.0, 0.999), weight_decay = 1e-4)
 		discriminator_optimizer = torch.optim.Adam(self.discriminator.parameters(), lr = learning_rate, betas = (0.0, 0.999), weight_decay = 1e-4)
-		return generator_optimizer, discriminator_optimizer
+		generator_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(generator_optimizer)
+		discriminator_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(discriminator_optimizer)
+
+		generator_config =\
+		{
+			'optimizer': generator_optimizer,
+			'lr_scheduler':
+			{
+				'scheduler': generator_scheduler,
+				'monitor': 'generator_loss',
+				'interval': 'step',
+				'frequency': 1000
+			}
+		}
+		discriminator_config =\
+		{
+			'optimizer': discriminator_optimizer,
+			'lr_scheduler':
+			{
+				'scheduler': discriminator_scheduler,
+				'monitor': 'discriminator_loss',
+				'interval': 'step',
+				'frequency': 1000
+			}
+		}
+		return generator_config, discriminator_config
 
 	def training_step(self, batch : Batch, batch_index : int) -> Tensor:
 		preview_frequency = CONFIG.getfloat('training.trainer', 'preview_frequency')
