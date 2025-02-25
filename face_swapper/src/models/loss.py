@@ -78,8 +78,8 @@ class ReconstructionLoss(nn.Module):
 		reconstruction_weight = CONFIG.getfloat('training.losses', 'reconstruction_weight')
 		temp_tensors = []
 
-		for _source_tensor, _target_tensor in zip(source_tensor, target_tensor):
-			temp_tensor = self.mse_loss(_source_tensor, _target_tensor) * torch.equal(_source_tensor, _target_tensor)
+		for __source_tensor__, __target_tensor__ in zip(source_tensor, target_tensor):
+			temp_tensor = self.mse_loss(__source_tensor__, __target_tensor__) * torch.equal(__source_tensor__, __target_tensor__)
 			temp_tensors.append(temp_tensor)
 
 		reconstruction_loss = torch.stack(temp_tensors).mean() * 0.5
