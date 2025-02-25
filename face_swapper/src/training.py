@@ -67,7 +67,7 @@ class FaceSwapperTrainer(lightning.LightningModule):
 		identity_loss, weighted_identity_loss = self.identity_loss(generator_output_tensor, source_tensor)
 		pose_loss, weighted_pose_loss = self.pose_loss(target_tensor, generator_output_tensor)
 		gaze_loss, weighted_gaze_loss = self.gaze_loss(target_tensor, generator_output_tensor)
-		generator_loss = weighted_adversarial_loss + weighted_attribute_loss + weighted_reconstruction_loss + weighted_identity_loss + weighted_pose_loss
+		generator_loss = weighted_adversarial_loss + weighted_attribute_loss + weighted_reconstruction_loss + weighted_identity_loss + weighted_pose_loss + weighted_gaze_loss
 
 		generator_optimizer.zero_grad()
 		self.manual_backward(generator_loss)
