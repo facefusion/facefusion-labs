@@ -25,7 +25,7 @@ class Discriminator(nn.Module):
 		discriminators = nn.ModuleList()
 
 		for _ in range(num_discriminators):
-			discriminator = NLD(input_channels, num_filters, num_layers, kernel_size).nld
+			discriminator = NLD(input_channels, num_filters, num_layers, kernel_size).sequences
 			discriminators.append(discriminator)
 
 		return discriminators
