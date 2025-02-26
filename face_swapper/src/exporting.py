@@ -3,7 +3,7 @@ from os import makedirs
 
 import torch
 
-from .models.generator import Generator
+from .training import FaceSwapperTrainer
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -17,9 +17,7 @@ def export() -> None:
 	opset_version = CONFIG.getint('exporting', 'opset_version')
 
 	makedirs(directory_path, exist_ok = True)
-	state_dict = torch.load(source_path, map_location = 'cpu').get('state_dict').get('generator')
-	model = Generator()
-	model.load_state_dict(state_dict)
+	model = FaceSwapperTrainer.load_from_checkpoint(source_path, map_location = 'cpu')
 	model.eval()
 	model.ir_version = torch.tensor(ir_version)
 	source_tensor = torch.randn(1, 512)
