@@ -194,6 +194,9 @@ def train() -> None:
 	dataset_batch_ratio = CONFIG.getfloat('training.dataset', 'batch_ratio')
 	output_resume_path = CONFIG.get('training.output', 'resume_path')
 
+	if torch.cuda.is_available():
+		torch.set_float32_matmul_precision('high')
+
 	dataset = DynamicDataset(dataset_file_pattern, dataset_batch_ratio)
 	training_loader, validation_loader = create_loaders(dataset)
 	face_swapper_trainer = FaceSwapperTrainer()

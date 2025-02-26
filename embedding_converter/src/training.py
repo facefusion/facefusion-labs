@@ -118,6 +118,9 @@ def train() -> None:
 	dataset_file_pattern = CONFIG.get('training.dataset', 'file_pattern')
 	output_resume_path = CONFIG.get('training.output', 'resume_path')
 
+	if torch.cuda.is_available():
+		torch.set_float32_matmul_precision('high')
+
 	dataset = StaticDataset(dataset_file_pattern)
 	training_loader, validation_loader = create_loaders(dataset)
 	embedding_converter_trainer = EmbeddingConverterTrainer()
