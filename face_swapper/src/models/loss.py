@@ -6,7 +6,7 @@ from pytorch_msssim import ssim
 from torch import Tensor, nn
 
 from ..helper import calc_embedding
-from ..types import Attributes, EmbedderModule, FaceLandmark203
+from ..types import Attributes, EmbedderModule, FaceLandmark203, LandmarkerModule, MotionExtractorModule
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -104,10 +104,9 @@ class IdentityLoss(nn.Module):
 
 
 class PoseLoss(nn.Module):
-	def __init__(self) -> None:
+	def __init__(self, motion_extractor : MotionExtractorModule) -> None:
 		super().__init__()
-		motion_extractor_path = CONFIG.get('training.model', 'motion_extractor_path')
-		self.motion_extractor = torch.jit.load(motion_extractor_path, map_location = 'cpu') # type:ignore[no-untyped-call]
+		self.motion_extractor = motion_extractor
 		self.mse_loss = nn.MSELoss()
 
 	def forward(self, target_tensor : Tensor, output_tensor : Tensor, ) -> Tuple[Tensor, Tensor]:
@@ -132,10 +131,9 @@ class PoseLoss(nn.Module):
 
 
 class GazeLoss(nn.Module):
-	def __init__(self) -> None:
+	def __init__(self, landmarker : LandmarkerModule) -> None:
 		super().__init__()
-		landmarker_path = CONFIG.get('training.model', 'landmarker_path')
-		self.landmarker = torch.jit.load(landmarker_path, map_location = 'cpu') # type:ignore[no-untyped-call]
+		self.landmarker = landmarker
 		self.mse_loss = nn.MSELoss()
 
 	def forward(self, target_tensor : Tensor, output_tensor : Tensor, ) -> Tuple[Tensor, Tensor]:
