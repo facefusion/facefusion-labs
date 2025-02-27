@@ -6,6 +6,7 @@ from torch import Tensor
 from torch.utils.data import Dataset
 from torchvision import io, transforms
 
+from .helper import warp_tensor
 from .types import Batch
 
 
@@ -35,6 +36,7 @@ class DynamicDataset(Dataset[Tensor]):
 			transforms.ColorJitter(brightness = 0.2, contrast = 0.2, saturation = 0.2, hue = 0.1),
 			transforms.RandomAffine(4, translate = (0.01, 0.01), scale = (0.98, 1.02), shear = (1, 1)),
 			transforms.ToTensor(),
+			lambda temp: warp_tensor(temp.unsqueeze(0), '__vgg_face_hq__to__arcface_128_v2__').squeeze(0),
 			transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 		])
 
