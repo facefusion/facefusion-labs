@@ -1,4 +1,4 @@
-from typing import Any, Tuple, TypeAlias
+from typing import Any, Dict, Tuple, TypeAlias
 
 from torch import Tensor
 from torch.nn import Module
@@ -17,3 +17,5 @@ LandmarkerModule : TypeAlias = Module
 MotionExtractorModule : TypeAlias = Module
 
 OptimizerConfig : TypeAlias = Any
+
+AlignmentMatrices : TypeAlias = Dict[str, Tensor]
