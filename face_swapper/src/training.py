@@ -28,16 +28,16 @@ class FaceSwapperTrainer(lightning.LightningModule):
 		super().__init__()
 		embedder_path = CONFIG.get('training.model', 'embedder_path')
 
+		self.embedder = torch.jit.load(embedder_path, map_location='cpu')  # type:ignore[no-untyped-call]
 		self.generator = Generator()
 		self.discriminator = Discriminator()
 		self.discriminator_loss = DiscriminatorLoss()
 		self.adversarial_loss = AdversarialLoss()
 		self.attribute_loss = AttributeLoss()
-		self.reconstruction_loss = ReconstructionLoss()
-		self.identity_loss = IdentityLoss()
+		self.reconstruction_loss = ReconstructionLoss(self.embedder)
+		self.identity_loss = IdentityLoss(self.embedder)
 		self.pose_loss = PoseLoss()
 		self.gaze_loss = GazeLoss()
-		self.embedder = torch.jit.load(embedder_path, map_location = 'cpu') # type:ignore[no-untyped-call]
 		self.automatic_optimization = False
 
 	def forward(self, source_embedding : Embedding, target_tensor : Tensor) -> Tensor:
