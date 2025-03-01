@@ -129,9 +129,9 @@ class FaceSwapperTrainer(lightning.LightningModule):
 		source_embedding = calc_embedding(self.embedder, source_tensor, (0, 0, 0, 0))
 		output_tensor = self.generator(source_embedding, target_tensor)
 		output_embedding = calc_embedding(self.embedder, output_tensor, (0, 0, 0, 0))
-		validation = (nn.functional.cosine_similarity(source_embedding, output_embedding).mean() + 1) * 0.5
-		self.log('validation', validation)
-		return validation
+		validation_score = (nn.functional.cosine_similarity(source_embedding, output_embedding).mean() + 1) * 0.5
+		self.log('validation_score', validation_score, prog_bar = True)
+		return validation_score
 
 	def generate_preview(self, source_tensor : Tensor, target_tensor : Tensor, output_tensor : Tensor) -> None:
 		preview_limit = 8

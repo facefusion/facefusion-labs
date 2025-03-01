@@ -46,9 +46,9 @@ class EmbeddingConverterTrainer(lightning.LightningModule):
 		with torch.no_grad():
 			source_embedding = self.source_embedder(batch)
 		output_embedding = self(source_embedding)
-		validation = (nn.functional.cosine_similarity(source_embedding, output_embedding).mean() + 1) * 0.5
-		self.log('validation', validation, prog_bar = True)
-		return validation
+		validation_score = (nn.functional.cosine_similarity(source_embedding, output_embedding).mean() + 1) * 0.5
+		self.log('validation_score', validation_score, prog_bar = True)
+		return validation_score
 
 	def configure_optimizers(self) -> OptimizerConfig:
 		learning_rate = CONFIG.getfloat('training.trainer', 'learning_rate')
