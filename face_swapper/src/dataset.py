@@ -36,7 +36,7 @@ class DynamicDataset(Dataset[Tensor]):
 			transforms.ColorJitter(brightness = 0.2, contrast = 0.2, saturation = 0.2, hue = 0.1),
 			transforms.RandomAffine(4, translate = (0.01, 0.01), scale = (0.98, 1.02), shear = (1, 1)),
 			transforms.ToTensor(),
-			lambda temp: warp_tensor(temp.unsqueeze(0), 'vgg_face_hq_to_arcface_128_v2').squeeze(0),
+			transforms.Lambda(lambda temp: warp_tensor(temp.unsqueeze(0), 'vgg_face_hq_to_arcface_128_v2').squeeze(0)),
 			transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 		])
 
