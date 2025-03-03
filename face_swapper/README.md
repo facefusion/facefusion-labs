@@ -28,7 +28,7 @@ This `config.ini` utilizes the MegaFace dataset to train the Face Swapper model.
 ```
 [training.dataset]
 file_pattern = .datasets/vggface2/**/*.jpg
-warp_matrix = vgg_face_hq_to_arcface_128_v2
+warp_template = vgg_face_hq_to_arcface_128_v2
 batch_ratio = 0.2
 ```
 

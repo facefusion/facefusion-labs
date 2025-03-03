@@ -18,5 +18,5 @@ MotionExtractorModule : TypeAlias = Module
 
 OptimizerConfig : TypeAlias = Any
 
-WarpMatrix = Literal['vgg_face_hq_to_arcface_128_v2', 'arcface_128_v2_to_arcface_112_v2']
-WarpMatrixSet : TypeAlias = Dict[WarpMatrix, Tensor]
+WarpTemplate = Literal['vgg_face_hq_to_arcface_128_v2', 'arcface_128_v2_to_arcface_112_v2']
+WarpTemplateSet : TypeAlias = Dict[WarpTemplate, Tensor]
