@@ -17,7 +17,7 @@ from .helper import calc_embedding
 from .models.discriminator import Discriminator
 from .models.generator import Generator
 from .models.loss import AdversarialLoss, AttributeLoss, DiscriminatorLoss, GazeLoss, IdentityLoss, PoseLoss, ReconstructionLoss
-from .types import Batch, Embedding, OptimizerConfig, WarpMatrix
+from .types import Batch, Embedding, OptimizerConfig, WarpTemplate
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -194,14 +194,14 @@ def create_trainer() -> Trainer:
 
 def train() -> None:
 	dataset_file_pattern = CONFIG.get('training.dataset', 'file_pattern')
-	dataset_warp_matrix = cast(WarpMatrix, CONFIG.get('training.dataset', 'warp_matrix'))
+	dataset_warp_template = cast(WarpTemplate, CONFIG.get('training.dataset', 'warp_template'))
 	dataset_batch_ratio = CONFIG.getfloat('training.dataset', 'batch_ratio')
 	output_resume_path = CONFIG.get('training.output', 'resume_path')
 
 	if torch.cuda.is_available():
 		torch.set_float32_matmul_precision('high')
 
-	dataset = DynamicDataset(dataset_file_pattern, dataset_warp_matrix, dataset_batch_ratio)
+	dataset = DynamicDataset(dataset_file_pattern, dataset_warp_template, dataset_batch_ratio)
 	training_loader, validation_loader = create_loaders(dataset)
 	face_swapper_trainer = FaceSwapperTrainer()
 	trainer = create_trainer()

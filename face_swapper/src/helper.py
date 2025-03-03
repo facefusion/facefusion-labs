@@ -1,9 +1,9 @@
 import torch
 from torch import Tensor, nn
 
-from .types import EmbedderModule, Embedding, Padding, WarpMatrix, WarpMatrixSet
+from .types import EmbedderModule, Embedding, Padding, WarpTemplate, WarpTemplateSet
 
-WARP_MATRIX_SET : WarpMatrixSet =\
+WARP_TEMPLATE_SET : WarpTemplateSet =\
 {
 	'vgg_face_hq_to_arcface_128_v2': torch.tensor(
 	[
@@ -18,10 +18,10 @@ WARP_MATRIX_SET : WarpMatrixSet =\
 }
 
 
-def warp_tensor(input_tensor : Tensor, warp_matrix : WarpMatrix) -> Tensor:
-	warp_matrix = WARP_MATRIX_SET.get(warp_matrix).repeat(input_tensor.shape[0], 1, 1)
-	grid = nn.functional.affine_grid(warp_matrix.to(input_tensor.device), list(input_tensor.shape))
-	output_tensor = nn.functional.grid_sample(input_tensor, grid, align_corners = False, padding_mode = 'reflection')
+def warp_tensor(input_tensor : Tensor, warp_template : WarpTemplate) -> Tensor:
+	normed_warp_template = WARP_TEMPLATE_SET.get(warp_template).repeat(input_tensor.shape[0], 1, 1)
+	affine_grid = nn.functional.affine_grid(normed_warp_template.to(input_tensor.device), list(input_tensor.shape))
+	output_tensor = nn.functional.grid_sample(input_tensor, affine_grid, align_corners = False, padding_mode = 'reflection')
 	return output_tensor
 
 

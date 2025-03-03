@@ -7,14 +7,14 @@ from torch.utils.data import Dataset
 from torchvision import io, transforms
 
 from .helper import warp_tensor
-from .types import Batch, WarpMatrix
+from .types import Batch, WarpTemplate
 
 
 class DynamicDataset(Dataset[Tensor]):
-	def __init__(self, file_pattern : str, warp_matrix : WarpMatrix, batch_ratio : float) -> None:
+	def __init__(self, file_pattern : str, warp_template : WarpTemplate, batch_ratio : float) -> None:
 		self.file_paths = glob.glob(file_pattern)
 		self.transforms = self.compose_transforms()
-		self.warp_matrix = warp_matrix
+		self.warp_template = warp_template
 		self.batch_ratio = batch_ratio
 
 	def __getitem__(self, index : int) -> Batch:
@@ -41,7 +41,7 @@ class DynamicDataset(Dataset[Tensor]):
 		])
 
 	def warp_tensor(self, temp_tensor : Tensor) -> Tensor:
-		return warp_tensor(temp_tensor.unsqueeze(0), self.warp_matrix).squeeze(0)
+		return warp_tensor(temp_tensor.unsqueeze(0), self.warp_template).squeeze(0)
 
 	def prepare_different_batch(self, source_path : str) -> Batch:
 		target_path = random.choice(self.file_paths)
