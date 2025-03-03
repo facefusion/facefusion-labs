@@ -1,5 +1,6 @@
 import configparser
 import os
+import warnings
 from typing import Tuple, cast
 
 import lightning
@@ -18,6 +19,8 @@ from .models.discriminator import Discriminator
 from .models.generator import Generator
 from .models.loss import AdversarialLoss, AttributeLoss, DiscriminatorLoss, GazeLoss, IdentityLoss, PoseLoss, ReconstructionLoss
 from .types import Batch, Embedding, OptimizerConfig, WarpTemplate
+
+warnings.filterwarnings("ignore", category=UserWarning, module="torch")
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
