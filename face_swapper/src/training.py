@@ -1,6 +1,6 @@
 import configparser
 import os
-from typing import cast, Tuple
+from typing import Tuple, cast
 
 import lightning
 import torch
