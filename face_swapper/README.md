@@ -42,7 +42,7 @@ split_ratio = 0.9995
 ```
 [training.model]
 embedder_path = .models/arcface.pt
-landmarker_path = .models/landmarker.pt
+gazer_path = .models/gazer.pt
 motion_extractor_path = .models/motion_extractor.pt
 ```
 
