@@ -38,7 +38,7 @@ class DynamicDataset(Dataset[Tensor]):
 		[
 			transforms.ToPILImage(),
 			transforms.Resize((256, 256), interpolation = transforms.InterpolationMode.BICUBIC),
-			AlterTransform(),
+			AugmentTransform(),
 			transforms.ToTensor(),
 			WarpTransform(self.warp_template),
 			transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -68,7 +68,7 @@ class DynamicDataset(Dataset[Tensor]):
 		return source_tensor, target_tensor
 
 
-class AlterTransform:
+class AugmentTransform:
 	def __init__(self) -> None:
 		self.transforms = self.compose_transforms()
 
