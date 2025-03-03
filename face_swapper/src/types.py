@@ -1,6 +1,5 @@
-from typing import Any, Dict, Tuple, TypeAlias
+from typing import Any, Dict, Tuple, TypeAlias, Type, Literal
 
-from jinja2.nodes import Literal
 from torch import Tensor
 from torch.nn import Module
 
