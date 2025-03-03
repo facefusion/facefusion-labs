@@ -18,4 +18,4 @@ MotionExtractorModule : TypeAlias = Module
 
 OptimizerConfig : TypeAlias = Any
 
-AlignmentMatrices : TypeAlias = Dict[str, Tensor]
+WarpMatrixSet : TypeAlias = Dict[str, Tensor]
