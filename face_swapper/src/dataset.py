@@ -40,7 +40,7 @@ class DynamicDataset(Dataset[Tensor]):
 			transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 		])
 
-	def warp_tensor(self, temp_tensor : Tensor):
+	def warp_tensor(self, temp_tensor : Tensor) -> Tensor:
 		return warp_tensor(temp_tensor.unsqueeze(0), self.warp_matrix).squeeze(0)
 
 	def prepare_different_batch(self, source_path : str) -> Batch:
