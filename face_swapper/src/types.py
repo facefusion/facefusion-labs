@@ -1,4 +1,4 @@
-from typing import Any, Dict, Tuple, TypeAlias
+from typing import Any, Dict, Literal, Tuple, TypeAlias
 
 from torch import Tensor
 from torch.nn import Module
@@ -18,4 +18,5 @@ MotionExtractorModule : TypeAlias = Module
 
 OptimizerConfig : TypeAlias = Any
 
-WarpMatrixSet : TypeAlias = Dict[str, Tensor]
+WarpTemplate = Literal['vgg_face_hq_to_arcface_128_v2', 'arcface_128_v2_to_arcface_112_v2']
+WarpTemplateSet : TypeAlias = Dict[WarpTemplate, Tensor]
