@@ -7,13 +7,14 @@ from torch.utils.data import Dataset
 from torchvision import io, transforms
 
 from .helper import warp_tensor
-from .types import Batch
+from .types import Batch, WarpMatrix
 
 
 class DynamicDataset(Dataset[Tensor]):
-	def __init__(self, file_pattern : str, batch_ratio : float) -> None:
+	def __init__(self, file_pattern : str, warp_matrix : WarpMatrix, batch_ratio : float) -> None:
 		self.file_paths = glob.glob(file_pattern)
 		self.transforms = self.compose_transforms()
+		self.warp_matrix = warp_matrix
 		self.batch_ratio = batch_ratio
 
 	def __getitem__(self, index : int) -> Batch:
@@ -27,8 +28,7 @@ class DynamicDataset(Dataset[Tensor]):
 	def __len__(self) -> int:
 		return len(self.file_paths)
 
-	@staticmethod
-	def compose_transforms() -> transforms:
+	def compose_transforms(self) -> transforms:
 		return transforms.Compose(
 		[
 			transforms.ToPILImage(),
@@ -36,9 +36,12 @@ class DynamicDataset(Dataset[Tensor]):
 			transforms.ColorJitter(brightness = 0.2, contrast = 0.2, saturation = 0.2, hue = 0.1),
 			transforms.RandomAffine(4, translate = (0.01, 0.01), scale = (0.98, 1.02), shear = (1, 1)),
 			transforms.ToTensor(),
-			transforms.Lambda(lambda temp_tensor: warp_tensor(temp_tensor.unsqueeze(0), 'vgg_face_hq_to_arcface_128_v2').squeeze(0)),
+			transforms.Lambda(self.warp_tensor),
 			transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 		])
+
+	def warp_tensor(self, temp_tensor : Tensor):
+		return warp_tensor(temp_tensor.unsqueeze(0), self.warp_matrix).squeeze(0)
 
 	def prepare_different_batch(self, source_path : str) -> Batch:
 		target_path = random.choice(self.file_paths)
