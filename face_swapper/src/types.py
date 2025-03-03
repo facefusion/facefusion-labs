@@ -1,5 +1,6 @@
 from typing import Any, Dict, Tuple, TypeAlias
 
+from jinja2.nodes import Literal
 from torch import Tensor
 from torch.nn import Module
 
@@ -18,4 +19,5 @@ MotionExtractorModule : TypeAlias = Module
 
 OptimizerConfig : TypeAlias = Any
 
-WarpMatrixSet : TypeAlias = Dict[str, Tensor]
+WarpMatrix = Literal['vgg_face_hq_to_arcface_128_v2', 'arcface_128_v2_to_arcface_112_v2']
+WarpMatrixSet : TypeAlias = Dict[WarpMatrix, Tensor]

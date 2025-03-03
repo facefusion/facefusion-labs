@@ -62,7 +62,7 @@ class FaceSwapperTrainer(lightning.LightningModule):
 			'lr_scheduler':
 			{
 				'scheduler': generator_scheduler,
-				'interval': 'step',
+				'interval': 'step'
 			}
 		}
 		discriminator_config =\
@@ -71,7 +71,7 @@ class FaceSwapperTrainer(lightning.LightningModule):
 			'lr_scheduler':
 			{
 				'scheduler': discriminator_scheduler,
-				'interval': 'step',
+				'interval': 'step'
 			}
 		}
 		return generator_config, discriminator_config
@@ -194,13 +194,14 @@ def create_trainer() -> Trainer:
 
 def train() -> None:
 	dataset_file_pattern = CONFIG.get('training.dataset', 'file_pattern')
+	dataset_warp_matrix = CONFIG.get('training.dataset', 'warp_matrix')
 	dataset_batch_ratio = CONFIG.getfloat('training.dataset', 'batch_ratio')
 	output_resume_path = CONFIG.get('training.output', 'resume_path')
 
 	if torch.cuda.is_available():
 		torch.set_float32_matmul_precision('high')
 
-	dataset = DynamicDataset(dataset_file_pattern, dataset_batch_ratio)
+	dataset = DynamicDataset(dataset_file_pattern, dataset_warp_matrix, dataset_batch_ratio)
 	training_loader, validation_loader = create_loaders(dataset)
 	face_swapper_trainer = FaceSwapperTrainer()
 	trainer = create_trainer()

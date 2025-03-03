@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor, nn
 
-from .types import EmbedderModule, Embedding, Padding, WarpMatrixSet
+from .types import EmbedderModule, Embedding, Padding, WarpMatrix, WarpMatrixSet
 
 WARP_MATRIX_SET : WarpMatrixSet =\
 {
@@ -18,9 +18,9 @@ WARP_MATRIX_SET : WarpMatrixSet =\
 }
 
 
-def warp_tensor(input_tensor : Tensor, alignment_matrix : str) -> Tensor:
-	matrix = WARP_MATRIX_SET.get(alignment_matrix).repeat(input_tensor.shape[0], 1, 1)
-	grid = nn.functional.affine_grid(matrix.to(input_tensor.device), list(input_tensor.shape))
+def warp_tensor(input_tensor : Tensor, warp_matrix : WarpMatrix) -> Tensor:
+	warp_matrix = WARP_MATRIX_SET.get(warp_matrix).repeat(input_tensor.shape[0], 1, 1)
+	grid = nn.functional.affine_grid(warp_matrix.to(input_tensor.device), list(input_tensor.shape))
 	output_tensor = nn.functional.grid_sample(input_tensor, grid, align_corners = False, padding_mode = 'reflection')
 	return output_tensor
 
