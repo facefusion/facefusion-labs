@@ -7,13 +7,13 @@ Batch : TypeAlias = Tuple[Tensor, Tensor]
 
 Attributes : TypeAlias = Tuple[Tensor, ...]
 Embedding : TypeAlias = Tensor
-FaceLandmark203 : TypeAlias = Tensor
+Gaze : TypeAlias = Tuple[Tensor, Tensor]
 
 Padding : TypeAlias = Tuple[int, int, int, int]
 
 GeneratorModule : TypeAlias = Module
 EmbedderModule : TypeAlias = Module
-LandmarkerModule : TypeAlias = Module
+GazerModule : TypeAlias = Module
 MotionExtractorModule : TypeAlias = Module
 
 OptimizerConfig : TypeAlias = Any
