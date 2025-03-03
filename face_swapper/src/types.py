@@ -1,4 +1,4 @@
-from typing import Any, Dict, Tuple, TypeAlias, Literal
+from typing import Any, Dict, Literal, Tuple, TypeAlias
 
 from torch import Tensor
 from torch.nn import Module
