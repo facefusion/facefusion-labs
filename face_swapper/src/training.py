@@ -30,11 +30,11 @@ class FaceSwapperTrainer(lightning.LightningModule):
 	def __init__(self) -> None:
 		super().__init__()
 		embedder_path = CONFIG.get('training.model', 'embedder_path')
-		landmarker_path = CONFIG.get('training.model', 'landmarker_path')
+		gazer_path = CONFIG.get('training.model', 'gazer_path')
 		motion_extractor_path = CONFIG.get('training.model', 'motion_extractor_path')
 
 		self.embedder = torch.jit.load(embedder_path, map_location = 'cpu').eval()  # type:ignore[no-untyped-call]
-		self.landmarker = torch.jit.load(landmarker_path, map_location = 'cpu').eval()  # type:ignore[no-untyped-call]
+		self.gazer = torch.jit.load(gazer_path, map_location = 'cpu').eval()  # type:ignore[no-untyped-call]
 		self.motion_extractor = torch.jit.load(motion_extractor_path, map_location = 'cpu').eval()  # type:ignore[no-untyped-call]
 
 		self.generator = Generator()
@@ -45,7 +45,7 @@ class FaceSwapperTrainer(lightning.LightningModule):
 		self.reconstruction_loss = ReconstructionLoss(self.embedder)
 		self.identity_loss = IdentityLoss(self.embedder)
 		self.pose_loss = PoseLoss(self.motion_extractor)
-		self.gaze_loss = GazeLoss(self.landmarker)
+		self.gaze_loss = GazeLoss(self.gazer)
 		self.automatic_optimization = False
 
 	def forward(self, source_embedding : Embedding, target_tensor : Tensor) -> Tensor:
