@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor, nn
 
-from .types import WarpMatrixSet, EmbedderModule, Embedding, Padding
+from .types import EmbedderModule, Embedding, Padding, WarpMatrixSet
 
 WARP_MATRIX_SET : WarpMatrixSet =\
 {
