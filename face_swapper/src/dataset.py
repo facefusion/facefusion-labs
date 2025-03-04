@@ -86,7 +86,7 @@ class AugmentTransform:
 				albumentations.MotionBlur(p = 0.1),
 				albumentations.MedianBlur(p = 0.1)
 			], p = 0.3),
-			albumentations.ColorJitter(p = 0.1),
+			albumentations.ColorJitter(p = 0.1)
 		])
 
 
@@ -97,4 +97,3 @@ class WarpTransform:
 	def __call__(self, input_tensor : Tensor) -> Tensor:
 		temp_tensor = input_tensor.unsqueeze(0)
 		return warp_tensor(temp_tensor, self.warp_template).squeeze(0)
-
