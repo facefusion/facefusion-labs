@@ -16,13 +16,14 @@ class Generator(nn.Module):
 		encoder_type = CONFIG.get('training.model.generator', 'encoder_type')
 		identity_channels = CONFIG.getint('training.model.generator', 'identity_channels')
 		output_channels = CONFIG.getint('training.model.generator', 'output_channels')
+		output_size = CONFIG.getint('training.model.generator', 'output_size')
 		num_blocks = CONFIG.getint('training.model.generator', 'num_blocks')
 
 		if encoder_type == 'unet':
 			self.encoder = UNet()
 		if encoder_type == 'unet-pro':
 			self.encoder = UNetPro()
-		self.generator = AAD(identity_channels, output_channels, num_blocks)
+		self.generator = AAD(identity_channels, output_channels, output_size, num_blocks)
 		self.encoder.apply(init_weight)
 		self.generator.apply(init_weight)
 
