@@ -53,6 +53,7 @@ motion_extractor_path = .models/motion_extractor.pt
 encoder_type = unet-pro
 identity_channels = 512
 output_channels = 4096
+output_size = 256
 num_blocks = 2
 ```
 
@@ -97,6 +98,7 @@ resume_path = .outputs/last.ckpt
 directory_path = .exports
 source_path = .outputs/last.ckpt
 target_path = .exports/face_swapper.onnx
+target_size = 256
 ir_version = 10
 opset_version = 15
 ```
