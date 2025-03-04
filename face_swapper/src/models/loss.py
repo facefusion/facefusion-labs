@@ -22,11 +22,11 @@ class DiscriminatorLoss(nn.Module):
 		negative_tensors = []
 
 		for discriminator_output_tensor in discriminator_output_tensors:
-			positive_tensor = torch.relu(discriminator_output_tensor[0] + 1).mean(dim = [ 1, 2, 3 ])
+			positive_tensor = torch.relu(discriminator_output_tensor + 1).mean(dim = [ 1, 2, 3 ])
 			positive_tensors.append(positive_tensor)
 
 		for discriminator_source_tensor in discriminator_source_tensors:
-			negative_tensor = torch.relu(1 - discriminator_source_tensor[0]).mean(dim = [ 1, 2, 3 ])
+			negative_tensor = torch.relu(1 - discriminator_source_tensor).mean(dim = [ 1, 2, 3 ])
 			negative_tensors.append(negative_tensor)
 
 		positive_loss = torch.stack(positive_tensors).mean()
