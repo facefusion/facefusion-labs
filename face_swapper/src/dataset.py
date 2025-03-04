@@ -36,9 +36,9 @@ class DynamicDataset(Dataset[Tensor]):
 	def compose_transforms(self) -> transforms:
 		return transforms.Compose(
 		[
+			AugmentTransform(),
 			transforms.ToPILImage(),
 			transforms.Resize((256, 256), interpolation = transforms.InterpolationMode.BICUBIC),
-			AugmentTransform(),
 			transforms.ToTensor(),
 			WarpTransform(self.warp_template),
 			transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -74,7 +74,7 @@ class AugmentTransform:
 
 	def __call__(self, input_tensor : Tensor) -> Tensor:
 		temp_tensor = input_tensor.numpy().transpose(1, 2, 0)
-		return self.transforms(temp_tensor).get('image')
+		return self.transforms(image = temp_tensor).get('image')
 
 	@staticmethod
 	def compose_transforms() -> albumentations.Compose:

@@ -17,7 +17,7 @@ from .dataset import DynamicDataset
 from .helper import calc_embedding
 from .models.discriminator import Discriminator
 from .models.generator import Generator
-from .models.loss import AdversarialLoss, AttributeLoss, DiscriminatorLoss, GazeLoss, IdentityLoss, PoseLoss, ReconstructionLoss
+from .models.loss import AdversarialLoss, AttributeLoss, DiscriminatorLoss, GazeLoss, IdentityLoss, MotionLoss, ReconstructionLoss
 from .types import Batch, BatchMode, Embedding, OptimizerConfig, WarpTemplate
 
 warnings.filterwarnings('ignore', category = UserWarning, module = 'torch')
@@ -44,7 +44,7 @@ class FaceSwapperTrainer(lightning.LightningModule):
 		self.attribute_loss = AttributeLoss()
 		self.reconstruction_loss = ReconstructionLoss(self.embedder)
 		self.identity_loss = IdentityLoss(self.embedder)
-		self.pose_loss = PoseLoss(self.motion_extractor)
+		self.motion_loss = MotionLoss(self.motion_extractor)
 		self.gaze_loss = GazeLoss(self.gazer)
 		self.automatic_optimization = False
 
@@ -95,9 +95,9 @@ class FaceSwapperTrainer(lightning.LightningModule):
 		attribute_loss, weighted_attribute_loss = self.attribute_loss(target_attributes, generator_output_attributes)
 		reconstruction_loss, weighted_reconstruction_loss = self.reconstruction_loss(source_tensor, target_tensor, generator_output_tensor)
 		identity_loss, weighted_identity_loss = self.identity_loss(generator_output_tensor, source_tensor)
-		pose_loss, weighted_pose_loss = self.pose_loss(target_tensor, generator_output_tensor)
+		pose_loss, weighted_pose_loss, expression_loss, weighted_expression_loss = self.motion_loss(target_tensor, generator_output_tensor)
 		gaze_loss, weighted_gaze_loss = self.gaze_loss(target_tensor, generator_output_tensor)
-		generator_loss = weighted_adversarial_loss + weighted_attribute_loss + weighted_reconstruction_loss + weighted_identity_loss + weighted_pose_loss + weighted_gaze_loss
+		generator_loss = weighted_adversarial_loss + weighted_attribute_loss + weighted_reconstruction_loss + weighted_identity_loss + weighted_pose_loss + weighted_gaze_loss + weighted_expression_loss
 
 		generator_optimizer.zero_grad()
 		self.manual_backward(generator_loss)
