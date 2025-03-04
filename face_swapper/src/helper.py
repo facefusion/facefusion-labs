@@ -27,7 +27,7 @@ def warp_tensor(input_tensor : Tensor, warp_template : WarpTemplate) -> Tensor:
 
 def calc_embedding(embedder : EmbedderModule, input_tensor : Tensor, padding : Padding) -> Embedding:
 	crop_tensor = warp_tensor(input_tensor, 'arcface_128_v2_to_arcface_112_v2')
-	crop_tensor = nn.functional.interpolate(crop_tensor, size = (112, 112), mode = 'area')
+	crop_tensor = nn.functional.interpolate(crop_tensor, size = 112, mode = 'area')
 	crop_tensor[:, :, :padding[0], :] = 0
 	crop_tensor[:, :, 112 - padding[1]:, :] = 0
 	crop_tensor[:, :, :, :padding[2]] = 0
