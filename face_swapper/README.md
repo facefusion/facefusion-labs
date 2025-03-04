@@ -31,6 +31,7 @@ file_pattern = .datasets/vggface2/**/*.jpg
 warp_template = vgg_face_hq_to_arcface_128_v2
 batch_mode = equal
 batch_ratio = 0.2
+resolution = 256
 ```
 
 ```

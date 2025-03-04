@@ -28,8 +28,9 @@ class AAD(nn.Module):
 		temp_tensors = self.pixel_shuffle_up_sample(source_embedding)
 
 		for index, layer in enumerate(self.layers[:-1]):
+			temp_shape = target_attributes[index + 1].shape[2:]
 			temp_tensor = layer(temp_tensors, target_attributes[index], source_embedding)
-			temp_tensors = nn.functional.interpolate(temp_tensor, scale_factor = 2, mode = 'bilinear', align_corners = False)
+			temp_tensors = nn.functional.interpolate(temp_tensor, temp_shape, mode = 'bilinear', align_corners = False)
 
 		temp_tensors = self.layers[-1](temp_tensors, target_attributes[-1], source_embedding)
 		output_tensor = torch.tanh(temp_tensors)
@@ -112,6 +113,9 @@ class FeatureModulation(nn.Module):
 
 	def forward(self, input_tensor : Tensor, attribute_embedding : Embedding, identity_embedding : Embedding) -> Tensor:
 		temp_tensor = self.instance_norm(input_tensor)
+
+		if attribute_embedding.shape[2:] != temp_tensor.shape[2:]:
+			attribute_embedding = nn.functional.interpolate(attribute_embedding, size = temp_tensor.shape[2:], mode = 'bilinear')
 
 		attribute_scale = self.conv1(attribute_embedding)
 		attribute_shift = self.conv2(attribute_embedding)
