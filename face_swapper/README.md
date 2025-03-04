@@ -70,8 +70,8 @@ adversarial_weight = 1.5
 attribute_weight = 10
 reconstruction_weight = 20
 identity_weight = 20
-pose_weight = 0
 gaze_weight = 0
+pose_weight = 0
 expression_weight = 0
 ```
 
