@@ -169,9 +169,11 @@ class GazeLoss(nn.Module):
 		return gaze_loss, weighted_gaze_loss
 
 	def detect_gaze(self, input_tensor : Tensor) -> Gaze:
-		crop_tensor = input_tensor[:, :, 60: 224, 16: 205]
+		transform_size = CONFIG.getint('training.dataset', 'transform_size')
+		crop_sizes = (torch.tensor([ 0.235, 0.875, 0.0625, 0.8 ]) * transform_size).int()
+		crop_tensor = input_tensor[:, :, crop_sizes[0]:crop_sizes[1], crop_sizes[2]:crop_sizes[3]]
 		crop_tensor = (crop_tensor + 1) * 0.5
 		crop_tensor = transforms.Normalize(mean = [ 0.485, 0.456, 0.406 ], std = [ 0.229, 0.224, 0.225 ])(crop_tensor)
-		crop_tensor = nn.functional.interpolate(crop_tensor, size = (448, 448), mode = 'bicubic')
+		crop_tensor = nn.functional.interpolate(crop_tensor, size = 448, mode = 'bicubic')
 		pitch_tensor, yaw_tensor = self.gazer(crop_tensor)
 		return pitch_tensor, yaw_tensor

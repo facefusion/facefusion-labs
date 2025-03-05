@@ -5,24 +5,45 @@ from ..types import Attributes, Embedding
 
 
 class AAD(nn.Module):
-	def __init__(self, identity_channels : int, output_channels : int, num_blocks : int) -> None:
+	def __init__(self, identity_channels : int, output_channels : int, output_size : int, num_blocks : int) -> None:
 		super().__init__()
+		self.identity_channels = identity_channels
+		self.output_channels = output_channels
+		self.output_size = output_size
+		self.num_blocks = num_blocks
 		self.pixel_shuffle_up_sample = PixelShuffleUpSample(identity_channels, output_channels)
-		self.layers = self.create_layers(identity_channels, num_blocks)
+		self.layers = self.create_layers()
 
-	@staticmethod
-	def create_layers(identity_channels : int, num_blocks : int) -> nn.ModuleList:
-		return nn.ModuleList(
+	def create_layers(self) -> nn.ModuleList:
+		layers = nn.ModuleList()
+
+		if self.output_size == 256:
+			layers.extend(
+			[
+				AdaptiveFeatureModulation(1024, 1024, 1024, self.identity_channels, self.num_blocks),
+				AdaptiveFeatureModulation(1024, 1024, 2048, self.identity_channels, self.num_blocks),
+				AdaptiveFeatureModulation(1024, 1024, 1024, self.identity_channels, self.num_blocks)
+			])
+
+		if self.output_size == 512:
+			layers.extend(
+			[
+				AdaptiveFeatureModulation(2048, 2048, 2048, self.identity_channels, self.num_blocks),
+				AdaptiveFeatureModulation(2048, 2048, 4096, self.identity_channels, self.num_blocks),
+				AdaptiveFeatureModulation(2048, 2048, 2048, self.identity_channels, self.num_blocks),
+				AdaptiveFeatureModulation(2048, 1024, 1024, self.identity_channels, self.num_blocks)
+			])
+
+		layers.extend(
 		[
-			AdaptiveFeatureModulation(1024, 1024, 1024, identity_channels, num_blocks),
-			AdaptiveFeatureModulation(1024, 1024, 2048, identity_channels, num_blocks),
-			AdaptiveFeatureModulation(1024, 1024, 1024, identity_channels, num_blocks),
-			AdaptiveFeatureModulation(1024, 512, 512, identity_channels, num_blocks),
-			AdaptiveFeatureModulation(512, 256, 256, identity_channels, num_blocks),
-			AdaptiveFeatureModulation(256, 128, 128, identity_channels, num_blocks),
-			AdaptiveFeatureModulation(128, 64, 64, identity_channels, num_blocks),
-			AdaptiveFeatureModulation(64, 3, 64, identity_channels, num_blocks)
+			AdaptiveFeatureModulation(1024, 512, 512, self.identity_channels, self.num_blocks),
+			AdaptiveFeatureModulation(512, 256, 256, self.identity_channels, self.num_blocks),
+			AdaptiveFeatureModulation(256, 128, 128, self.identity_channels, self.num_blocks),
+			AdaptiveFeatureModulation(128, 64, 64, self.identity_channels, self.num_blocks),
+			AdaptiveFeatureModulation(64, 3, 64, self.identity_channels, self.num_blocks)
 		])
+
+		return layers
 
 	def forward(self, source_embedding : Embedding, target_attributes : Attributes) -> Tensor:
 		temp_tensors = self.pixel_shuffle_up_sample(source_embedding)
@@ -41,37 +62,38 @@ class AdaptiveFeatureModulation(nn.Module):
 		super().__init__()
 		self.input_channels = input_channels
 		self.output_channels = output_channels
-		self.primary_layers = self.create_primary_layers(input_channels, output_channels, attribute_channels, identity_channels, num_blocks)
-		self.shortcut_layers = self.create_shortcut_layers(input_channels, output_channels, attribute_channels, identity_channels)
+		self.attribute_channels = attribute_channels
+		self.identity_channels = identity_channels
+		self.num_blocks = num_blocks
+		self.primary_layers = self.create_primary_layers()
+		self.shortcut_layers = self.create_shortcut_layers()
 
-	@staticmethod
-	def create_primary_layers(input_channels : int, output_channels : int, attribute_channels : int, identity_channels : int, num_blocks : int) -> nn.ModuleList:
+	def create_primary_layers(self) -> nn.ModuleList:
 		primary_layers = nn.ModuleList()
 
-		for index in range(num_blocks):
+		for index in range(self.num_blocks):
 			primary_layers.extend(
 			[
-				FeatureModulation(input_channels, attribute_channels, identity_channels),
+				FeatureModulation(self.input_channels, self.attribute_channels, self.identity_channels),
 				nn.ReLU(inplace = True)
 			])
 
-			if index < num_blocks - 1:
-				primary_layers.append(nn.Conv2d(input_channels, input_channels, kernel_size = 3, padding = 1, bias = False))
+			if index < self.num_blocks - 1:
+				primary_layers.append(nn.Conv2d(self.input_channels, self.input_channels, kernel_size = 3, padding = 1, bias = False))
 			else:
-				primary_layers.append(nn.Conv2d(input_channels, output_channels, kernel_size = 3, padding = 1, bias = False))
+				primary_layers.append(nn.Conv2d(self.input_channels, self.output_channels, kernel_size = 3, padding = 1, bias = False))
 
 		return primary_layers
 
-	@staticmethod
-	def create_shortcut_layers(input_channels : int, output_channels : int, attribute_channels : int, identity_channels : int) -> nn.ModuleList:
+	def create_shortcut_layers(self) -> nn.ModuleList:
 		shortcut_layers = nn.ModuleList()
 
-		if input_channels > output_channels:
+		if self.input_channels > self.output_channels:
 			shortcut_layers.extend(
 			[
-				FeatureModulation(input_channels, attribute_channels, identity_channels),
+				FeatureModulation(self.input_channels, self.attribute_channels, self.identity_channels),
 				nn.ReLU(inplace = True),
-				nn.Conv2d(input_channels, output_channels, kernel_size = 3, padding = 1, bias = False)
+				nn.Conv2d(self.input_channels, self.output_channels, kernel_size = 3, padding = 1, bias = False)
 			])
 
 		return shortcut_layers

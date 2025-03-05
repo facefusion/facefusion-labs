@@ -12,9 +12,10 @@ from .types import Batch, BatchMode, WarpTemplate
 
 
 class DynamicDataset(Dataset[Tensor]):
-	def __init__(self, file_pattern : str, warp_template : WarpTemplate, batch_mode : BatchMode, batch_ratio : float) -> None:
+	def __init__(self, file_pattern : str, warp_template : WarpTemplate, transform_size : int, batch_mode : BatchMode, batch_ratio : float) -> None:
 		self.file_paths = glob.glob(file_pattern)
 		self.warp_template = warp_template
+		self.transform_size = transform_size
 		self.batch_mode = batch_mode
 		self.batch_ratio = batch_ratio
 		self.transforms = self.compose_transforms()
@@ -38,7 +39,7 @@ class DynamicDataset(Dataset[Tensor]):
 		[
 			AugmentTransform(),
 			transforms.ToPILImage(),
-			transforms.Resize((256, 256), interpolation = transforms.InterpolationMode.BICUBIC),
+			transforms.Resize((self.transform_size, self.transform_size), interpolation = transforms.InterpolationMode.BICUBIC),
 			transforms.ToTensor(),
 			WarpTransform(self.warp_template),
 			transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))

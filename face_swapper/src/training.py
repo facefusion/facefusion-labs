@@ -80,7 +80,7 @@ class FaceSwapperTrainer(lightning.LightningModule):
 		return generator_config, discriminator_config
 
 	def training_step(self, batch : Batch, batch_index : int) -> Tensor:
-		preview_frequency = CONFIG.getfloat('training.trainer', 'preview_frequency')
+		preview_frequency = CONFIG.getint('training.trainer', 'preview_frequency')
 
 		source_tensor, target_tensor = batch
 		generator_optimizer, discriminator_optimizer = self.optimizers() #type:ignore[attr-defined]
@@ -198,6 +198,7 @@ def create_trainer() -> Trainer:
 def train() -> None:
 	dataset_file_pattern = CONFIG.get('training.dataset', 'file_pattern')
 	dataset_warp_template = cast(WarpTemplate, CONFIG.get('training.dataset', 'warp_template'))
+	dataset_transform_size = CONFIG.getint('training.dataset', 'transform_size')
 	dataset_batch_mode = cast(BatchMode, CONFIG.get('training.dataset', 'batch_mode'))
 	dataset_batch_ratio = CONFIG.getfloat('training.dataset', 'batch_ratio')
 	output_resume_path = CONFIG.get('training.output', 'resume_path')
@@ -205,7 +206,7 @@ def train() -> None:
 	if torch.cuda.is_available():
 		torch.set_float32_matmul_precision('high')
 
-	dataset = DynamicDataset(dataset_file_pattern, dataset_warp_template, dataset_batch_mode, dataset_batch_ratio)
+	dataset = DynamicDataset(dataset_file_pattern, dataset_warp_template, dataset_transform_size, dataset_batch_mode, dataset_batch_ratio)
 	training_loader, validation_loader = create_loaders(dataset)
 	face_swapper_trainer = FaceSwapperTrainer()
 	trainer = create_trainer()

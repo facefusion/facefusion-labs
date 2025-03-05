@@ -2,40 +2,67 @@ from typing import Tuple
 
 import torch
 from torch import Tensor, nn
-from torchvision import models
-from torchvision.models import ResNet34_Weights
 
 
 class UNet(nn.Module):
-	def __init__(self) -> None:
+	def __init__(self, output_size : int) -> None:
 		super().__init__()
-		self.down_samples = self.create_down_samples(self)
+		self.output_size = output_size
+		self.down_samples = self.create_down_samples()
 		self.up_samples = self.create_up_samples()
 
-	@staticmethod
-	def create_down_samples(self : nn.Module) -> nn.ModuleList:
-		return nn.ModuleList(
+	def create_down_samples(self) -> nn.ModuleList:
+		down_samples = nn.ModuleList(
 		[
 			DownSample(3, 32),
 			DownSample(32, 64),
 			DownSample(64, 128),
 			DownSample(128, 256),
 			DownSample(256, 512),
-			DownSample(512, 1024),
-			DownSample(1024, 1024)
+			DownSample(512, 1024)
 		])
 
-	@staticmethod
-	def create_up_samples() -> nn.ModuleList:
-		return nn.ModuleList(
+		if self.output_size == 256:
+			down_samples.extend(
+			[
+				DownSample(1024, 1024)
+			])
+
+		if self.output_size == 512:
+			down_samples.extend(
+			[
+				DownSample(1024, 2048),
+				DownSample(2048, 2048)
+			])
+
+		return down_samples
+
+	def create_up_samples(self) -> nn.ModuleList:
+		up_samples = nn.ModuleList()
+
+		if self.output_size == 256:
+			up_samples.extend(
+			[
+				UpSample(1024, 1024)
+			])
+
+		if self.output_size == 512:
+			up_samples.extend(
+			[
+				UpSample(2048, 2048),
+				UpSample(4096, 1024)
+			])
+
+		up_samples.extend(
 		[
-			UpSample(1024, 1024),
 			UpSample(2048, 512),
 			UpSample(1024, 256),
 			UpSample(512, 128),
 			UpSample(256, 64),
 			UpSample(128, 32)
 		])
+
+		return up_samples
 
 	def forward(self, target_tensor : Tensor) -> Tuple[Tensor, ...]:
 		down_features = []
@@ -56,34 +83,6 @@ class UNet(nn.Module):
 
 		output_tensor = nn.functional.interpolate(temp_tensor, scale_factor = 2, mode = 'bilinear', align_corners = False)
 		return bottleneck_tensor, *up_features, output_tensor
-
-
-class UNetPro(UNet):
-	def __init__(self) -> None:
-		super(UNet, self).__init__()
-		self.resnet = models.resnet34(weights = ResNet34_Weights.DEFAULT)
-		self.down_samples = self.create_down_samples(self)
-		self.up_samples = self.create_up_samples()
-
-	@staticmethod
-	def create_down_samples(self : nn.Module) -> nn.ModuleList:
-		return nn.ModuleList(
-		[
-			nn.Sequential(
-				self.resnet.conv1,
-				self.resnet.bn1,
-				self.resnet.relu,
-				nn.Conv2d(64, 32, kernel_size = 1, bias = False),
-				nn.BatchNorm2d(32),
-				nn.LeakyReLU(0.1, inplace = True)
-			),
-			DownSample(32, 64),
-			self.resnet.layer2,
-			self.resnet.layer3,
-			self.resnet.layer4,
-			DownSample(512, 1024),
-			DownSample(1024, 1024)
-		])
 
 
 class UpSample(nn.Module):

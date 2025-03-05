@@ -29,6 +29,7 @@ This `config.ini` utilizes the MegaFace dataset to train the Face Swapper model.
 [training.dataset]
 file_pattern = .datasets/vggface2/**/*.jpg
 warp_template = vgg_face_hq_to_arcface_128_v2
+transform_size = 256
 batch_mode = equal
 batch_ratio = 0.2
 ```
@@ -49,9 +50,9 @@ motion_extractor_path = .models/motion_extractor.pt
 
 ```
 [training.model.generator]
-encoder_type = unet-pro
 identity_channels = 512
 output_channels = 4096
+output_size = 256
 num_blocks = 2
 ```
 
@@ -66,13 +67,13 @@ kernel_size = 4
 
 ```
 [training.losses]
-adversarial_weight = 1.5
-attribute_weight = 10
-reconstruction_weight = 20
-identity_weight = 20
-gaze_weight = 0
-pose_weight = 0
-expression_weight = 0
+adversarial_weight = 1.0
+attribute_weight = 10.0
+reconstruction_weight = 20.0
+identity_weight = 20.0
+gaze_weight = 0.0
+pose_weight = 0.0
+expression_weight = 0.0
 ```
 
 ```
@@ -95,6 +96,7 @@ resume_path = .outputs/last.ckpt
 directory_path = .exports
 source_path = .outputs/last.ckpt
 target_path = .exports/face_swapper.onnx
+target_size = 256
 ir_version = 10
 opset_version = 15
 ```
