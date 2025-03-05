@@ -80,7 +80,7 @@ class FaceSwapperTrainer(lightning.LightningModule):
 		return generator_config, discriminator_config
 
 	def training_step(self, batch : Batch, batch_index : int) -> Tensor:
-		preview_frequency = CONFIG.getfloat('training.trainer', 'preview_frequency')
+		preview_frequency = CONFIG.getint('training.trainer', 'preview_frequency')
 
 		source_tensor, target_tensor = batch
 		generator_optimizer, discriminator_optimizer = self.optimizers() #type:ignore[attr-defined]

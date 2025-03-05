@@ -169,7 +169,7 @@ class GazeLoss(nn.Module):
 		return gaze_loss, weighted_gaze_loss
 
 	def detect_gaze(self, input_tensor : Tensor) -> Gaze:
-		scale_factor = CONFIG.getint('training.losses', 'gaze_scale_factor')
+		scale_factor = CONFIG.getfloat('training.losses', 'gaze_scale_factor')
 		y_min = int(60 * scale_factor)
 		y_max = int(224 * scale_factor)
 		x_min = int(16 * scale_factor)
