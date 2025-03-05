@@ -1,5 +1,11 @@
+import os
+import sys
+
 import pytest
 import torch
+
+package_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(package_directory)
 
 from face_swapper.src.networks.aad import AAD
 from face_swapper.src.networks.unet import UNet
@@ -23,4 +29,5 @@ def test_aad_with_unet(output_size : int) -> None:
 	target_attributes = encoder(target_tensor)
 	output_tensor = generator(source_tensor, target_attributes)
 
+	assert package_directory == None
 	assert output_tensor.shape == (1, 3, output_size, output_size)
