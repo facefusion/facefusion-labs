@@ -20,13 +20,23 @@ class UNet(nn.Module):
 			DownSample(32, 64),
 			DownSample(64, 128),
 			DownSample(128, 256),
-			DownSample(256, 512),
-			DownSample(512, 1024),
-			DownSample(1024, 1024)
+			DownSample(256, 512)
 		])
 
+		if self.output_size == 256:
+			down_samples.extend(
+			[
+				DownSample(512, 1024),
+				DownSample(1024, 1024)
+			])
+
 		if self.output_size == 512:
-			down_samples.append(DownSample(2048, 2048))
+			down_samples.extend(
+			[
+				DownSample(512, 1024),
+				DownSample(1024, 2048),
+				DownSample(2048, 2048)
+			])
 
 		return down_samples
 
@@ -104,14 +114,8 @@ class UNetPro(UNet):
 			DownSample(1024, 1024)
 		])
 
-		if self.output_size in [ 384, 512, 768, 1024 ]:
-			down_samples.append(DownSample(1024, 2048))
-		if self.output_size in [ 512, 768, 1024 ]:
-			down_samples.append(DownSample(2048, 4096))
-		if self.output_size in [ 768, 1024 ]:
-			down_samples.append(DownSample(4096, 8192))
-		if self.output_size == 1024:
-			down_samples.append(DownSample(8192, 16384))
+		if self.output_size == 512:
+			down_samples.append(DownSample(2048, 2048))
 
 		return down_samples
 
