@@ -25,36 +25,35 @@ class UNet(nn.Module):
 			DownSample(1024, 1024)
 		])
 
-		if self.output_size in [ 384, 512, 768, 1024 ]:
-			down_samples.append(DownSample(1024, 2048))
-		if self.output_size in [ 512, 768, 1024 ]:
-			down_samples.append(DownSample(2048, 4096))
-		if self.output_size in [ 768, 1024 ]:
-			down_samples.append(DownSample(4096, 8192))
-		if self.output_size == 1024:
-			down_samples.append(DownSample(8192, 16384))
+		if self.output_size == 512:
+			down_samples.append(DownSample(2048, 2048))
 
 		return down_samples
 
 	def create_up_samples(self) -> nn.ModuleList:
-		up_samples = nn.ModuleList(
+		up_samples = nn.ModuleList()
+
+		if self.output_size == 256:
+			up_samples.extend(
+			[
+				UpSample(1024, 1024)
+			])
+
+		if self.output_size == 512:
+			up_samples.extend(
+			[
+				UpSample(2048, 2048),
+				UpSample(4096, 1024)
+			])
+
+		up_samples.extend(
 		[
-			UpSample(1024, 1024),
 			UpSample(2048, 512),
 			UpSample(1024, 256),
 			UpSample(512, 128),
 			UpSample(256, 64),
 			UpSample(128, 32)
 		])
-
-		if self.output_size in [ 384, 512, 768, 1024 ]:
-			up_samples.append(UpSample(32, 16))
-		if self.output_size in [ 512, 768, 1024 ]:
-			up_samples.append(UpSample(16, 8))
-		if self.output_size in [ 768, 1024 ]:
-			up_samples.append(UpSample(8, 4))
-		if self.output_size == 1024:
-			up_samples.append(UpSample(4, 2))
 
 		return up_samples
 
