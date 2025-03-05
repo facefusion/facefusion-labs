@@ -18,20 +18,19 @@ class UNet(nn.Module):
 			DownSample(32, 64),
 			DownSample(64, 128),
 			DownSample(128, 256),
-			DownSample(256, 512)
+			DownSample(256, 512),
+			DownSample(512, 1024)
 		])
 
 		if self.output_size == 256:
 			down_samples.extend(
 			[
-				DownSample(512, 1024),
 				DownSample(1024, 1024)
 			])
 
 		if self.output_size == 512:
 			down_samples.extend(
 			[
-				DownSample(512, 1024),
 				DownSample(1024, 2048),
 				DownSample(2048, 2048)
 			])
