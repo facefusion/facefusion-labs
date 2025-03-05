@@ -29,4 +29,5 @@ def test_aad_with_unet(output_size : int) -> None:
 	target_attributes = encoder(target_tensor)
 	output_tensor = generator(source_tensor, target_attributes)
 
+	assert package_directory == None
 	assert output_tensor.shape == (1, 3, output_size, output_size)
