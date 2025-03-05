@@ -50,7 +50,6 @@ motion_extractor_path = .models/motion_extractor.pt
 
 ```
 [training.model.generator]
-encoder_type = unet-pro
 identity_channels = 512
 output_channels = 4096
 output_size = 256
@@ -68,14 +67,14 @@ kernel_size = 4
 
 ```
 [training.losses]
-adversarial_weight = 1.5
-attribute_weight = 10
-reconstruction_weight = 20
-identity_weight = 20
-gaze_weight = 0
-gaze_scale_factor = 1
-pose_weight = 0
-expression_weight = 0
+adversarial_weight = 1.0
+attribute_weight = 10.0
+reconstruction_weight = 20.0
+identity_weight = 20.0
+gaze_weight = 0.0
+gaze_scale_factor = 1.0
+pose_weight = 0.0
+expression_weight = 0.0
 ```
 
 ```
