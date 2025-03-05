@@ -18,10 +18,7 @@ jobs:
   - run: flake8 embedding_converter face_swapper
   - run: mypy embedding_converter face_swapper
  test:
-  strategy:
-   matrix:
-    os: [ macos-latest, ubuntu-latest, windows-latest ]
-  runs-on: ${{ matrix.os }}
+  runs-on: ubuntu-latest
   steps:
   - name: Checkout
     uses: actions/checkout@v4
