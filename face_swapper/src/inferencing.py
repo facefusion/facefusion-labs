@@ -12,12 +12,6 @@ CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 
 
-def run_swap(generator : GeneratorModule, embedder : EmbedderModule, source_tensor : Tensor, target_tensor : Tensor) -> Tensor:
-	source_embedding = calc_embedding(embedder, source_tensor, (0, 0, 0, 0))
-	output_tensor = generator(source_embedding, target_tensor)[0]
-	return output_tensor
-
-
 def infer() -> None:
 	generator_path = CONFIG.get('inferencing', 'generator_path')
 	embedder_path = CONFIG.get('inferencing', 'embedder_path')
@@ -34,5 +28,6 @@ def infer() -> None:
 
 	source_tensor = io.read_image(source_path)
 	target_tensor = io.read_image(target_path)
-	output_tensor = run_swap(generator, embedder, source_tensor, target_tensor)
+	source_embedding = calc_embedding(embedder, source_tensor, (0, 0, 0, 0))
+	output_tensor = generator(source_embedding, target_tensor)[0]
 	io.write_jpeg(output_tensor, output_path)
