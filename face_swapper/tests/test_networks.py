@@ -1,5 +1,5 @@
-import torch
 import pytest
+import torch
 
 from face_swapper.src.networks.aad import AAD
 from face_swapper.src.networks.unet import UNet
