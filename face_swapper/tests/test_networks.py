@@ -1,8 +1,8 @@
 import torch
 import pytest
 
-from ..src.networks.aad import AAD
-from ..src.networks.unet import UNet
+from face_swapper.src.networks.aad import AAD
+from face_swapper.src.networks.unet import UNet
 
 
 @pytest.mark.parametrize('output_size', [ 256 ])
