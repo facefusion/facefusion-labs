@@ -72,7 +72,6 @@ attribute_weight = 10.0
 reconstruction_weight = 20.0
 identity_weight = 20.0
 gaze_weight = 0.0
-gaze_scale_factor = 1.0
 pose_weight = 0.0
 expression_weight = 0.0
 ```
