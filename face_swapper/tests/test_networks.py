@@ -1,9 +1,13 @@
+import os
 import sys
 
 import pytest
 import torch
 
-sys.path.append('..')
+package_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(package_directory)
+
+print(package_directory)
 
 from face_swapper.src.networks.aad import AAD
 from face_swapper.src.networks.unet import UNet
