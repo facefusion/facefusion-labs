@@ -31,4 +31,4 @@ jobs:
      python-version: '3.12'
   - run: pip install torch torchvision
   - run: pip install pytest
-  - run: PYTHONPATH=face_swapper pytest
+  - run: pytest
