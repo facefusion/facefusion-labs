@@ -1,5 +1,9 @@
+import sys
+
 import pytest
 import torch
+
+sys.path.append('..')
 
 from face_swapper.src.networks.aad import AAD
 from face_swapper.src.networks.unet import UNet
