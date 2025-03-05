@@ -28,4 +28,4 @@ jobs:
      python-version: '3.12'
   - run: pip install torch torchvision
   - run: pip install pytest
-  - run: PYTHONPATH=/Users/runner/work/facefusion-labs/facefusion-labs pytest
+  - run: PYTHONPATH=/home/runner/work/facefusion-labs/facefusion-labs pytest
