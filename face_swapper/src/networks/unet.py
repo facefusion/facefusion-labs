@@ -3,6 +3,7 @@ from typing import Tuple
 import torch
 from torch import Tensor, nn
 
+
 class UNet(nn.Module):
 	def __init__(self, output_size : int) -> None:
 		super().__init__()
