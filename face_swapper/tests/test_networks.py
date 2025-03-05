@@ -7,10 +7,8 @@ import torch
 package_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(package_directory)
 
-print(package_directory)
-
-from face_swapper.src.networks.aad import AAD
-from face_swapper.src.networks.unet import UNet
+from src.networks.aad import AAD
+from src.networks.unet import UNet
 
 
 @pytest.mark.parametrize('output_size', [ 256 ])
