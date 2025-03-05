@@ -20,9 +20,9 @@ class Generator(nn.Module):
 		num_blocks = CONFIG.getint('training.model.generator', 'num_blocks')
 
 		if encoder_type == 'unet':
-			self.encoder = UNet()
+			self.encoder = UNet(output_size)
 		if encoder_type == 'unet-pro':
-			self.encoder = UNetPro()
+			self.encoder = UNetPro(output_size)
 		self.generator = AAD(identity_channels, output_channels, output_size, num_blocks)
 		self.encoder.apply(init_weight)
 		self.generator.apply(init_weight)

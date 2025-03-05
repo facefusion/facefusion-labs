@@ -23,18 +23,15 @@ class AAD(nn.Module):
 			AdaptiveFeatureModulation(1024, 512, 512, self.identity_channels, self.num_blocks),
 			AdaptiveFeatureModulation(512, 256, 256, self.identity_channels, self.num_blocks),
 			AdaptiveFeatureModulation(256, 128, 128, self.identity_channels, self.num_blocks),
-			AdaptiveFeatureModulation(128, 64, 64, self.identity_channels, self.num_blocks),
+			AdaptiveFeatureModulation(128, 64, 64, self.identity_channels, self.num_blocks)
 		])
 
 		if self.output_size in [ 384, 512, 768, 1024 ]:
 			layers.append(AdaptiveFeatureModulation(64, 32, 32, self.identity_channels, self.num_blocks))
-
 		if self.output_size in [ 512, 768, 1024 ]:
 			layers.append(AdaptiveFeatureModulation(32, 16, 16, self.identity_channels, self.num_blocks))
-
 		if self.output_size in [ 768, 1024 ]:
 			layers.append(AdaptiveFeatureModulation(16, 8, 8, self.identity_channels, self.num_blocks))
-
 		if self.output_size == 1024:
 			layers.append(AdaptiveFeatureModulation(8, 4, 4, self.identity_channels, self.num_blocks))
 
