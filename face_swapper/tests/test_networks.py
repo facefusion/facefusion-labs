@@ -4,6 +4,7 @@ import torch
 from face_swapper.src.networks.aad import AAD
 from face_swapper.src.networks.unet import UNet
 
+
 @pytest.mark.parametrize('output_size', [ 256 ])
 def test_aad_with_unet(output_size : int) -> None:
 	identity_channels = 512
