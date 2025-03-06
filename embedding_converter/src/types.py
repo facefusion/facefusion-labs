@@ -1,4 +1,4 @@
-from typing import Any, TypeAlias, Dict
+from typing import Any, Dict, TypeAlias
 
 from torch import Tensor
 
@@ -6,4 +6,4 @@ Batch : TypeAlias = Tensor
 Embedding : TypeAlias = Tensor
 
 Config : TypeAlias = Dict[str, Any]
-OptimizerConfig : TypeAlias = Any
+OptimizerSet : TypeAlias = Any
