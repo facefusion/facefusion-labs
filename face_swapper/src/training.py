@@ -1,7 +1,7 @@
 import os
-from configparser import ConfigParser
 import warnings
-from typing import Tuple, cast
+from configparser import ConfigParser
+from typing import Tuple
 
 import torch
 import torchvision
@@ -17,7 +17,7 @@ from .helper import calc_embedding
 from .models.discriminator import Discriminator
 from .models.generator import Generator
 from .models.loss import AdversarialLoss, AttributeLoss, DiscriminatorLoss, GazeLoss, IdentityLoss, MotionLoss, ReconstructionLoss
-from .types import Batch, BatchMode, Embedding, OptimizerSet, WarpTemplate
+from .types import Batch, Embedding, OptimizerSet
 
 warnings.filterwarnings('ignore', category = UserWarning, module = 'torch')
 

@@ -10,7 +10,7 @@ from torch.utils.data import Dataset
 from torchvision import io, transforms
 
 from .helper import warp_tensor
-from .types import Batch, WarpTemplate, BatchMode
+from .types import Batch, BatchMode, WarpTemplate
 
 
 class DynamicDataset(Dataset[Tensor]):
