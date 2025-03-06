@@ -139,7 +139,9 @@ class MotionLoss(nn.Module):
 
 	def get_motions(self, input_tensor : Tensor) -> Tuple[Tuple[Tensor, ...], Tensor]:
 		input_tensor = (input_tensor + 1) * 0.5
-		pitch, yaw, roll, translation, expression, scale, motion_points = self.motion_extractor(input_tensor)
+
+		with torch.no_grad():
+			pitch, yaw, roll, translation, expression, scale, motion_points = self.motion_extractor(input_tensor)
 		rotation = torch.cat([ pitch, yaw, roll ], dim = 1)
 		pose = translation, scale, rotation, motion_points
 		return pose, expression
@@ -170,5 +172,7 @@ class GazeLoss(nn.Module):
 		crop_tensor = (crop_tensor + 1) * 0.5
 		crop_tensor = transforms.Normalize(mean = [ 0.485, 0.456, 0.406 ], std = [ 0.229, 0.224, 0.225 ])(crop_tensor)
 		crop_tensor = nn.functional.interpolate(crop_tensor, size = 448, mode = 'bicubic')
-		pitch, yaw = self.gazer(crop_tensor)
+
+		with torch.no_grad():
+			pitch, yaw = self.gazer(crop_tensor)
 		return pitch, yaw
