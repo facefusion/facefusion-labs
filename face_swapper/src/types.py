@@ -17,9 +17,6 @@ EmbedderModule : TypeAlias = Module
 GazerModule : TypeAlias = Module
 MotionExtractorModule : TypeAlias = Module
 
-Config : TypeAlias = Dict[str, Any]
-ConfigSet : TypeAlias = Dict[str, Config]
-
 OptimizerSet : TypeAlias = Any
 
 WarpTemplate = Literal['vgg_face_hq_to_arcface_128_v2', 'arcface_128_v2_to_arcface_112_v2']
