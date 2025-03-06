@@ -129,7 +129,7 @@ def train() -> None:
 	{
 		'source_path': CONFIG.get('training.model', 'source_path'),
 		'target_path': CONFIG.get('training.model', 'target_path'),
-		'learning_rate': CONFIG.getfloat('training.trainer', 'learning_rate'),
+		'learning_rate': CONFIG.getfloat('training.trainer', 'learning_rate')
 	}
 	config_common =\
 	{
