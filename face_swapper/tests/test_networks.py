@@ -5,10 +5,12 @@ from face_swapper.src.networks.aad import AAD
 from face_swapper.src.networks.unet import UNet
 
 
-@pytest.mark.parametrize('output_size', [ 256, 512 ])
+@pytest.mark.parametrize('output_size', [ 128, 256, 512 ])
 def test_aad_with_unet(output_size : int) -> None:
 	identity_channels = 512
-	output_channels = 2048
+	output_channels = 1024
+	if output_size == 128:
+		output_channels = 2048
 	if output_size == 256:
 		output_channels = 4096
 	if output_size == 512:

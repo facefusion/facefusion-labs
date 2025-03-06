@@ -18,19 +18,26 @@ class UNet(nn.Module):
 			DownSample(32, 64),
 			DownSample(64, 128),
 			DownSample(128, 256),
-			DownSample(256, 512),
-			DownSample(512, 1024)
+			DownSample(256, 512)
 		])
+
+		if self.output_size == 128:
+			down_samples.extend(
+			[
+				DownSample(512, 512)
+			])
 
 		if self.output_size == 256:
 			down_samples.extend(
 			[
+				DownSample(512, 1024),
 				DownSample(1024, 1024)
 			])
 
 		if self.output_size == 512:
 			down_samples.extend(
 			[
+				DownSample(512, 1024),
 				DownSample(1024, 2048),
 				DownSample(2048, 2048)
 			])
@@ -40,22 +47,29 @@ class UNet(nn.Module):
 	def create_up_samples(self) -> nn.ModuleList:
 		up_samples = nn.ModuleList()
 
+		if self.output_size == 128:
+			up_samples.extend(
+			[
+				UpSample(512, 512)
+			])
+
 		if self.output_size == 256:
 			up_samples.extend(
 			[
-				UpSample(1024, 1024)
+				UpSample(1024, 1024),
+				UpSample(2048, 512)
 			])
 
 		if self.output_size == 512:
 			up_samples.extend(
 			[
 				UpSample(2048, 2048),
-				UpSample(4096, 1024)
+				UpSample(4096, 1024),
+				UpSample(2048, 512)
 			])
 
 		up_samples.extend(
 		[
-			UpSample(2048, 512),
 			UpSample(1024, 256),
 			UpSample(512, 128),
 			UpSample(256, 64),
