@@ -12,7 +12,7 @@ from torchdata.stateful_dataloader import StatefulDataLoader
 
 from .dataset import StaticDataset
 from .models.embedding_converter import EmbeddingConverter
-from .types import Batch, Config, Embedding, OptimizerSet
+from .types import Batch, Config, ConfigSet, Embedding, OptimizerSet
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -121,7 +121,7 @@ def create_trainer() -> Trainer:
 
 
 def train() -> None:
-	config : Config =\
+	config : ConfigSet =\
 	{
 		'dataset':
 		{
