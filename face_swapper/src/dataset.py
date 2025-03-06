@@ -29,13 +29,13 @@ class DynamicDataset(Dataset[Tensor]):
 	def __getitem__(self, index : int) -> Batch:
 		file_path = self.file_paths[index]
 
-		if random.random() < self.config.get('batch_ratio'):
+		if random.random() < self.config.get('batch_ratio'): # type:ignore[operator]
 			if self.config.get('batch_mode') == 'equal':
-				return self.prepare_equal_batch(file_path)
+				return self.prepare_equal_batch(file_path) # type:ignore[arg-type]
 			if self.config.get('batch_mode') == 'same':
-				return self.prepare_same_batch(file_path)
+				return self.prepare_same_batch(file_path) # type:ignore[arg-type]
 
-		return self.prepare_different_batch(file_path)
+		return self.prepare_different_batch(file_path) # type:ignore[arg-type]
 
 	def __len__(self) -> int:
 		return len(self.file_paths)

@@ -21,7 +21,7 @@ def export() -> None:
 		'opset_version': CONFIG_PARSER.getint('exporting', 'opset_version')
 	}
 
-	os.makedirs(config.get('directory_path'), exist_ok = True)
+	os.makedirs(config.get('directory_path'), exist_ok = True) # type:ignore[arg-type]
 	model = FaceSwapperTrainer.load_from_checkpoint(config.get('source_path'), map_location = 'cpu')
 	model.eval()
 	model.ir_version = torch.tensor(config.get('ir_version'))
