@@ -23,7 +23,7 @@ class DynamicDataset(Dataset[Tensor]):
 			'batch_ratio': config_parser.getfloat('training.dataset', 'batch_ratio'),
 		}
 		self.config_parser = config_parser
-		self.file_paths = glob.glob(self.config.get('file_pattern'))
+		self.file_paths = glob.glob(self.config.get('file_pattern')) # type:ignore[type-var]
 		self.transforms = self.compose_transforms()
 
 	def __getitem__(self, index : int) -> Batch:
