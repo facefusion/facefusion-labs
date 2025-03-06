@@ -1,12 +1,10 @@
 import configparser
 
 import torch
-from torch import Tensor
 from torchvision import io
 
 from .helper import calc_embedding
 from .models.generator import Generator
-from .types import EmbedderModule, GeneratorModule
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
