@@ -13,7 +13,6 @@ class AAD(nn.Module):
 		self.config_output_channels = config_parser.getint('training.model.generator', 'output_channels')
 		self.config_output_size = config_parser.getint('training.model.generator', 'output_size')
 		self.config_num_blocks = config_parser.getint('training.model.generator', 'num_blocks')
-		self.config_parser = config_parser
 		self.pixel_shuffle_up_sample = PixelShuffleUpSample(self.config_identity_channels, self.config_output_channels)
 		self.layers = self.create_layers()
 
