@@ -1,15 +1,19 @@
 import glob
+from configparser import ConfigParser
 
 from torch import Tensor
 from torch.utils.data import Dataset
 from torchvision import io, transforms
 
-from .types import Batch, Config
+from .types import Batch
 
 
 class StaticDataset(Dataset[Tensor]):
-	def __init__(self, config : Config) -> None:
-		self.config = config
+	def __init__(self, config : ConfigParser) -> None:
+		self.config =\
+		{
+			'file_pattern': config.get('training.dataset', 'file_pattern')
+		}
 		self.file_paths = glob.glob(self.config.get('file_pattern'))
 		self.transforms = self.compose_transforms()
 
