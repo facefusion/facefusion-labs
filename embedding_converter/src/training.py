@@ -25,8 +25,8 @@ class EmbeddingConverterTrainer(LightningModule):
 		self.config_target_path = config_parser.get('training.model', 'target_path')
 		self.config_learning_rate = config_parser.getfloat('training.trainer', 'learning_rate')
 		self.embedding_converter = EmbeddingConverter()
-		self.source_embedder = torch.jit.load(self.config_source_path, map_location = 'cpu')
-		self.target_embedder = torch.jit.load(self.config_target_path, map_location = 'cpu')
+		self.source_embedder = torch.jit.load(self.config_source_path, map_location = 'cpu').eval()
+		self.target_embedder = torch.jit.load(self.config_target_path, map_location = 'cpu').eval()
 		self.mse_loss = nn.MSELoss()
 
 	def forward(self, source_embedding : Embedding) -> Embedding:

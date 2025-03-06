@@ -35,10 +35,7 @@ class DiscriminatorLoss(nn.Module):
 class AdversarialLoss(nn.Module):
 	def __init__(self, config_parser : ConfigParser) -> None:
 		super().__init__()
-		self.config =\
-		{
-			'adversarial_weight': config_parser.getfloat('training.losses', 'adversarial_weight')
-		}
+		self.config_adversarial_weight = config_parser.getfloat('training.losses', 'adversarial_weight')
 
 	def forward(self, discriminator_output_tensors : List[Tensor]) -> Tuple[Tensor, Tensor]:
 		temp_tensors = []
@@ -48,38 +45,32 @@ class AdversarialLoss(nn.Module):
 			temp_tensors.append(temp_tensor)
 
 		adversarial_loss = torch.stack(temp_tensors).mean()
-		weighted_adversarial_loss = adversarial_loss * self.config.get('adversarial_weight')
+		weighted_adversarial_loss = adversarial_loss * self.config_adversarial_weight
 		return adversarial_loss, weighted_adversarial_loss
 
 
 class AttributeLoss(nn.Module):
 	def __init__(self, config_parser : ConfigParser) -> None:
 		super().__init__()
-		self.config =\
-		{
-			'batch_size': config_parser.getint('training.loader', 'batch_size'),
-			'attribute_weight': config_parser.getfloat('training.losses', 'attribute_weight')
-		}
+		self.config_batch_size = config_parser.getint('training.loader', 'batch_size')
+		self.config_attribute_weight = config_parser.getfloat('training.losses', 'attribute_weight')
 
 	def forward(self, target_attributes : Attributes, output_attributes : Attributes) -> Tuple[Tensor, Tensor]:
 		temp_tensors = []
 
 		for target_attribute, output_attribute in zip(target_attributes, output_attributes):
-			temp_tensor = torch.mean(torch.pow(output_attribute - target_attribute, 2).reshape(self.config.get('batch_size'), -1), dim = 1).mean()
+			temp_tensor = torch.mean(torch.pow(output_attribute - target_attribute, 2).reshape(self.config_batch_size, -1), dim = 1).mean()
 			temp_tensors.append(temp_tensor)
 
 		attribute_loss = torch.stack(temp_tensors).mean() * 0.5
-		weighted_attribute_loss = attribute_loss * self.config.get('attribute_weight')
+		weighted_attribute_loss = attribute_loss * self.config_attribute_weight
 		return attribute_loss, weighted_attribute_loss
 
 
 class ReconstructionLoss(nn.Module):
 	def __init__(self, config_parser : ConfigParser, embedder : EmbedderModule) -> None:
 		super().__init__()
-		self.config =\
-		{
-			'reconstruction_weight': config_parser.getfloat('training.losses', 'reconstruction_weight')
-		}
+		self.config_reconstruction_weight = config_parser.getfloat('training.losses', 'reconstruction_weight')
 		self.embedder = embedder
 		self.mse_loss = nn.MSELoss()
 
@@ -94,7 +85,7 @@ class ReconstructionLoss(nn.Module):
 		data_range = float(torch.max(output_tensor) - torch.min(output_tensor))
 		visual_loss = 1 - ssim(output_tensor, target_tensor, data_range = data_range).mean()
 		reconstruction_loss = (reconstruction_loss + visual_loss) * 0.5
-		weighted_reconstruction_loss = reconstruction_loss * self.config.get('reconstruction_weight')
+		weighted_reconstruction_loss = reconstruction_loss * self.config_reconstruction_weight
 		return reconstruction_loss, weighted_reconstruction_loss
 
 
@@ -156,11 +147,8 @@ class MotionLoss(nn.Module):
 class GazeLoss(nn.Module):
 	def __init__(self, config_parser : ConfigParser, gazer : GazerModule) -> None:
 		super().__init__()
-		self.config =\
-		{
-			'gaze_weight': config_parser.getfloat('training.losses', 'gaze_weight'),
-			'output_size': config_parser.getint('training.model.generator', 'output_size')
-		}
+		self.config_gaze_weight = config_parser.getfloat('training.losses', 'gaze_weight')
+		self.config_output_size = config_parser.getint('training.model.generator', 'output_size')
 		self.gazer = gazer
 		self.l1_loss = nn.L1Loss()
 
@@ -172,11 +160,11 @@ class GazeLoss(nn.Module):
 		yaw_loss = self.l1_loss(output_yaw, target_yaw)
 
 		gaze_loss = (pitch_loss + yaw_loss) * 0.5
-		weighted_gaze_loss = gaze_loss * self.config.get('gaze_weight')
+		weighted_gaze_loss = gaze_loss * self.config_gaze_weight
 		return gaze_loss, weighted_gaze_loss
 
 	def detect_gaze(self, input_tensor : Tensor) -> Gaze:
-		crop_sizes = (torch.tensor([ 0.235, 0.875, 0.0625, 0.8 ]) * self.config.get('output_size')).int()
+		crop_sizes = (torch.tensor([ 0.235, 0.875, 0.0625, 0.8 ]) * self.config_output_size).int()
 		crop_tensor = input_tensor[:, :, crop_sizes[0]:crop_sizes[1], crop_sizes[2]:crop_sizes[3]]
 		crop_tensor = (crop_tensor + 1) * 0.5
 		crop_tensor = transforms.Normalize(mean = [ 0.485, 0.456, 0.406 ], std = [ 0.229, 0.224, 0.225 ])(crop_tensor)
