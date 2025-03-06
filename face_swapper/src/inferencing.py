@@ -24,7 +24,7 @@ def infer() -> None:
 	generator = Generator(CONFIG_PARSER)
 	generator.load_state_dict(state_dict)
 	generator.eval()
-	embedder = torch.jit.load(embedder_path, map_location = 'cpu') # type:ignore[no-untyped-call]
+	embedder = torch.jit.load(config.get('embedder_path'), map_location = 'cpu') # type:ignore[no-untyped-call]
 	embedder.eval()
 
 	source_tensor = io.read_image(config.get('source_path'))

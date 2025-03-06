@@ -17,7 +17,6 @@ class Discriminator(nn.Module):
 		self.avg_pool = nn.AvgPool2d(kernel_size = 3, stride = 2, padding = (1, 1), count_include_pad = False)
 		self.discriminators = self.create_discriminators()
 
-
 	def create_discriminators(self) -> nn.ModuleList:
 		discriminators = nn.ModuleList()
 
