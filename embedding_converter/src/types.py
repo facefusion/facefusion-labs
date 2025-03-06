@@ -1,4 +1,4 @@
-from typing import Any, Dict, TypeAlias
+from typing import Any, TypeAlias
 
 from torch import Tensor
 
