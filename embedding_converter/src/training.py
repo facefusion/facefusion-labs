@@ -21,7 +21,7 @@ CONFIG_PARSER.read('config.ini')
 class EmbeddingConverterTrainer(LightningModule):
 	def __init__(self, config_parser : ConfigParser) -> None:
 		super().__init__()
-		self.config_parser =\
+		self.config =\
 		{
 			'source_path': config_parser.get('training.model', 'source_path'),
 			'target_path': config_parser.get('training.model', 'target_path'),
