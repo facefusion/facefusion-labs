@@ -5,18 +5,18 @@ import torch
 
 from .training import EmbeddingConverterTrainer
 
-CONFIG = configparser.ConfigParser()
-CONFIG.read('config.ini')
+CONFIG_PARSER = configparser.ConfigParser()
+CONFIG_PARSER.read('config.ini')
 
 
 def export() -> None:
 	config =\
 	{
-		'directory_path': CONFIG.get('exporting', 'directory_path'),
-		'source_path': CONFIG.get('exporting', 'source_path'),
-		'target_path': CONFIG.get('exporting', 'target_path'),
-		'ir_version': CONFIG.getint('exporting', 'ir_version'),
-		'opset_version': CONFIG.getint('exporting', 'opset_version')
+		'directory_path': CONFIG_PARSER.get('exporting', 'directory_path'),
+		'source_path': CONFIG_PARSER.get('exporting', 'source_path'),
+		'target_path': CONFIG_PARSER.get('exporting', 'target_path'),
+		'ir_version': CONFIG_PARSER.getint('exporting', 'ir_version'),
+		'opset_version': CONFIG_PARSER.getint('exporting', 'opset_version')
 	}
 
 	makedirs(config.get('directory_path'), exist_ok = True) # type:ignore[arg-type]
