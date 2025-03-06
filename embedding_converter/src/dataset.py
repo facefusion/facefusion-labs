@@ -4,12 +4,13 @@ from torch import Tensor
 from torch.utils.data import Dataset
 from torchvision import io, transforms
 
-from .types import Batch
+from .types import Batch, Config
 
 
 class StaticDataset(Dataset[Tensor]):
-	def __init__(self, file_pattern : str) -> None:
-		self.file_paths = glob.glob(file_pattern)
+	def __init__(self, config : Config) -> None:
+		self.config = config
+		self.file_paths = glob.glob(self.config.get('file_pattern'))
 		self.transforms = self.compose_transforms()
 
 	def __getitem__(self, index : int) -> Batch:
