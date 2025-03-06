@@ -106,7 +106,7 @@ class UNet(nn.Module):
 class UpSample(nn.Module):
 	def __init__(self, input_channels : int, output_channels : int) -> None:
 		super().__init__()
-		self.conv_transpose = nn.ConvTranspose2d(in_channels = input_channels, out_channels = output_channels, kernel_size = 4, stride = 2, padding = 1, bias = False)
+		self.conv_transpose = nn.ConvTranspose2d(input_channels, output_channels, kernel_size = 4, stride = 2, padding = 1, bias = False)
 		self.batch_norm = nn.BatchNorm2d(output_channels)
 		self.leaky_relu = nn.LeakyReLU(0.1, inplace = True)
 
@@ -121,7 +121,7 @@ class UpSample(nn.Module):
 class DownSample(nn.Module):
 	def __init__(self, input_channels : int, output_channels : int) -> None:
 		super().__init__()
-		self.conv = nn.Conv2d(in_channels = input_channels, out_channels = output_channels, kernel_size = 4, stride = 2, padding = 1, bias = False)
+		self.conv = nn.Conv2d(input_channels, output_channels, kernel_size = 4, stride = 2, padding = 1, bias = False)
 		self.batch_norm = nn.BatchNorm2d(output_channels)
 		self.leaky_relu = nn.LeakyReLU(0.1, inplace = True)
 

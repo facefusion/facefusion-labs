@@ -39,10 +39,9 @@ class FaceSwapperTrainer(LightningModule):
 		self.embedder = torch.jit.load(self.config.get('embedder_path'), map_location = 'cpu').eval()  # type:ignore[no-untyped-call]
 		self.gazer = torch.jit.load(self.config.get('gazer_path'), map_location = 'cpu').eval()  # type:ignore[no-untyped-call]
 		self.motion_extractor = torch.jit.load(self.config.get('motion_extractor_path'), map_location = 'cpu').eval()  # type:ignore[no-untyped-call]
-
 		self.generator = Generator(config_parser)
 		self.discriminator = Discriminator(config_parser)
-		self.discriminator_loss = DiscriminatorLoss(config_parser)
+		self.discriminator_loss = DiscriminatorLoss()
 		self.adversarial_loss = AdversarialLoss(config_parser)
 		self.attribute_loss = AttributeLoss(config_parser)
 		self.reconstruction_loss = ReconstructionLoss(config_parser, self.embedder)
