@@ -5,5 +5,5 @@ from torch import Tensor
 Batch : TypeAlias = Tensor
 Embedding : TypeAlias = Tensor
 
-Config : TypeAlias = Dict[str, Any]
+Config : TypeAlias = Any
 OptimizerSet : TypeAlias = Any
