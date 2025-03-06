@@ -139,7 +139,6 @@ def train() -> None:
 		}
 	}
 
-
 	if torch.cuda.is_available():
 		torch.set_float32_matmul_precision('high')
 
