@@ -5,7 +5,7 @@ from typing import Tuple, cast
 
 import torch
 import torchvision
-from lightning import Trainer, LightningModule
+from lightning import LightningModule, Trainer
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
 from torch import Tensor, nn

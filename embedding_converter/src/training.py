@@ -3,7 +3,7 @@ import os
 from typing import Tuple
 
 import torch
-from lightning import Trainer, LightningModule
+from lightning import LightningModule, Trainer
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
 from torch import Tensor, nn
@@ -12,7 +12,7 @@ from torchdata.stateful_dataloader import StatefulDataLoader
 
 from .dataset import StaticDataset
 from .models.embedding_converter import EmbeddingConverter
-from .types import Batch, Embedding, OptimizerSet, Config
+from .types import Batch, Config, Embedding, OptimizerSet
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
