@@ -10,13 +10,16 @@ from face_swapper.src.networks.unet import UNet
 @pytest.mark.parametrize('output_size', [ 128, 256, 512 ])
 def test_aad_with_unet(output_size : int) -> None:
 	config_parser = ConfigParser()
-	config_parser['training.model.generator'] =\
+	config_parser.read_dict(
 	{
-		'identity_channels': '512',
-		'output_channels': str(output_size * 16),
-		'output_size': str(output_size),
-		'num_blocks': '2'
-	}
+		'training.model.generator':
+		{
+			'identity_channels': '512',
+			'output_channels': str(output_size * 16),
+			'output_size': str(output_size),
+			'num_blocks': '2'
+		}
+	})
 
 	generator = AAD(config_parser).eval()
 	encoder = UNet(config_parser).eval()
