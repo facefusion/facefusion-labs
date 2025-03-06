@@ -3,10 +3,9 @@ import os
 import warnings
 from typing import Tuple, cast
 
-import lightning
 import torch
 import torchvision
-from lightning import Trainer
+from lightning import LightningModule, Trainer
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
 from torch import Tensor, nn
@@ -18,7 +17,7 @@ from .helper import calc_embedding
 from .models.discriminator import Discriminator
 from .models.generator import Generator
 from .models.loss import AdversarialLoss, AttributeLoss, DiscriminatorLoss, GazeLoss, IdentityLoss, MotionLoss, ReconstructionLoss
-from .types import Batch, BatchMode, Embedding, OptimizerConfig, WarpTemplate
+from .types import Batch, BatchMode, Embedding, OptimizerSet, WarpTemplate
 
 warnings.filterwarnings('ignore', category = UserWarning, module = 'torch')
 
@@ -26,7 +25,7 @@ CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 
 
-class FaceSwapperTrainer(lightning.LightningModule):
+class FaceSwapperTrainer(LightningModule):
 	def __init__(self) -> None:
 		super().__init__()
 		embedder_path = CONFIG.get('training.model', 'embedder_path')
@@ -52,7 +51,7 @@ class FaceSwapperTrainer(lightning.LightningModule):
 		output_tensor = self.generator(source_embedding, target_tensor)
 		return output_tensor
 
-	def configure_optimizers(self) -> Tuple[OptimizerConfig, OptimizerConfig]:
+	def configure_optimizers(self) -> Tuple[OptimizerSet, OptimizerSet]:
 		learning_rate = CONFIG.getfloat('training.trainer', 'learning_rate')
 		generator_optimizer = torch.optim.AdamW(self.generator.parameters(), lr = learning_rate, betas = (0.0, 0.999), weight_decay = 1e-4)
 		discriminator_optimizer = torch.optim.AdamW(self.discriminator.parameters(), lr = learning_rate, betas = (0.0, 0.999), weight_decay = 1e-4)

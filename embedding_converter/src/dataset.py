@@ -1,4 +1,5 @@
 import glob
+from configparser import ConfigParser
 
 from torch import Tensor
 from torch.utils.data import Dataset
@@ -8,8 +9,12 @@ from .types import Batch
 
 
 class StaticDataset(Dataset[Tensor]):
-	def __init__(self, file_pattern : str) -> None:
-		self.file_paths = glob.glob(file_pattern)
+	def __init__(self, config_parser : ConfigParser) -> None:
+		self.config =\
+		{
+			'file_pattern': config_parser.get('training.dataset', 'file_pattern')
+		}
+		self.file_paths = glob.glob(self.config.get('file_pattern'))
 		self.transforms = self.compose_transforms()
 
 	def __getitem__(self, index : int) -> Batch:
