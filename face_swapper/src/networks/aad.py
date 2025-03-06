@@ -17,12 +17,21 @@ class AAD(nn.Module):
 	def create_layers(self) -> nn.ModuleList:
 		layers = nn.ModuleList()
 
+		if self.output_size == 128:
+			layers.extend(
+			[
+				AdaptiveFeatureModulation(512, 512, 512, self.identity_channels, self.num_blocks),
+				AdaptiveFeatureModulation(512, 512, 1024, self.identity_channels, self.num_blocks),
+				AdaptiveFeatureModulation(512, 512, 512, self.identity_channels, self.num_blocks),
+			])
+
 		if self.output_size == 256:
 			layers.extend(
 			[
 				AdaptiveFeatureModulation(1024, 1024, 1024, self.identity_channels, self.num_blocks),
 				AdaptiveFeatureModulation(1024, 1024, 2048, self.identity_channels, self.num_blocks),
-				AdaptiveFeatureModulation(1024, 1024, 1024, self.identity_channels, self.num_blocks)
+				AdaptiveFeatureModulation(1024, 1024, 1024, self.identity_channels, self.num_blocks),
+				AdaptiveFeatureModulation(1024, 512, 512, self.identity_channels, self.num_blocks)
 			])
 
 		if self.output_size == 512:
@@ -31,12 +40,12 @@ class AAD(nn.Module):
 				AdaptiveFeatureModulation(2048, 2048, 2048, self.identity_channels, self.num_blocks),
 				AdaptiveFeatureModulation(2048, 2048, 4096, self.identity_channels, self.num_blocks),
 				AdaptiveFeatureModulation(2048, 2048, 2048, self.identity_channels, self.num_blocks),
-				AdaptiveFeatureModulation(2048, 1024, 1024, self.identity_channels, self.num_blocks)
+				AdaptiveFeatureModulation(2048, 1024, 1024, self.identity_channels, self.num_blocks),
+				AdaptiveFeatureModulation(1024, 512, 512, self.identity_channels, self.num_blocks)
 			])
 
 		layers.extend(
 		[
-			AdaptiveFeatureModulation(1024, 512, 512, self.identity_channels, self.num_blocks),
 			AdaptiveFeatureModulation(512, 256, 256, self.identity_channels, self.num_blocks),
 			AdaptiveFeatureModulation(256, 128, 128, self.identity_channels, self.num_blocks),
 			AdaptiveFeatureModulation(128, 64, 64, self.identity_channels, self.num_blocks),
