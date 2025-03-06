@@ -21,12 +21,12 @@ class DiscriminatorLoss(nn.Module):
 		positive_tensors = []
 		negative_tensors = []
 
-		for discriminator_output_tensor in discriminator_output_tensors:
-			positive_tensor = torch.relu(discriminator_output_tensor[0] + 1).mean(dim = [ 1, 2, 3 ])
+		for discriminator_source_tensor in discriminator_source_tensors:
+			positive_tensor = torch.relu(discriminator_source_tensor + 1).mean(dim = [ 1, 2, 3 ])
 			positive_tensors.append(positive_tensor)
 
-		for discriminator_source_tensor in discriminator_source_tensors:
-			negative_tensor = torch.relu(1 - discriminator_source_tensor[0]).mean(dim = [ 1, 2, 3 ])
+		for discriminator_output_tensor in discriminator_output_tensors:
+			negative_tensor = torch.relu(1 - discriminator_output_tensor).mean(dim = [ 1, 2, 3 ])
 			negative_tensors.append(negative_tensor)
 
 		positive_loss = torch.stack(positive_tensors).mean()
@@ -44,7 +44,7 @@ class AdversarialLoss(nn.Module):
 		temp_tensors = []
 
 		for discriminator_output_tensor in discriminator_output_tensors:
-			temp_tensor = torch.relu(1 - discriminator_output_tensor[0]).mean(dim = [ 1, 2, 3 ]).mean()
+			temp_tensor = torch.relu(1 - discriminator_output_tensor).mean(dim = [ 1, 2, 3 ]).mean()
 			temp_tensors.append(temp_tensor)
 
 		adversarial_loss = torch.stack(temp_tensors).mean()
@@ -164,8 +164,8 @@ class GazeLoss(nn.Module):
 		return gaze_loss, weighted_gaze_loss
 
 	def detect_gaze(self, input_tensor : Tensor) -> Gaze:
-		transform_size = CONFIG.getint('training.dataset', 'transform_size')
-		crop_sizes = (torch.tensor([ 0.235, 0.875, 0.0625, 0.8 ]) * transform_size).int()
+		output_size = CONFIG.getint('training.model.generator', 'output_size')
+		crop_sizes = (torch.tensor([ 0.235, 0.875, 0.0625, 0.8 ]) * output_size).int()
 		crop_tensor = input_tensor[:, :, crop_sizes[0]:crop_sizes[1], crop_sizes[2]:crop_sizes[3]]
 		crop_tensor = (crop_tensor + 1) * 0.5
 		crop_tensor = transforms.Normalize(mean = [ 0.485, 0.456, 0.406 ], std = [ 0.229, 0.224, 0.225 ])(crop_tensor)

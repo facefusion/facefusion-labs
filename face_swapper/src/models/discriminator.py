@@ -30,12 +30,12 @@ class Discriminator(nn.Module):
 
 		return discriminators
 
-	def forward(self, input_tensor : Tensor) -> List[List[Tensor]]:
+	def forward(self, input_tensor : Tensor) -> List[Tensor]:
 		temp_tensor = input_tensor
 		output_tensors = []
 
 		for discriminator in self.discriminators:
-			output_tensors.append([ discriminator(temp_tensor) ])
+			output_tensors.append(discriminator(temp_tensor))
 			temp_tensor = self.avg_pool(temp_tensor)
 
 		return output_tensors
