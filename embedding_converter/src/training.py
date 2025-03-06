@@ -21,15 +21,12 @@ CONFIG_PARSER.read('config.ini')
 class EmbeddingConverterTrainer(LightningModule):
 	def __init__(self, config_parser : ConfigParser) -> None:
 		super().__init__()
-		self.config =\
-		{
-			'source_path': config_parser.get('training.model', 'source_path'),
-			'target_path': config_parser.get('training.model', 'target_path'),
-			'learning_rate': config_parser.getfloat('training.trainer', 'learning_rate')
-		}
+		self.config_source_path = config_parser.get('training.model', 'source_path')
+		self.config_target_path = config_parser.get('training.model', 'target_path')
+		self.config_learning_rate = config_parser.getfloat('training.trainer', 'learning_rate')
 		self.embedding_converter = EmbeddingConverter()
-		self.source_embedder = torch.jit.load(self.config.get('source_path'), map_location = 'cpu') # type:ignore[no-untyped-call]
-		self.target_embedder = torch.jit.load(self.config.get('target_path'), map_location = 'cpu') # type:ignore[no-untyped-call]
+		self.source_embedder = torch.jit.load(self.config_source_path, map_location = 'cpu')
+		self.target_embedder = torch.jit.load(self.config_target_path, map_location = 'cpu')
 		self.mse_loss = nn.MSELoss()
 
 	def forward(self, source_embedding : Embedding) -> Embedding:
@@ -53,7 +50,7 @@ class EmbeddingConverterTrainer(LightningModule):
 		return validation_score
 
 	def configure_optimizers(self) -> OptimizerSet:
-		optimizer = torch.optim.Adam(self.parameters(), lr = self.config.get('learning_rate'))
+		optimizer = torch.optim.Adam(self.parameters(), lr = self.config_learning_rate)
 		scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
 		optimizer_set =\
 		{
@@ -71,52 +68,43 @@ class EmbeddingConverterTrainer(LightningModule):
 
 
 def create_loaders(dataset : Dataset[Tensor]) -> Tuple[StatefulDataLoader[Tensor], StatefulDataLoader[Tensor]]:
-	config =\
-	{
-		'batch_size': CONFIG_PARSER.getint('training.loader', 'batch_size'),
-		'num_workers': CONFIG_PARSER.getint('training.loader', 'num_workers')
-	}
+	config_batch_size = CONFIG_PARSER.getint('training.loader', 'batch_size')
+	config_num_workers = CONFIG_PARSER.getint('training.loader', 'num_workers')
 
 	training_dataset, validate_dataset = split_dataset(dataset)
-	training_loader = StatefulDataLoader(training_dataset, batch_size = config.get('batch_size'), shuffle = True, num_workers = config.get('num_workers'), drop_last = True, pin_memory = True, persistent_workers = True)
-	validation_loader = StatefulDataLoader(validate_dataset, batch_size = config.get('batch_size'), shuffle = False, num_workers = config.get('num_workers'), pin_memory = True, persistent_workers = True)
+	training_loader = StatefulDataLoader(training_dataset, batch_size = config_batch_size, shuffle = True, num_workers = config_num_workers, drop_last = True, pin_memory = True, persistent_workers = True)
+	validation_loader = StatefulDataLoader(validate_dataset, batch_size = config_batch_size, shuffle = False, num_workers = config_num_workers, pin_memory = True, persistent_workers = True)
 	return training_loader, validation_loader
 
 
 def split_dataset(dataset : Dataset[Tensor]) -> Tuple[Dataset[Tensor], Dataset[Tensor]]:
-	config =\
-	{
-		'split_ratio': CONFIG_PARSER.getfloat('training.loader', 'split_ratio')
-	}
+	config_split_ratio = CONFIG_PARSER.getfloat('training.loader', 'split_ratio')
 
 	dataset_size = len(dataset) # type:ignore[arg-type]
-	training_size = int(dataset_size * config.get('split_ratio'))
+	training_size = int(dataset_size * config_split_ratio)
 	validation_size = int(dataset_size - training_size)
 	training_dataset, validate_dataset = random_split(dataset, [ training_size, validation_size ])
 	return training_dataset, validate_dataset
 
 
 def create_trainer() -> Trainer:
-	config =\
-	{
-		'max_epochs': CONFIG_PARSER.getint('training.trainer', 'max_epochs'),
-		'precision': CONFIG_PARSER.get('training.trainer', 'precision'),
-		'directory_path': CONFIG_PARSER.get('training.output', 'directory_path'),
-		'file_pattern': CONFIG_PARSER.get('training.output', 'file_pattern')
-	}
+	config_max_epochs = CONFIG_PARSER.getint('training.trainer', 'max_epochs')
+	config_precision = CONFIG_PARSER.get('training.trainer', 'precision')
+	config_directory_path = CONFIG_PARSER.get('training.output', 'directory_path')
+	config_file_pattern = CONFIG_PARSER.get('training.output', 'file_pattern')
 	logger = TensorBoardLogger('.logs', name = 'embedding_converter')
 
 	return Trainer(
 		logger = logger,
 		log_every_n_steps = 10,
-		max_epochs = config.get('max_epochs'),
-		precision = config.get('precision'),
+		max_epochs = config_max_epochs,
+		precision = config_precision,
 		callbacks =
 		[
 			ModelCheckpoint(
 				monitor = 'training_loss',
-				dirpath = config.get('directory_path'),
-				filename = config.get('file_pattern'),
+				dirpath = config_directory_path,
+				filename = config_file_pattern,
 				every_n_epochs = 1,
 				save_top_k = 3,
 				save_last = True
@@ -126,10 +114,7 @@ def create_trainer() -> Trainer:
 
 
 def train() -> None:
-	config =\
-	{
-		'resume_path': CONFIG_PARSER.get('training.output', 'resume_path')
-	}
+	config_resume_path = CONFIG_PARSER.get('training.output', 'resume_path')
 
 	if torch.cuda.is_available():
 		torch.set_float32_matmul_precision('high')
@@ -139,7 +124,7 @@ def train() -> None:
 	embedding_converter_trainer = EmbeddingConverterTrainer(CONFIG_PARSER)
 	trainer = create_trainer()
 
-	if os.path.exists(config.get('resume_path')):
-		trainer.fit(embedding_converter_trainer, training_loader, validation_loader, ckpt_path = config.get('resume_path'))
+	if os.path.exists(config_resume_path):
+		trainer.fit(embedding_converter_trainer, training_loader, validation_loader, ckpt_path = config_resume_path)
 	else:
 		trainer.fit(embedding_converter_trainer, training_loader, validation_loader)

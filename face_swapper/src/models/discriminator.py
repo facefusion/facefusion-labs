@@ -9,10 +9,7 @@ from ..networks.nld import NLD
 class Discriminator(nn.Module):
 	def __init__(self, config_parser : ConfigParser) -> None:
 		super().__init__()
-		self.config =\
-		{
-			'num_discriminators': config_parser.getint('training.model.discriminator', 'num_discriminators')
-		}
+		self.config_num_discriminators = config_parser.getint('training.model.discriminator', 'num_discriminators')
 		self.config_parser = config_parser
 		self.avg_pool = nn.AvgPool2d(kernel_size = 3, stride = 2, padding = (1, 1), count_include_pad = False)
 		self.discriminators = self.create_discriminators()
@@ -20,7 +17,7 @@ class Discriminator(nn.Module):
 	def create_discriminators(self) -> nn.ModuleList:
 		discriminators = nn.ModuleList()
 
-		for _ in range(self.config.get('num_discriminators')):
+		for _ in range(self.config_num_discriminators):
 			discriminator = NLD(self.config_parser).sequences
 			discriminators.append(discriminator)
 
