@@ -121,7 +121,7 @@ def create_trainer() -> Trainer:
 
 
 def train() -> None:
-	config =\
+	config : Config =\
 	{
 		'dataset':
 		{
