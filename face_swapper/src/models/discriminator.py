@@ -1,31 +1,28 @@
-import configparser
+from configparser import ConfigParser
 from typing import List
 
 from torch import Tensor, nn
 
 from ..networks.nld import NLD
 
-CONFIG = configparser.ConfigParser()
-CONFIG.read('config.ini')
-
 
 class Discriminator(nn.Module):
-	def __init__(self) -> None:
+	def __init__(self, config_parser : ConfigParser) -> None:
 		super().__init__()
+		self.config =\
+		{
+			'num_discriminators': config_parser.getint('training.model.discriminator', 'num_discriminators')
+		}
+		self.config_parser = config_parser
 		self.avg_pool = nn.AvgPool2d(kernel_size = 3, stride = 2, padding = (1, 1), count_include_pad = False)
 		self.discriminators = self.create_discriminators()
 
-	@staticmethod
-	def create_discriminators() -> nn.ModuleList:
-		num_discriminators = CONFIG.getint('training.model.discriminator', 'num_discriminators')
-		input_channels = CONFIG.getint('training.model.discriminator', 'input_channels')
-		num_filters = CONFIG.getint('training.model.discriminator', 'num_filters')
-		kernel_size = CONFIG.getint('training.model.discriminator', 'kernel_size')
-		num_layers = CONFIG.getint('training.model.discriminator', 'num_layers')
+
+	def create_discriminators(self) -> nn.ModuleList:
 		discriminators = nn.ModuleList()
 
-		for _ in range(num_discriminators):
-			discriminator = NLD(input_channels, num_filters, num_layers, kernel_size).sequences
+		for _ in range(self.config.get('num_discriminators')):
+			discriminator = NLD(self.config_parser).sequences
 			discriminators.append(discriminator)
 
 		return discriminators
@@ -35,7 +32,8 @@ class Discriminator(nn.Module):
 		output_tensors = []
 
 		for discriminator in self.discriminators:
-			output_tensors.append(discriminator(temp_tensor))
+			output_tensor = discriminator(temp_tensor)
+			output_tensors.append(output_tensor)
 			temp_tensor = self.avg_pool(temp_tensor)
 
 		return output_tensors

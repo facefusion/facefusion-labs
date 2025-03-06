@@ -1,6 +1,8 @@
 import glob
 import os
 import random
+from configparser import ConfigParser
+from typing import cast
 
 import albumentations
 from torch import Tensor
@@ -8,25 +10,29 @@ from torch.utils.data import Dataset
 from torchvision import io, transforms
 
 from .helper import warp_tensor
-from .types import Batch, BatchMode, WarpTemplate
+from .types import Batch, WarpTemplate, BatchMode
 
 
 class DynamicDataset(Dataset[Tensor]):
-	def __init__(self, file_pattern : str, warp_template : WarpTemplate, transform_size : int, batch_mode : BatchMode, batch_ratio : float) -> None:
-		self.file_paths = glob.glob(file_pattern)
-		self.warp_template = warp_template
-		self.transform_size = transform_size
-		self.batch_mode = batch_mode
-		self.batch_ratio = batch_ratio
+	def __init__(self, config_parser : ConfigParser) -> None:
+		self.config =\
+		{
+			'file_pattern': config_parser.get('training.dataset', 'file_pattern'),
+			'transform_size': config_parser.get('training.dataset', 'transform_size'),
+			'batch_mode': cast(BatchMode, config_parser.get('training.dataset', 'batch_mode')),
+			'batch_ratio': config_parser.getfloat('training.dataset', 'batch_ratio'),
+		}
+		self.config_parser = config_parser
+		self.file_paths = glob.glob(self.config.get('file_pattern'))
 		self.transforms = self.compose_transforms()
 
 	def __getitem__(self, index : int) -> Batch:
 		file_path = self.file_paths[index]
 
-		if random.random() < self.batch_ratio:
-			if self.batch_mode == 'equal':
+		if random.random() < self.config.get('batch_ratio'):
+			if self.config.get('batch_mode') == 'equal':
 				return self.prepare_equal_batch(file_path)
-			if self.batch_mode == 'same':
+			if self.config.get('batch_mode') == 'same':
 				return self.prepare_same_batch(file_path)
 
 		return self.prepare_different_batch(file_path)
@@ -39,9 +45,9 @@ class DynamicDataset(Dataset[Tensor]):
 		[
 			AugmentTransform(),
 			transforms.ToPILImage(),
-			transforms.Resize((self.transform_size, self.transform_size), interpolation = transforms.InterpolationMode.BICUBIC),
+			transforms.Resize((self.config.get('transform_size'), self.config.get('transform_size')), interpolation = transforms.InterpolationMode.BICUBIC),
 			transforms.ToTensor(),
-			WarpTransform(self.warp_template),
+			WarpTransform(self.config_parser),
 			transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 		])
 
@@ -92,9 +98,12 @@ class AugmentTransform:
 
 
 class WarpTransform:
-	def __init__(self, warp_template : WarpTemplate) -> None:
-		self.warp_template = warp_template
+	def __init__(self, config_parser : ConfigParser) -> None:
+		self.config =\
+		{
+			'warp_template': cast(WarpTemplate, config_parser.get('training.dataset', 'warp_template'))
+		}
 
 	def __call__(self, input_tensor : Tensor) -> Tensor:
 		temp_tensor = input_tensor.unsqueeze(0)
-		return warp_tensor(temp_tensor, self.warp_template).squeeze(0)
+		return warp_tensor(temp_tensor, self.config.get('warp_template')).squeeze(0)

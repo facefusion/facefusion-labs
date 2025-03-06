@@ -1,4 +1,4 @@
-import configparser
+from configparser import ConfigParser
 from typing import List, Tuple
 
 import torch
@@ -8,9 +8,6 @@ from torchvision import transforms
 
 from ..helper import calc_embedding
 from ..types import Attributes, EmbedderModule, Gaze, GazerModule, MotionExtractorModule
-
-CONFIG = configparser.ConfigParser()
-CONFIG.read('config.ini')
 
 
 class DiscriminatorLoss(nn.Module):
@@ -36,11 +33,14 @@ class DiscriminatorLoss(nn.Module):
 
 
 class AdversarialLoss(nn.Module):
-	def __init__(self) -> None:
+	def __init__(self, config_parser : ConfigParser) -> None:
 		super().__init__()
+		self.config =\
+		{
+			'adversarial_weight': config_parser.getfloat('training.losses', 'adversarial_weight')
+		}
 
 	def forward(self, discriminator_output_tensors : List[Tensor]) -> Tuple[Tensor, Tensor]:
-		adversarial_weight = CONFIG.getfloat('training.losses', 'adversarial_weight')
 		temp_tensors = []
 
 		for discriminator_output_tensor in discriminator_output_tensors:
@@ -48,7 +48,7 @@ class AdversarialLoss(nn.Module):
 			temp_tensors.append(temp_tensor)
 
 		adversarial_loss = torch.stack(temp_tensors).mean()
-		weighted_adversarial_loss = adversarial_loss * adversarial_weight
+		weighted_adversarial_loss = adversarial_loss * self.config.get('adversarial_weight')
 		return adversarial_loss, weighted_adversarial_loss
 
 

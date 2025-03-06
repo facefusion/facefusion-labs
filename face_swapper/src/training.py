@@ -1,5 +1,5 @@
-import configparser
 import os
+from configparser import ConfigParser
 import warnings
 from typing import Tuple, cast
 
@@ -21,30 +21,34 @@ from .types import Batch, BatchMode, Embedding, OptimizerSet, WarpTemplate
 
 warnings.filterwarnings('ignore', category = UserWarning, module = 'torch')
 
-CONFIG = configparser.ConfigParser()
-CONFIG.read('config.ini')
+CONFIG_PARSER = ConfigParser()
+CONFIG_PARSER.read('config.ini')
 
 
 class FaceSwapperTrainer(LightningModule):
-	def __init__(self) -> None:
+	def __init__(self, config_parser : ConfigParser) -> None:
 		super().__init__()
-		embedder_path = CONFIG.get('training.model', 'embedder_path')
-		gazer_path = CONFIG.get('training.model', 'gazer_path')
-		motion_extractor_path = CONFIG.get('training.model', 'motion_extractor_path')
+		self.config =\
+		{
+			'embedder_path': config_parser.get('training.model', 'embedder_path'),
+			'gazer_path': config_parser.get('training.model', 'gazer_path'),
+			'motion_extractor_path': config_parser.get('training.model', 'motion_extractor_path'),
+			'learning_rate': config_parser.getfloat('training.trainer', 'learning_rate'),
+			'preview_frequency': config_parser.getint('training.trainer', 'preview_frequency')
+		}
+		self.embedder = torch.jit.load(self.config.get('embedder_path'), map_location = 'cpu').eval()  # type:ignore[no-untyped-call]
+		self.gazer = torch.jit.load(self.config.get('gazer_path'), map_location = 'cpu').eval()  # type:ignore[no-untyped-call]
+		self.motion_extractor = torch.jit.load(self.config.get('motion_extractor_path'), map_location = 'cpu').eval()  # type:ignore[no-untyped-call]
 
-		self.embedder = torch.jit.load(embedder_path, map_location = 'cpu').eval()  # type:ignore[no-untyped-call]
-		self.gazer = torch.jit.load(gazer_path, map_location = 'cpu').eval()  # type:ignore[no-untyped-call]
-		self.motion_extractor = torch.jit.load(motion_extractor_path, map_location = 'cpu').eval()  # type:ignore[no-untyped-call]
-
-		self.generator = Generator()
-		self.discriminator = Discriminator()
-		self.discriminator_loss = DiscriminatorLoss()
-		self.adversarial_loss = AdversarialLoss()
-		self.attribute_loss = AttributeLoss()
-		self.reconstruction_loss = ReconstructionLoss(self.embedder)
-		self.identity_loss = IdentityLoss(self.embedder)
-		self.motion_loss = MotionLoss(self.motion_extractor)
-		self.gaze_loss = GazeLoss(self.gazer)
+		self.generator = Generator(config_parser)
+		self.discriminator = Discriminator(config_parser)
+		self.discriminator_loss = DiscriminatorLoss(config_parser)
+		self.adversarial_loss = AdversarialLoss(config_parser)
+		self.attribute_loss = AttributeLoss(config_parser)
+		self.reconstruction_loss = ReconstructionLoss(config_parser, self.embedder)
+		self.identity_loss = IdentityLoss(config_parser, self.embedder)
+		self.motion_loss = MotionLoss(config_parser, self.motion_extractor)
+		self.gaze_loss = GazeLoss(config_parser, self.gazer)
 		self.automatic_optimization = False
 
 	def forward(self, source_embedding : Embedding, target_tensor : Tensor) -> Tensor:
@@ -52,9 +56,8 @@ class FaceSwapperTrainer(LightningModule):
 		return output_tensor
 
 	def configure_optimizers(self) -> Tuple[OptimizerSet, OptimizerSet]:
-		learning_rate = CONFIG.getfloat('training.trainer', 'learning_rate')
-		generator_optimizer = torch.optim.AdamW(self.generator.parameters(), lr = learning_rate, betas = (0.0, 0.999), weight_decay = 1e-4)
-		discriminator_optimizer = torch.optim.AdamW(self.discriminator.parameters(), lr = learning_rate, betas = (0.0, 0.999), weight_decay = 1e-4)
+		generator_optimizer = torch.optim.AdamW(self.generator.parameters(), lr = self.config.get('learning_rate'), betas = (0.0, 0.999), weight_decay = 1e-4)
+		discriminator_optimizer = torch.optim.AdamW(self.discriminator.parameters(), lr = self.config.get('learning_rate'), betas = (0.0, 0.999), weight_decay = 1e-4)
 		generator_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(generator_optimizer, T_0 = 300, T_mult = 2)
 		discriminator_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(discriminator_optimizer, T_0 = 300, T_mult = 2)
 
@@ -79,8 +82,6 @@ class FaceSwapperTrainer(LightningModule):
 		return generator_config, discriminator_config
 
 	def training_step(self, batch : Batch, batch_index : int) -> Tensor:
-		preview_frequency = CONFIG.getint('training.trainer', 'preview_frequency')
-
 		source_tensor, target_tensor = batch
 		generator_optimizer, discriminator_optimizer = self.optimizers() #type:ignore[attr-defined]
 		source_embedding = calc_embedding(self.embedder, source_tensor, (0, 0, 0, 0))
@@ -113,7 +114,7 @@ class FaceSwapperTrainer(LightningModule):
 		discriminator_optimizer.step()
 		self.untoggle_optimizer(discriminator_optimizer)
 
-		if self.global_step % preview_frequency == 0:
+		if self.global_step % self.config.get('preview_frequency') == 0:
 			self.generate_preview(source_tensor, target_tensor, generator_output_tensor)
 
 		self.log('generator_loss', generator_loss, prog_bar = True)
@@ -149,42 +150,52 @@ class FaceSwapperTrainer(LightningModule):
 
 
 def create_loaders(dataset : Dataset[Tensor]) -> Tuple[StatefulDataLoader[Tensor], StatefulDataLoader[Tensor]]:
-	batch_size = CONFIG.getint('training.loader', 'batch_size')
-	num_workers = CONFIG.getint('training.loader', 'num_workers')
+	config =\
+	{
+		'batch_size': CONFIG_PARSER.getint('training.loader', 'batch_size'),
+		'num_workers': CONFIG_PARSER.getint('training.loader', 'num_workers')
+	}
 
 	training_dataset, validate_dataset = split_dataset(dataset)
-	training_loader = StatefulDataLoader(training_dataset, batch_size = batch_size, shuffle = True, num_workers = num_workers, drop_last = True, pin_memory = True, persistent_workers = True)
-	validation_loader = StatefulDataLoader(validate_dataset, batch_size = batch_size, shuffle = False, num_workers = num_workers, pin_memory = True, persistent_workers = True)
+	training_loader = StatefulDataLoader(training_dataset, batch_size = config.get('batch_size'), shuffle = True, num_workers = config.get('num_workers'), drop_last = True, pin_memory = True, persistent_workers = True)
+	validation_loader = StatefulDataLoader(validate_dataset, batch_size = config.get('batch_size'), shuffle = False, num_workers = config.get('num_workers'), pin_memory = True, persistent_workers = True)
 	return training_loader, validation_loader
 
 
 def split_dataset(dataset : Dataset[Tensor]) -> Tuple[Dataset[Tensor], Dataset[Tensor]]:
-	split_ratio = CONFIG.getfloat('training.loader', 'split_ratio')
+	config =\
+	{
+		'split_ratio': CONFIG_PARSER.getfloat('training.loader', 'split_ratio')
+	}
+
 	dataset_size = len(dataset) # type:ignore[arg-type]
-	training_size = int(dataset_size * split_ratio)
+	training_size = int(dataset_size * config.get('split_ratio'))
 	validation_size = int(dataset_size - training_size)
 	training_dataset, validate_dataset = random_split(dataset, [ training_size, validation_size ])
 	return training_dataset, validate_dataset
 
 
 def create_trainer() -> Trainer:
-	trainer_max_epochs = CONFIG.getint('training.trainer', 'max_epochs')
-	output_directory_path = CONFIG.get('training.output', 'directory_path')
-	output_file_pattern = CONFIG.get('training.output', 'file_pattern')
-	trainer_precision = CONFIG.get('training.trainer', 'precision')
+	config =\
+	{
+		'max_epochs': CONFIG_PARSER.getint('training.trainer', 'max_epochs'),
+		'precision': CONFIG_PARSER.get('training.trainer', 'precision'),
+		'directory_path': CONFIG_PARSER.get('training.output', 'directory_path'),
+		'file_pattern': CONFIG_PARSER.get('training.output', 'file_pattern')
+	}
 	logger = TensorBoardLogger('.logs', name = 'face_swapper')
 
 	return Trainer(
 		logger = logger,
 		log_every_n_steps = 10,
-		max_epochs = trainer_max_epochs,
-		precision = trainer_precision, # type:ignore[arg-type]
+		max_epochs = config.get('max_epochs'),
+		precision = config.get('precision'),
 		callbacks =
 		[
 			ModelCheckpoint(
 				monitor = 'generator_loss',
-				dirpath = output_directory_path,
-				filename = output_file_pattern,
+				dirpath = config.get('directory_path'),
+				filename = config.get('file_pattern'),
 				every_n_train_steps = 1000,
 				save_top_k = 3,
 				save_last = True
@@ -195,22 +206,20 @@ def create_trainer() -> Trainer:
 
 
 def train() -> None:
-	dataset_file_pattern = CONFIG.get('training.dataset', 'file_pattern')
-	dataset_warp_template = cast(WarpTemplate, CONFIG.get('training.dataset', 'warp_template'))
-	dataset_batch_mode = cast(BatchMode, CONFIG.get('training.dataset', 'batch_mode'))
-	dataset_batch_ratio = CONFIG.getfloat('training.dataset', 'batch_ratio')
-	output_resume_path = CONFIG.get('training.output', 'resume_path')
-	output_size = CONFIG.getint('training.model.generator', 'output_size')
+	config =\
+	{
+		'resume_path': CONFIG_PARSER.get('training.output', 'resume_path')
+	}
 
 	if torch.cuda.is_available():
 		torch.set_float32_matmul_precision('high')
 
-	dataset = DynamicDataset(dataset_file_pattern, dataset_warp_template, output_size, dataset_batch_mode, dataset_batch_ratio)
+	dataset = DynamicDataset(CONFIG_PARSER)
 	training_loader, validation_loader = create_loaders(dataset)
-	face_swapper_trainer = FaceSwapperTrainer()
+	face_swapper_trainer = FaceSwapperTrainer(CONFIG_PARSER)
 	trainer = create_trainer()
 
-	if os.path.isfile(output_resume_path):
-		trainer.fit(face_swapper_trainer, training_loader, validation_loader, ckpt_path = output_resume_path)
+	if os.path.isfile(config.get('resume_path')):
+		trainer.fit(face_swapper_trainer, training_loader, validation_loader, ckpt_path = config.get('resume_path'))
 	else:
 		trainer.fit(face_swapper_trainer, training_loader, validation_loader)
