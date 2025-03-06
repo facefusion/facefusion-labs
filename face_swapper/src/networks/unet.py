@@ -8,10 +8,7 @@ from torch import Tensor, nn
 class UNet(nn.Module):
 	def __init__(self, config_parser : ConfigParser) -> None:
 		super().__init__()
-		self.config =\
-		{
-			'output_size': config_parser.getint('training.model.generator', 'output_size')
-		}
+		self.config_output_size = config_parser.getint('training.model.generator', 'output_size')
 		self.down_samples = self.create_down_samples()
 		self.up_samples = self.create_up_samples()
 
@@ -25,20 +22,20 @@ class UNet(nn.Module):
 			DownSample(256, 512)
 		])
 
-		if self.config.get('output_size') == 128:
+		if self.config_output_size == 128:
 			down_samples.extend(
 			[
 				DownSample(512, 512)
 			])
 
-		if self.config.get('output_size') == 256:
+		if self.config_output_size == 256:
 			down_samples.extend(
 			[
 				DownSample(512, 1024),
 				DownSample(1024, 1024)
 			])
 
-		if self.config.get('output_size') == 512:
+		if self.config_output_size == 512:
 			down_samples.extend(
 			[
 				DownSample(512, 1024),
@@ -51,20 +48,20 @@ class UNet(nn.Module):
 	def create_up_samples(self) -> nn.ModuleList:
 		up_samples = nn.ModuleList()
 
-		if self.config.get('output_size') == 128:
+		if self.config_output_size == 128:
 			up_samples.extend(
 			[
 				UpSample(512, 512)
 			])
 
-		if self.config.get('output_size') == 256:
+		if self.config_output_size == 256:
 			up_samples.extend(
 			[
 				UpSample(1024, 1024),
 				UpSample(2048, 512)
 			])
 
-		if self.config.get('output_size') == 512:
+		if self.config_output_size == 512:
 			up_samples.extend(
 			[
 				UpSample(2048, 2048),
