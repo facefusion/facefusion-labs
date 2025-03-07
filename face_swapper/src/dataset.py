@@ -16,7 +16,7 @@ from .types import Batch, BatchMode, WarpTemplate
 class DynamicDataset(Dataset[Tensor]):
 	def __init__(self, config_parser : ConfigParser) -> None:
 		self.config_file_pattern = config_parser.get('training.dataset', 'file_pattern')
-		self.config_transform_size = config_parser.get('training.dataset', 'transform_size')
+		self.config_transform_size = config_parser.getint('training.dataset', 'transform_size')
 		self.config_batch_mode = cast(BatchMode, config_parser.get('training.dataset', 'batch_mode'))
 		self.config_batch_ratio = config_parser.getfloat('training.dataset', 'batch_ratio')
 		self.config_parser = config_parser
