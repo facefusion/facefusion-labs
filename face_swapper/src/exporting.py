@@ -1,26 +1,26 @@
-import configparser
-from os import makedirs
+import os
+from configparser import ConfigParser
+
 
 import torch
 
 from .training import FaceSwapperTrainer
 
-CONFIG = configparser.ConfigParser()
-CONFIG.read('config.ini')
+CONFIG_PARSER = ConfigParser()
+CONFIG_PARSER.read('config.ini')
 
 
 def export() -> None:
-	directory_path = CONFIG.get('exporting', 'directory_path')
-	source_path = CONFIG.get('exporting', 'source_path')
-	target_path = CONFIG.get('exporting', 'target_path')
-	target_size = CONFIG.getint('exporting', 'target_size')
-	ir_version = CONFIG.getint('exporting', 'ir_version')
-	opset_version = CONFIG.getint('exporting', 'opset_version')
+	config_directory_path = CONFIG_PARSER.get('exporting', 'directory_path')
+	config_source_path = CONFIG_PARSER.get('exporting', 'source_path')
+	config_target_path = CONFIG_PARSER.get('exporting', 'target_path')
+	config_target_size = CONFIG_PARSER.getint('exporting', 'target_size')
+	config_ir_version = CONFIG_PARSER.getint('exporting', 'ir_version')
+	config_opset_version = CONFIG_PARSER.getint('exporting', 'opset_version')
 
-	makedirs(directory_path, exist_ok = True)
-	model = FaceSwapperTrainer.load_from_checkpoint(source_path, map_location = 'cpu')
-	model.eval()
-	model.ir_version = torch.tensor(ir_version)
+	os.makedirs(config_directory_path, exist_ok = True)
+	model = FaceSwapperTrainer.load_from_checkpoint(config_source_path, map_location = 'cpu').eval()
+	model.ir_version = torch.tensor(config_ir_version)
 	source_tensor = torch.randn(1, 512)
-	target_tensor = torch.randn(1, 3, target_size, target_size)
-	torch.onnx.export(model, (source_tensor, target_tensor), target_path, input_names = [ 'source', 'target' ], output_names = [ 'output' ], opset_version = opset_version)
+	target_tensor = torch.randn(1, 3, config_target_size, config_target_size)
+	torch.onnx.export(model, (source_tensor, target_tensor), config_target_path, input_names = [ 'source', 'target' ], output_names = [ 'output' ], opset_version = config_opset_version)

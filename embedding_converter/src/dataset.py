@@ -10,11 +10,8 @@ from .types import Batch
 
 class StaticDataset(Dataset[Tensor]):
 	def __init__(self, config_parser : ConfigParser) -> None:
-		self.config =\
-		{
-			'file_pattern': config_parser.get('training.dataset', 'file_pattern')
-		}
-		self.file_paths = glob.glob(self.config.get('file_pattern'))
+		self.config_file_pattern = config_parser.get('training.dataset', 'file_pattern')
+		self.file_paths = glob.glob(self.config_file_pattern)
 		self.transforms = self.compose_transforms()
 
 	def __getitem__(self, index : int) -> Batch:
