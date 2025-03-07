@@ -107,7 +107,7 @@ class MotionLoss(nn.Module):
 	def __init__(self, config_parser : ConfigParser, motion_extractor : MotionExtractorModule):
 		super().__init__()
 		self.config_pose_weight = config_parser.getfloat('training.losses', 'pose_weight')
-		self.expression_weight = config_parser.getfloat('training.losses', 'expression_weight')
+		self.config_expression_weight = config_parser.getfloat('training.losses', 'expression_weight')
 		self.motion_extractor = motion_extractor
 		self.mse_loss = nn.MSELoss()
 
