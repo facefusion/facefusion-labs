@@ -33,7 +33,6 @@ def calc_embedding(embedder : EmbedderModule, input_tensor : Tensor, padding : P
 	crop_tensor[:, :, :, :padding[2]] = 0
 	crop_tensor[:, :, :, 112 - padding[3]:] = 0
 
-	with torch.no_grad():
-		embedding = embedder(crop_tensor)
+	embedding = embedder(crop_tensor)
 	embedding = nn.functional.normalize(embedding, p = 2)
 	return embedding
