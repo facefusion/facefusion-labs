@@ -16,7 +16,7 @@ from .dataset import DynamicDataset
 from .helper import calc_embedding
 from .models.discriminator import Discriminator
 from .models.generator import Generator
-from .models.loss import AdversarialLoss, AttributeLoss, DiscriminatorLoss, GazeLoss, IdentityLoss, MotionLoss, ReconstructionLoss
+from .models.loss import AdversarialLoss, AttributeLoss, DiscriminatorLoss, GazeLoss, IdentityLoss, MaskLoss, MotionLoss, ReconstructionLoss
 from .types import Batch, Embedding, OptimizerSet
 
 warnings.filterwarnings('ignore', category = UserWarning, module = 'torch')
@@ -31,11 +31,13 @@ class FaceSwapperTrainer(LightningModule):
 		self.config_embedder_path = config_parser.get('training.model', 'embedder_path')
 		self.config_gazer_path = config_parser.get('training.model', 'gazer_path')
 		self.config_motion_extractor_path = config_parser.get('training.model', 'motion_extractor_path')
+		self.config_parser_path = config_parser.get('training.model', 'parser_path')
 		self.config_learning_rate = config_parser.getfloat('training.trainer', 'learning_rate')
 		self.config_preview_frequency = config_parser.getint('training.trainer', 'preview_frequency')
 		self.embedder = torch.jit.load(self.config_embedder_path, map_location = 'cpu').eval()
 		self.gazer = torch.jit.load(self.config_gazer_path, map_location = 'cpu').eval()
 		self.motion_extractor = torch.jit.load(self.config_motion_extractor_path, map_location = 'cpu').eval()
+		self.parser = torch.jit.load(self.config_parser_path, map_location = 'cpu').eval()
 		self.generator = Generator(config_parser)
 		self.discriminator = Discriminator(config_parser)
 		self.discriminator_loss = DiscriminatorLoss()
@@ -45,11 +47,12 @@ class FaceSwapperTrainer(LightningModule):
 		self.identity_loss = IdentityLoss(config_parser, self.embedder)
 		self.motion_loss = MotionLoss(config_parser, self.motion_extractor)
 		self.gaze_loss = GazeLoss(config_parser, self.gazer)
+		self.mask_loss = MaskLoss(config_parser, self.parser)
 		self.automatic_optimization = False
 
-	def forward(self, source_embedding : Embedding, target_tensor : Tensor) -> Tensor:
-		output_tensor = self.generator(source_embedding, target_tensor)
-		return output_tensor
+	def forward(self, source_embedding : Embedding, target_tensor : Tensor) -> Tuple[Tensor, Tensor]:
+		output_tensor, mask_tensor = self.generator(source_embedding, target_tensor)
+		return output_tensor, mask_tensor
 
 	def configure_optimizers(self) -> Tuple[OptimizerSet, OptimizerSet]:
 		generator_optimizer = torch.optim.AdamW(self.generator.parameters(), lr = self.config_learning_rate, betas = (0.0, 0.999), weight_decay = 1e-4)
@@ -82,7 +85,7 @@ class FaceSwapperTrainer(LightningModule):
 		generator_optimizer, discriminator_optimizer = self.optimizers() #type:ignore[attr-defined]
 		source_embedding = calc_embedding(self.embedder, source_tensor, (0, 0, 0, 0))
 		target_attributes = self.generator.get_attributes(target_tensor)
-		generator_output_tensor = self.generator(source_embedding, target_tensor)
+		generator_output_tensor, generator_mask_tensor = self.generator(source_embedding, target_tensor)
 		generator_output_attributes = self.generator.get_attributes(generator_output_tensor)
 		discriminator_output_tensors = self.discriminator(generator_output_tensor)
 
@@ -93,7 +96,8 @@ class FaceSwapperTrainer(LightningModule):
 		identity_loss, weighted_identity_loss = self.identity_loss(generator_output_tensor, source_tensor)
 		pose_loss, weighted_pose_loss, expression_loss, weighted_expression_loss = self.motion_loss(target_tensor, generator_output_tensor)
 		gaze_loss, weighted_gaze_loss = self.gaze_loss(target_tensor, generator_output_tensor)
-		generator_loss = weighted_adversarial_loss + weighted_attribute_loss + weighted_reconstruction_loss + weighted_identity_loss + weighted_pose_loss + weighted_gaze_loss + weighted_expression_loss
+		mask_loss, weighted_mask_loss = self.mask_loss(target_tensor, generator_mask_tensor)
+		generator_loss = weighted_adversarial_loss + weighted_attribute_loss + weighted_reconstruction_loss + weighted_identity_loss + weighted_pose_loss + weighted_gaze_loss + weighted_expression_loss + weighted_mask_loss
 
 		generator_optimizer.zero_grad()
 		self.manual_backward(generator_loss)
@@ -121,12 +125,13 @@ class FaceSwapperTrainer(LightningModule):
 		self.log('identity_loss', identity_loss)
 		self.log('pose_loss', pose_loss)
 		self.log('gaze_loss', gaze_loss)
+		self.log('mask_loss', mask_loss)
 		return generator_loss
 
 	def validation_step(self, batch : Batch, batch_index : int) -> Tensor:
 		source_tensor, target_tensor = batch
 		source_embedding = calc_embedding(self.embedder, source_tensor, (0, 0, 0, 0))
-		output_tensor = self.generator(source_embedding, target_tensor)
+		output_tensor, mask_tensor = self.generator(source_embedding, target_tensor)
 		output_embedding = calc_embedding(self.embedder, output_tensor, (0, 0, 0, 0))
 		validation_score = (nn.functional.cosine_similarity(source_embedding, output_embedding).mean() + 1) * 0.5
 		self.log('validation_score', validation_score, prog_bar = True)
