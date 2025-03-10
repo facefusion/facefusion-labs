@@ -14,7 +14,7 @@ class Generator(nn.Module):
 		super().__init__()
 		self.encoder = UNet(config_parser)
 		self.generator = AAD(config_parser)
-		self.masker = MaskNet(67, 1, 16)
+		self.masker = MaskNet(config_parser)
 		self.encoder.apply(init_weight)
 		self.generator.apply(init_weight)
 		self.masker.apply(init_weight)
