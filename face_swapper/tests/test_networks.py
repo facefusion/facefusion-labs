@@ -43,7 +43,7 @@ def test_mask_net(output_size : int) -> None:
 		{
 			'input_channels': '67',
 			'output_channels': '1',
-			'num_filters': '16',
+			'num_filters': '16'
 		}
 	})
 
