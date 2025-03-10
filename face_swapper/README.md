@@ -46,6 +46,7 @@ split_ratio = 0.9995
 embedder_path = .models/arcface.pt
 gazer_path = .models/gazer.pt
 motion_extractor_path = .models/motion_extractor.pt
+parser_path = .models/parser.pt
 ```
 
 ```
@@ -63,6 +64,13 @@ num_filters = 64
 num_layers = 5
 num_discriminators = 3
 kernel_size = 4
+```
+
+```
+[training.model.masker]
+input_channels = 67
+output_channels = 1
+num_filters = 16
 ```
 
 ```
