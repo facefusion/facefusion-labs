@@ -46,6 +46,7 @@ split_ratio = 0.9995
 embedder_path = .models/arcface.pt
 gazer_path = .models/gazer.pt
 motion_extractor_path = .models/motion_extractor.pt
+parser_path .models/parser.pt
 ```
 
 ```
