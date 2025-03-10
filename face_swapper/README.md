@@ -81,7 +81,6 @@ identity_weight = 20.0
 gaze_weight = 0.0
 pose_weight = 0.0
 expression_weight = 0.0
-mask_weight = 1.0
 ```
 
 ```
