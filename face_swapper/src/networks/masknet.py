@@ -46,7 +46,7 @@ class MaskNet(nn.Module):
 			output_tensor = up_sample(output_tensor)
 
 		output_tensor = self.conv(output_tensor)
-		output_tensor = self.activation(output_tensor)
+		output_tensor = self.sigmoid(output_tensor)
 		return output_tensor
 
 
