@@ -66,6 +66,13 @@ kernel_size = 4
 ```
 
 ```
+[training.model.masker]
+input_channels = 67
+output_channels = 1
+base_channels = 16
+```
+
+```
 [training.losses]
 adversarial_weight = 1.0
 attribute_weight = 10.0
