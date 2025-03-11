@@ -16,7 +16,7 @@ GeneratorModule : TypeAlias = Module
 EmbedderModule : TypeAlias = Module
 GazerModule : TypeAlias = Module
 MotionExtractorModule : TypeAlias = Module
-ParserModule : TypeAlias = Module
+FaceParserModule : TypeAlias = Module
 
 OptimizerSet : TypeAlias = Any
 
