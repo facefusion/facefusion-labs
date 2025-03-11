@@ -7,7 +7,6 @@ Batch : TypeAlias = Tuple[Tensor, Tensor]
 BatchMode = Literal['equal', 'same']
 
 Attribute : TypeAlias = Tensor
-Attributes : TypeAlias = Tuple[Attribute, ...]
 Embedding : TypeAlias = Tensor
 Gaze : TypeAlias = Tuple[Tensor, Tensor]
 

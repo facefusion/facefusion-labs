@@ -1,10 +1,11 @@
 from configparser import ConfigParser
+from typing import Tuple
 
 from torch import Tensor, nn
 
 from ..networks.aad import AAD
 from ..networks.unet import UNet
-from ..types import Attributes, Embedding
+from ..types import Embedding, Attribute
 
 
 class Generator(nn.Module):
@@ -20,7 +21,7 @@ class Generator(nn.Module):
 		output_tensor = self.generator(source_embedding, target_attributes)
 		return output_tensor
 
-	def get_attributes(self, input_tensor : Tensor) -> Attributes:
+	def get_attributes(self, input_tensor : Tensor) -> Tuple[Attribute, ...]:
 		return self.encoder(input_tensor)
 
 

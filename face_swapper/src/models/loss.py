@@ -7,7 +7,7 @@ from torch import Tensor, nn
 from torchvision import transforms
 
 from ..helper import calc_embedding
-from ..types import Attributes, EmbedderModule, FaceParserModule, Gaze, GazerModule, MotionExtractorModule
+from ..types import Attribute, EmbedderModule, FaceParserModule, Gaze, GazerModule, MotionExtractorModule
 
 
 class DiscriminatorLoss(nn.Module):
@@ -55,7 +55,7 @@ class AttributeLoss(nn.Module):
 		self.config_batch_size = config_parser.getint('training.loader', 'batch_size')
 		self.config_attribute_weight = config_parser.getfloat('training.losses', 'attribute_weight')
 
-	def forward(self, target_attributes : Attributes, output_attributes : Attributes) -> Tuple[Tensor, Tensor]:
+	def forward(self, target_attributes : Tuple[Attribute, ...], output_attributes : Tuple[Attribute, ...]) -> Tuple[Tensor, Tensor]:
 		temp_tensors = []
 
 		for target_attribute, output_attribute in zip(target_attributes, output_attributes):
