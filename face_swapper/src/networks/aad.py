@@ -1,9 +1,10 @@
 from configparser import ConfigParser
+from typing import Tuple
 
 import torch
 from torch import Tensor, nn
 
-from ..types import Attributes, Embedding
+from ..types import Attribute, Embedding
 
 
 class AAD(nn.Module):
@@ -56,7 +57,7 @@ class AAD(nn.Module):
 
 		return layers
 
-	def forward(self, source_embedding : Embedding, target_attributes : Attributes) -> Tensor:
+	def forward(self, source_embedding : Embedding, target_attributes : Tuple[Attribute, ...]) -> Tensor:
 		temp_tensors = self.pixel_shuffle_up_sample(source_embedding)
 
 		for index, layer in enumerate(self.layers[:-1]):

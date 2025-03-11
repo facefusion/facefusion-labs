@@ -54,11 +54,10 @@ class FaceSwapperTrainer(LightningModule):
 		self.automatic_optimization = False
 
 	def forward(self, source_embedding : Embedding, target_tensor : Tensor) -> Tuple[Tensor, Tensor]:
-
 		with torch.no_grad():
 			output_tensor = self.generator(source_embedding, target_tensor)
-			target_attributes = self.generator.get_attributes(target_tensor)
-			mask_tensor = self.masker(target_tensor, target_attributes[-1])
+			target_attribute = self.generator.get_attributes(target_tensor)[-1]
+			mask_tensor = self.masker(target_tensor, target_attribute)
 
 		return output_tensor, mask_tensor
 
@@ -127,7 +126,8 @@ class FaceSwapperTrainer(LightningModule):
 		self.untoggle_optimizer(generator_optimizer)
 
 		self.toggle_optimizer(masker_optimizer)
-		mask_tensor = self.masker(target_tensor, target_attributes[-1].detach())
+		target_attribute = target_attributes[-1].detach()
+		mask_tensor = self.masker(target_tensor, target_attribute)
 		mask_loss = self.mask_loss(target_tensor, mask_tensor)
 
 		self.manual_backward(mask_loss)

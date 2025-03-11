@@ -3,6 +3,8 @@ from configparser import ConfigParser
 import torch
 from torch import Tensor, nn
 
+from face_swapper.src.types import Attribute
+
 
 class MaskNet(nn.Module):
 	def __init__(self, config_parser : ConfigParser) -> None:
@@ -32,7 +34,7 @@ class MaskNet(nn.Module):
 			UpSample(num_filters, num_filters)
 		])
 
-	def forward(self, target_tensor : Tensor, target_attribute : Tensor) -> Tensor:
+	def forward(self, target_tensor : Tensor, target_attribute : Attribute) -> Tensor:
 		output_tensor = torch.cat([ target_tensor, target_attribute ], dim = 1)
 
 		for down_sample in self.down_samples:
