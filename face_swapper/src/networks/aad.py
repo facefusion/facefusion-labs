@@ -65,7 +65,7 @@ class AAD(nn.Module):
 			temp_tensor = layer(temp_tensors, source_embedding, target_attribute)
 			temp_tensors = nn.functional.interpolate(temp_tensor, scale_factor = 2, mode = 'bilinear', align_corners = False)
 
-		target_attribute = target_attributes[-1],
+		target_attribute = target_attributes[-1]
 		temp_tensors = self.layers[-1](temp_tensors, source_embedding, target_attribute)
 		output_tensor = torch.tanh(temp_tensors)
 		return output_tensor
