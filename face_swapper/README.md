@@ -86,6 +86,7 @@ expression_weight = 0.0
 
 ```
 [training.trainer]
+accumulate_size = 4
 learning_rate = 0.0004
 max_epochs = 50
 precision = 16-mixed
