@@ -36,3 +36,11 @@ def calc_embedding(embedder : EmbedderModule, input_tensor : Tensor, padding : P
 	embedding = embedder(crop_tensor)
 	embedding = nn.functional.normalize(embedding, p = 2)
 	return embedding
+
+
+def overlay_mask(target_tensor : Tensor, mask_tensor : Tensor) -> Tensor:
+	color_tensor = torch.zeros(*list(target_tensor.shape), dtype = target_tensor.dtype, device = target_tensor.device)
+	color_tensor[:, 2, :, :] = 1
+	mask_tensor = mask_tensor.repeat(1, 3, 1, 1).clamp(0, 0.8)
+	output_tensor = target_tensor * (1 - mask_tensor) + color_tensor * mask_tensor
+	return output_tensor

@@ -13,7 +13,7 @@ from torch.utils.data import Dataset, random_split
 from torchdata.stateful_dataloader import StatefulDataLoader
 
 from .dataset import DynamicDataset
-from .helper import calc_embedding
+from .helper import calc_embedding, overlay_mask
 from .models.discriminator import Discriminator
 from .models.generator import Generator
 from .models.loss import AdversarialLoss, AttributeLoss, DiscriminatorLoss, GazeLoss, IdentityLoss, MaskLoss, MotionLoss, ReconstructionLoss
@@ -172,7 +172,7 @@ class FaceSwapperTrainer(LightningModule):
 	def generate_preview(self, source_tensor : Tensor, target_tensor : Tensor, output_tensor : Tensor, mask_tensor : Tensor) -> None:
 		preview_limit = 8
 		preview_cells = []
-		mask_tensor = (mask_tensor.repeat(1, 3, 1, 1) - 0.5) * 2
+		mask_tensor = overlay_mask(target_tensor, mask_tensor)
 
 		for source_tensor, target_tensor, output_tensor, mask_tensor in zip(source_tensor[:preview_limit], target_tensor[:preview_limit], output_tensor[:preview_limit], mask_tensor[:preview_limit]):
 			preview_cell = torch.cat([ source_tensor, target_tensor, output_tensor, mask_tensor ], dim = 2)
