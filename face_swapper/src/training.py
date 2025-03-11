@@ -96,7 +96,7 @@ class FaceSwapperTrainer(LightningModule):
 
 	def training_step(self, batch : Batch, batch_index : int) -> Tensor:
 		source_tensor, target_tensor = batch
-		is_accumulation_step = (batch_index + 1) % self.config_accumulate_size == 0
+		do_update = (batch_index + 1) % self.config_accumulate_size == 0
 		generator_optimizer, discriminator_optimizer, masker_optimizer = self.optimizers() #type:ignore[attr-defined]
 		source_embedding = calc_embedding(self.embedder, source_tensor, (0, 0, 0, 0))
 		target_attributes = self.generator.get_attributes(target_tensor)
@@ -115,7 +115,7 @@ class FaceSwapperTrainer(LightningModule):
 
 		self.manual_backward(generator_loss)
 
-		if is_accumulation_step:
+		if do_update:
 			generator_optimizer.step()
 			generator_optimizer.zero_grad()
 
@@ -127,7 +127,7 @@ class FaceSwapperTrainer(LightningModule):
 
 		self.manual_backward(mask_loss)
 
-		if is_accumulation_step:
+		if do_update:
 			masker_optimizer.step()
 			masker_optimizer.zero_grad()
 
@@ -140,7 +140,7 @@ class FaceSwapperTrainer(LightningModule):
 
 		self.manual_backward(discriminator_loss)
 
-		if is_accumulation_step:
+		if do_update:
 			discriminator_optimizer.step()
 			discriminator_optimizer.zero_grad()
 
