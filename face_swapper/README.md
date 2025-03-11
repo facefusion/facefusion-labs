@@ -91,6 +91,7 @@ learning_rate = 0.0004
 max_epochs = 50
 precision = 16-mixed
 preview_frequency = 250
+strategy = auto
 ```
 
 ```
