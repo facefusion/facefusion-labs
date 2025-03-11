@@ -103,14 +103,18 @@ class UNet(nn.Module):
 class UpSample(nn.Module):
 	def __init__(self, input_channels : int, output_channels : int) -> None:
 		super().__init__()
-		self.conv_transpose = nn.ConvTranspose2d(input_channels, output_channels, kernel_size = 4, stride = 2, padding = 1, bias = False)
-		self.batch_norm = nn.BatchNorm2d(output_channels)
-		self.leaky_relu = nn.LeakyReLU(0.1, inplace = True)
+		self.sequences = self.create_sequences(input_channels, output_channels)
+
+	@staticmethod
+	def create_sequences(input_channels : int, output_channels : int) -> nn.Sequential:
+		return nn.Sequential(
+			nn.ConvTranspose2d(input_channels, output_channels, kernel_size = 4, stride = 2, padding = 1, bias = False),
+			nn.BatchNorm2d(output_channels),
+			nn.LeakyReLU(0.1, inplace = True)
+		)
 
 	def forward(self, input_tensor : Tensor, skip_tensor : Tensor) -> Tensor:
-		output_tensor = self.conv_transpose(input_tensor)
-		output_tensor = self.batch_norm(output_tensor)
-		output_tensor = self.leaky_relu(output_tensor)
+		output_tensor = self.sequences(input_tensor)
 		output_tensor = torch.cat((output_tensor, skip_tensor), dim = 1)
 		return output_tensor
 
@@ -118,12 +122,16 @@ class UpSample(nn.Module):
 class DownSample(nn.Module):
 	def __init__(self, input_channels : int, output_channels : int) -> None:
 		super().__init__()
-		self.conv = nn.Conv2d(input_channels, output_channels, kernel_size = 4, stride = 2, padding = 1, bias = False)
-		self.batch_norm = nn.BatchNorm2d(output_channels)
-		self.leaky_relu = nn.LeakyReLU(0.1, inplace = True)
+		self.sequences = self.create_sequences(input_channels, output_channels)
+
+	@staticmethod
+	def create_sequences(input_channels : int, output_channels : int) -> nn.Sequential:
+		return nn.Sequential(
+			nn.Conv2d(input_channels, output_channels, kernel_size = 4, stride = 2, padding = 1, bias = False),
+			nn.BatchNorm2d(output_channels),
+			nn.LeakyReLU(0.1, inplace = True)
+		)
 
 	def forward(self, input_tensor : Tensor) -> Tensor:
-		output_tensor = self.conv(input_tensor)
-		output_tensor = self.batch_norm(output_tensor)
-		output_tensor = self.leaky_relu(output_tensor)
+		output_tensor = self.sequences(input_tensor)
 		return output_tensor
