@@ -5,7 +5,7 @@ from torch import Tensor, nn
 
 from ..networks.aad import AAD
 from ..networks.unet import UNet
-from ..types import Embedding, Attribute
+from ..types import Attribute, Embedding
 
 
 class Generator(nn.Module):
