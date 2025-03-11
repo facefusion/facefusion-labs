@@ -7,7 +7,7 @@ from torch import Tensor, nn
 from torchvision import transforms
 
 from ..helper import calc_embedding
-from ..types import Attributes, EmbedderModule, Gaze, GazerModule, MotionExtractorModule, ParserModule
+from ..types import Attributes, EmbedderModule, Gaze, GazerModule, MotionExtractorModule, FaceParserModule
 
 
 class DiscriminatorLoss(nn.Module):
@@ -180,10 +180,10 @@ class GazeLoss(nn.Module):
 
 
 class MaskLoss(nn.Module):
-	def __init__(self, config_parser : ConfigParser, parser : ParserModule) -> None:
+	def __init__(self, config_parser : ConfigParser, face_parser : FaceParserModule) -> None:
 		super().__init__()
 		self.config_output_size = config_parser.getint('training.model.generator', 'output_size')
-		self.parser = parser
+		self.face_parser = face_parser
 		self.mse_loss = nn.MSELoss()
 
 	def forward(self, target_tensor : Tensor, mask_tensor : Tensor) -> Tensor:
@@ -198,7 +198,7 @@ class MaskLoss(nn.Module):
 		face_mask_regions = torch.tensor([ 1, 2, 3, 4, 5, 10, 11, 12, 13 ]).to(target_tensor.device)
 
 		with torch.no_grad():
-			output_tensor = self.parser(target_tensor)[0]
+			output_tensor = self.face_parser(target_tensor)[0]
 			output_tensor = output_tensor.argmax(1)
 			output_tensor = torch.isin(output_tensor, face_mask_regions).to(target_tensor.dtype)
 			output_tensor = output_tensor.view(-1, 1, 512, 512)
