@@ -206,6 +206,7 @@ def split_dataset(dataset : Dataset[Tensor]) -> Tuple[Dataset[Tensor], Dataset[T
 def create_trainer() -> Trainer:
 	config_max_epochs = CONFIG_PARSER.getint('training.trainer', 'max_epochs')
 	config_precision = CONFIG_PARSER.get('training.trainer', 'precision')
+	config_strategy = CONFIG_PARSER.get('training.trainer', 'strategy')
 	config_directory_path = CONFIG_PARSER.get('training.output', 'directory_path')
 	config_file_pattern = CONFIG_PARSER.get('training.output', 'file_pattern')
 	logger = TensorBoardLogger('.logs', name = 'face_swapper')
@@ -215,6 +216,7 @@ def create_trainer() -> Trainer:
 		log_every_n_steps = 10,
 		max_epochs = config_max_epochs,
 		precision = config_precision,
+		strategy = config_strategy,
 		callbacks =
 		[
 			ModelCheckpoint(
