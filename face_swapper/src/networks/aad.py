@@ -162,10 +162,16 @@ class FeatureModulation(nn.Module):
 class PixelShuffleUpSample(nn.Module):
 	def __init__(self, input_channels : int, output_channels : int) -> None:
 		super().__init__()
-		self.conv = nn.Conv2d(input_channels, output_channels, kernel_size = 3, padding = 1)
-		self.pixel_shuffle = nn.PixelShuffle(upscale_factor = 2)
+		self.sequences = self.create_sequences(input_channels, output_channels)
+
+	@staticmethod
+	def create_sequences(input_channels : int, output_channels : int) -> nn.Sequential:
+		return nn.Sequential(
+			nn.Conv2d(input_channels, output_channels, kernel_size = 3, padding = 1),
+			nn.PixelShuffle(upscale_factor = 2)
+		)
 
 	def forward(self, input_tensor : Tensor) -> Tensor:
-		output_tensor = self.conv(input_tensor.view(input_tensor.shape[0], -1, 1, 1))
-		output_tensor = self.pixel_shuffle(output_tensor)
+		temp_tensor = input_tensor.view(input_tensor.shape[0], -1, 1, 1)
+		output_tensor = self.sequences(temp_tensor)
 		return output_tensor
