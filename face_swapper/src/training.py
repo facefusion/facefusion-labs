@@ -32,7 +32,7 @@ class FaceSwapperTrainer(LightningModule):
 		self.config_embedder_path = config_parser.get('training.model', 'embedder_path')
 		self.config_gazer_path = config_parser.get('training.model', 'gazer_path')
 		self.config_motion_extractor_path = config_parser.get('training.model', 'motion_extractor_path')
-		self.config_face_parser_path = config_parser.get('training.model', 'parser_path')
+		self.config_face_parser_path = config_parser.get('training.model', 'face_parser_path')
 		self.config_accumulate_size = config_parser.getfloat('training.trainer', 'accumulate_size')
 		self.config_learning_rate = config_parser.getfloat('training.trainer', 'learning_rate')
 		self.config_preview_frequency = config_parser.getint('training.trainer', 'preview_frequency')
