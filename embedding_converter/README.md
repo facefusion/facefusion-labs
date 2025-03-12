@@ -47,7 +47,10 @@ target_path = .models/arcface_simswap.pt
 [training.trainer]
 learning_rate = 0.001
 max_epochs = 4096
+strategy = auto
 precision = 16-mixed
+logger_path = .logs
+logger_name = arcface_converter_simswap
 ```
 
 ```

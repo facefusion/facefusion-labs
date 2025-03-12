@@ -89,15 +89,19 @@ def split_dataset(dataset : Dataset[Tensor]) -> Tuple[Dataset[Tensor], Dataset[T
 
 def create_trainer() -> Trainer:
 	config_max_epochs = CONFIG_PARSER.getint('training.trainer', 'max_epochs')
+	config_strategy = CONFIG_PARSER.get('training.trainer', 'strategy')
 	config_precision = CONFIG_PARSER.get('training.trainer', 'precision')
+	config_logger_path = CONFIG_PARSER.get('training.trainer', 'logger_path')
+	config_logger_name = CONFIG_PARSER.get('training.trainer', 'logger_name')
 	config_directory_path = CONFIG_PARSER.get('training.output', 'directory_path')
 	config_file_pattern = CONFIG_PARSER.get('training.output', 'file_pattern')
-	logger = TensorBoardLogger('.logs', name = 'embedding_converter')
+	logger = TensorBoardLogger(config_logger_path, config_logger_name)
 
 	return Trainer(
 		logger = logger,
 		log_every_n_steps = 10,
 		max_epochs = config_max_epochs,
+		strategy = config_strategy,
 		precision = config_precision,
 		callbacks =
 		[
