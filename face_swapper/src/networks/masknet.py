@@ -34,8 +34,8 @@ class MaskNet(nn.Module):
 			UpSample(num_filters, num_filters)
 		])
 
-	def forward(self, target_tensor : Tensor, target_attribute : Attribute) -> Tensor:
-		output_tensor = torch.cat([ target_tensor, target_attribute ], dim = 1)
+	def forward(self, input_tensor : Tensor, input_attribute : Attribute) -> Tensor:
+		output_tensor = torch.cat([ input_tensor, input_attribute ], dim = 1)
 
 		for down_sample in self.down_samples:
 			output_tensor = down_sample(output_tensor)
