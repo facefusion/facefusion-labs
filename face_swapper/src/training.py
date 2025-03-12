@@ -105,11 +105,10 @@ class FaceSwapperTrainer(LightningModule):
 
 		self.toggle_optimizer(generator_optimizer)
 		source_embedding = calc_embedding(self.embedder, source_tensor, (0, 0, 0, 0))
-		_, generator_target_attributes = self.generator(target_tensor)
 		generator_output_tensor, generator_output_attributes = self.generator(source_embedding, target_tensor)
 		discriminator_output_tensors = self.discriminator(generator_output_tensor)
 		adversarial_loss, weighted_adversarial_loss = self.adversarial_loss(discriminator_output_tensors)
-		attribute_loss, weighted_attribute_loss = self.attribute_loss(generator_target_attributes, generator_output_attributes)
+		attribute_loss, weighted_attribute_loss = self.attribute_loss(generator_output_attributes, generator_output_attributes)
 		reconstruction_loss, weighted_reconstruction_loss = self.reconstruction_loss(source_tensor, target_tensor, generator_output_tensor)
 		identity_loss, weighted_identity_loss = self.identity_loss(generator_output_tensor, source_tensor)
 		pose_loss, weighted_pose_loss, expression_loss, weighted_expression_loss = self.motion_loss(target_tensor, generator_output_tensor)
@@ -125,7 +124,7 @@ class FaceSwapperTrainer(LightningModule):
 		self.untoggle_optimizer(generator_optimizer)
 
 		self.toggle_optimizer(masker_optimizer)
-		target_attribute = generator_target_attributes[-1].detach()
+		target_attribute = generator_output_attributes[-1].detach()
 		mask_tensor = self.masker(target_tensor, target_attribute)
 		mask_loss = self.mask_loss(target_tensor, mask_tensor)
 
