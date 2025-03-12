@@ -214,7 +214,7 @@ def create_trainer() -> Trainer:
 	config_logger_name = CONFIG_PARSER.get('training.trainer', 'logger_name')
 	config_directory_path = CONFIG_PARSER.get('training.output', 'directory_path')
 	config_file_pattern = CONFIG_PARSER.get('training.output', 'file_pattern')
-	logger = TensorBoardLogger(config_logger_path, name = config_logger_name)
+	logger = TensorBoardLogger(config_logger_path, config_logger_name)
 
 	return Trainer(
 		logger = logger,
