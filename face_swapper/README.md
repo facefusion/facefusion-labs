@@ -89,9 +89,11 @@ expression_weight = 0.0
 accumulate_size = 4
 learning_rate = 0.0004
 max_epochs = 50
-precision = 16-mixed
-preview_frequency = 250
 strategy = auto
+precision = 16-mixed
+logger_path = .logs
+logger_name = face_swapper
+preview_frequency = 250
 ```
 
 ```
