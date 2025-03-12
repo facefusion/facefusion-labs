@@ -16,13 +16,10 @@ class Generator(nn.Module):
 		self.encoder.apply(init_weight)
 		self.generator.apply(init_weight)
 
-	def forward(self, source_embedding : Embedding, target_tensor : Tensor) -> Tensor:
-		target_attributes = self.get_attributes(target_tensor)
+	def forward(self, source_embedding : Embedding, target_tensor : Tensor) -> Tuple[Tensor, Tuple[Attribute, ...]]:
+		target_attributes = self.encoder(target_tensor)
 		output_tensor = self.generator(source_embedding, target_attributes)
-		return output_tensor
-
-	def get_attributes(self, input_tensor : Tensor) -> Tuple[Attribute, ...]:
-		return self.encoder(input_tensor)
+		return output_tensor, target_attributes
 
 
 def init_weight(module : nn.Module) -> None:

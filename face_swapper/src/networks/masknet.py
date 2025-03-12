@@ -3,7 +3,7 @@ from configparser import ConfigParser
 import torch
 from torch import Tensor, nn
 
-from face_swapper.src.types import Attribute
+from ..types import Attribute
 
 
 class MaskNet(nn.Module):
