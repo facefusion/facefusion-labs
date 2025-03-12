@@ -15,7 +15,7 @@ def test_aad_with_unet(output_size : int) -> None:
 	{
 		'training.model.generator':
 		{
-			'identity_channels': '512',
+			'source_channels': '512',
 			'output_channels': str(output_size * 16),
 			'output_size': str(output_size),
 			'num_blocks': '2'

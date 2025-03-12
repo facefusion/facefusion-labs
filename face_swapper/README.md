@@ -51,7 +51,7 @@ face_parser_path = .models/face_parser.pt
 
 ```
 [training.model.generator]
-identity_channels = 512
+source_channels = 512
 output_channels = 4096
 output_size = 256
 num_blocks = 2
