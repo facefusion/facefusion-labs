@@ -123,7 +123,7 @@ class FaceSwapperTrainer(LightningModule):
 		mask_loss = self.mask_loss(target_tensor, mask_tensor)
 
 		self.toggle_optimizer(generator_optimizer)
-		self.manual_backward(generator_loss, retain_graph = True)
+		self.manual_backward(generator_loss)
 		if do_update:
 			generator_optimizer.step()
 			generator_optimizer.zero_grad()
