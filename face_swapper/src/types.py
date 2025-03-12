@@ -4,11 +4,11 @@ from torch import Tensor
 from torch.nn import Module
 
 Batch : TypeAlias = Tuple[Tensor, Tensor]
-BatchMode = Literal['equal', 'same']
+BatchMode = Literal['equal', 'same', 'different']
 
 Attribute : TypeAlias = Tensor
 Embedding : TypeAlias = Tensor
-Gaze : TypeAlias = Tuple[Tensor, Tensor]
+Loss : TypeAlias = Tensor
 
 Padding : TypeAlias = Tuple[int, int, int, int]
 
