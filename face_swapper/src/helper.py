@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor, nn
 
-from .types import EmbedderModule, Embedding, Padding, WarpTemplate, WarpTemplateSet, Mask
+from .types import EmbedderModule, Embedding, Mask, Padding, WarpTemplate, WarpTemplateSet
 
 WARP_TEMPLATE_SET : WarpTemplateSet =\
 {

@@ -18,7 +18,7 @@ from .models.discriminator import Discriminator
 from .models.generator import Generator
 from .models.loss import AdversarialLoss, AttributeLoss, DiscriminatorLoss, GazeLoss, IdentityLoss, MaskLoss, MotionLoss, ReconstructionLoss
 from .networks.masknet import MaskNet
-from .types import Batch, Embedding, OptimizerSet, Mask
+from .types import Batch, Embedding, Mask, OptimizerSet
 
 warnings.filterwarnings('ignore', category = UserWarning, module = 'torch')
 
