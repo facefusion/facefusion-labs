@@ -69,7 +69,6 @@ kernel_size = 4
 [training.model.masker]
 input_channels = 67
 output_channels = 1
-num_filters = 16
 ```
 
 ```
