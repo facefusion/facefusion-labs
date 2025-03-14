@@ -3,7 +3,7 @@ from configparser import ConfigParser
 import torch
 from torch import Tensor, nn
 
-from ..types import Attribute
+from ..types import Attribute, Mask
 
 
 class MaskNet(nn.Module):
@@ -14,7 +14,7 @@ class MaskNet(nn.Module):
 		self.config_num_filters = config_parser.getint('training.model.masker', 'num_filters')
 		self.down_samples = self.create_down_samples(self.config_input_channels, self.config_num_filters)
 		self.up_samples = self.create_up_samples(self.config_num_filters)
-		self.bottleneck = BottleNeck(self.config_num_filters * 2)
+		self.bottleneck = BottleNeck(self.config_num_filters * 4)
 		self.conv = nn.Conv2d(self.config_num_filters, self.config_output_channels, kernel_size = 1)
 		self.sigmoid = nn.Sigmoid()
 
@@ -23,31 +23,33 @@ class MaskNet(nn.Module):
 		return nn.ModuleList(
 		[
 			DownSample(input_channels, num_filters),
-			DownSample(num_filters, num_filters * 2)
+			DownSample(num_filters, num_filters * 2),
+			DownSample(num_filters, num_filters * 4)
 		])
 
 	@staticmethod
 	def create_up_samples(num_filters : int) -> nn.ModuleList:
 		return nn.ModuleList(
 		[
+			UpSample(num_filters * 4, num_filters),
 			UpSample(num_filters * 2, num_filters),
 			UpSample(num_filters, num_filters)
 		])
 
-	def forward(self, input_tensor : Tensor, input_attribute : Attribute) -> Tensor:
-		output_tensor = torch.cat([ input_tensor, input_attribute ], dim = 1)
+	def forward(self, input_tensor : Tensor, input_attribute : Attribute) -> Mask:
+		output_mask = torch.cat([ input_tensor, input_attribute ], dim = 1)
 
 		for down_sample in self.down_samples:
-			output_tensor = down_sample(output_tensor)
+			output_mask = down_sample(output_mask)
 
-		output_tensor = self.bottleneck(output_tensor)
+		output_mask = self.bottleneck(output_mask)
 
 		for up_sample in self.up_samples:
-			output_tensor = up_sample(output_tensor)
+			output_mask = up_sample(output_mask)
 
-		output_tensor = self.conv(output_tensor)
-		output_tensor = self.sigmoid(output_tensor)
-		return output_tensor
+		output_mask = self.conv(output_mask)
+		output_mask = self.sigmoid(output_mask)
+		return output_mask
 
 
 class BottleNeck(nn.Module):

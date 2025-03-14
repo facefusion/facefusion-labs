@@ -8,6 +8,7 @@ BatchMode = Literal['equal', 'same', 'different']
 
 Attribute : TypeAlias = Tensor
 Embedding : TypeAlias = Tensor
+Mask : TypeAlias = Tensor
 Loss : TypeAlias = Tensor
 
 Padding : TypeAlias = Tuple[int, int, int, int]

@@ -18,7 +18,7 @@ from .models.discriminator import Discriminator
 from .models.generator import Generator
 from .models.loss import AdversarialLoss, AttributeLoss, DiscriminatorLoss, GazeLoss, IdentityLoss, MaskLoss, MotionLoss, ReconstructionLoss
 from .networks.masknet import MaskNet
-from .types import Batch, Embedding, OptimizerSet
+from .types import Batch, Embedding, Mask, OptimizerSet
 
 warnings.filterwarnings('ignore', category = UserWarning, module = 'torch')
 
@@ -57,9 +57,9 @@ class FaceSwapperTrainer(LightningModule):
 		with torch.no_grad():
 			output_tensor, target_attributes = self.generator(source_embedding, target_tensor)
 			target_attribute = target_attributes[-1]
-			mask_tensor = self.masker(target_tensor, target_attribute)
+			output_mask = self.masker(target_tensor, target_attribute)
 
-		return output_tensor, mask_tensor
+		return output_tensor, output_mask
 
 	def configure_optimizers(self) -> Tuple[OptimizerSet, OptimizerSet, OptimizerSet]:
 		generator_optimizer = torch.optim.AdamW(self.generator.parameters(), lr = self.config_learning_rate, betas = (0.0, 0.999), weight_decay = 1e-4)
@@ -120,8 +120,8 @@ class FaceSwapperTrainer(LightningModule):
 		discriminator_loss = self.discriminator_loss(discriminator_source_tensors, discriminator_output_tensors)
 
 		generator_output_attribute = generator_output_attributes[-1]
-		mask_tensor = self.masker(generator_output_tensor.detach(), generator_output_attribute.detach())
-		mask_loss = self.mask_loss(target_tensor, mask_tensor)
+		generator_output_mask = self.masker(generator_output_tensor.detach(), generator_output_attribute.detach())
+		mask_loss = self.mask_loss(target_tensor, generator_output_mask)
 
 		self.toggle_optimizer(generator_optimizer)
 		self.manual_backward(generator_loss)
@@ -145,7 +145,7 @@ class FaceSwapperTrainer(LightningModule):
 		self.untoggle_optimizer(masker_optimizer)
 
 		if self.global_step % self.config_preview_frequency == 0:
-			self.generate_preview(source_tensor, target_tensor, generator_output_tensor, mask_tensor)
+			self.generate_preview(source_tensor, target_tensor, generator_output_tensor, generator_output_mask)
 
 		self.log('generator_loss', generator_loss, prog_bar = True)
 		self.log('discriminator_loss', discriminator_loss, prog_bar = True)
@@ -167,10 +167,10 @@ class FaceSwapperTrainer(LightningModule):
 		self.log('validation_score', validation_score, prog_bar = True)
 		return validation_score
 
-	def generate_preview(self, source_tensor : Tensor, target_tensor : Tensor, output_tensor : Tensor, mask_tensor : Tensor) -> None:
+	def generate_preview(self, source_tensor : Tensor, target_tensor : Tensor, output_tensor : Tensor, output_mask : Mask) -> None:
 		preview_limit = 8
 		preview_cells = []
-		overlay_tensor = overlay_mask(output_tensor, mask_tensor)
+		overlay_tensor = overlay_mask(output_tensor, output_mask)
 
 		for source_tensor, target_tensor, output_tensor, overlay_tensor in zip(source_tensor[:preview_limit], target_tensor[:preview_limit], output_tensor[:preview_limit], overlay_tensor[:preview_limit]):
 			preview_cell = torch.cat([ source_tensor, target_tensor, output_tensor, overlay_tensor ], dim = 2)

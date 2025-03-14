@@ -7,7 +7,7 @@ from torch import Tensor, nn
 from torchvision import transforms
 
 from ..helper import calc_embedding
-from ..types import Attribute, EmbedderModule, FaceParserModule, GazerModule, Loss, MotionExtractorModule
+from ..types import Attribute, EmbedderModule, FaceParserModule, GazerModule, Loss, Mask, MotionExtractorModule
 
 
 class DiscriminatorLoss(nn.Module):
@@ -186,11 +186,11 @@ class MaskLoss(nn.Module):
 		self.face_parser = face_parser
 		self.mse_loss = nn.MSELoss()
 
-	def forward(self, target_tensor : Tensor, mask_tensor : Tensor) -> Loss:
+	def forward(self, target_tensor : Tensor, output_mask : Mask) -> Loss:
 		target_mask = self.calc_mask(target_tensor)
 		target_mask = target_mask.view(-1, self.config_output_size, self.config_output_size)
-		mask_tensor = mask_tensor.view(-1, self.config_output_size, self.config_output_size)
-		mask_loss = self.mse_loss(target_mask, mask_tensor)
+		output_mask = output_mask.view(-1, self.config_output_size, self.config_output_size)
+		mask_loss = self.mse_loss(target_mask, output_mask)
 		return mask_loss
 
 	def calc_mask(self, target_tensor : Tensor) -> Tensor:
