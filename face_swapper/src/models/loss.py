@@ -183,13 +183,11 @@ class MaskLoss(nn.Module):
 	def __init__(self, config_parser : ConfigParser) -> None:
 		super().__init__()
 		self.config_output_size = config_parser.getint('training.model.generator', 'output_size')
-		self.mse_loss = nn.MSELoss(reduction = 'none')
+		self.mse_loss = nn.MSELoss(reduction = 'mean')
 
 	def forward(self, target_tensor : Tensor, output_tensor : Tensor, output_mask : Mask) -> Tensor:
 		target_tensor = target_tensor.view(-1, self.config_output_size, self.config_output_size)
 		output_tensor = output_tensor.view(-1, self.config_output_size, self.config_output_size)
-
-		visual_loss = self.mse_loss(target_tensor, output_tensor)
-		total_loss = visual_loss * output_mask
-		mask_loss = total_loss.sum() / output_mask.sum()
+		temp_tensor = torch.abs(target_tensor - output_tensor).max(dim = 0).values
+		mask_loss = self.mse_loss(temp_tensor, output_mask)
 		return mask_loss
