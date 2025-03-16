@@ -6,7 +6,7 @@ from torch.nn import Module
 Batch : TypeAlias = Tuple[Tensor, Tensor]
 BatchMode = Literal['equal', 'same', 'different']
 
-Attribute : TypeAlias = Tensor
+Feature : TypeAlias = Tensor
 Embedding : TypeAlias = Tensor
 Mask : TypeAlias = Tensor
 Loss : TypeAlias = Tensor

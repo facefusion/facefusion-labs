@@ -5,7 +5,7 @@ from torch import Tensor, nn
 
 from ..networks.aad import AAD
 from ..networks.unet import UNet
-from ..types import Attribute, Embedding
+from ..types import Feature, Embedding
 
 
 class Generator(nn.Module):
@@ -16,12 +16,12 @@ class Generator(nn.Module):
 		self.encoder.apply(init_weight)
 		self.generator.apply(init_weight)
 
-	def forward(self, source_embedding : Embedding, target_tensor : Tensor) -> Tuple[Tensor, Tuple[Attribute, ...]]:
-		target_attributes = self.encode_attributes(target_tensor)
-		output_tensor = self.generator(source_embedding, target_attributes)
-		return output_tensor, target_attributes
+	def forward(self, source_embedding : Embedding, target_tensor : Tensor) -> Tuple[Tensor, Tuple[Feature, ...]]:
+		target_features = self.encode_features(target_tensor)
+		output_tensor = self.generator(source_embedding, target_features)
+		return output_tensor, target_features
 
-	def encode_attributes(self, input_tensor : Tensor) -> Tuple[Attribute, ...]:
+	def encode_features(self, input_tensor : Tensor) -> Tuple[Feature, ...]:
 		return self.encoder(input_tensor)
 
 
