@@ -39,7 +39,6 @@ def calc_embedding(embedder : EmbedderModule, input_tensor : Tensor, padding : P
 
 
 def overlay_mask(input_tensor : Tensor, input_mask : Mask) -> Tensor:
-	input_mask = input_mask.mean(dim = 1, keepdim = True)
 	overlay_tensor = torch.zeros(*input_tensor.shape, dtype = input_tensor.dtype, device = input_tensor.device)
 	overlay_tensor[:, 2, :, :] = 1
 	input_mask = input_mask.repeat(1, 3, 1, 1).clamp(0, 0.8)

@@ -94,7 +94,7 @@ strategy = auto
 precision = 16-mixed
 logger_path = .logs
 logger_name = face_swapper
-preview_frequency = 250
+preview_frequency = 100
 ```
 
 ```
