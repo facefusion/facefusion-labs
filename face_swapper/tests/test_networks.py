@@ -52,6 +52,6 @@ def test_mask_net(output_size : int) -> None:
 	target_tensor = torch.randn(1, 3, output_size, output_size)
 	target_feature = torch.randn(1, 64, output_size, output_size)
 
-	output_tensor = masker(target_tensor, target_feature)
+	output_mask = masker(target_tensor, target_feature)
 
-	assert output_tensor.shape == (1, 1, output_size, output_size)
+	assert output_mask.shape == (1, 1, output_size, output_size)
