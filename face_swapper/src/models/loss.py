@@ -7,7 +7,7 @@ from torch import Tensor, nn
 from torchvision import transforms
 
 from ..helper import calc_embedding
-from ..types import Feature, EmbedderModule, FaceParserModule, GazerModule, Loss, Mask, MotionExtractorModule
+from ..types import EmbedderModule, FaceParserModule, Feature, GazerModule, Loss, Mask, MotionExtractorModule
 
 
 class DiscriminatorLoss(nn.Module):

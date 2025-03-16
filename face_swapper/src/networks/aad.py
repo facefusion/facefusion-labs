@@ -4,7 +4,7 @@ from typing import Tuple
 import torch
 from torch import Tensor, nn
 
-from ..types import Feature, Embedding
+from ..types import Embedding, Feature
 
 
 class AAD(nn.Module):
