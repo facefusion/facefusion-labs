@@ -22,14 +22,14 @@ def test_aad_with_unet(output_size : int) -> None:
 		}
 	})
 
-	generator = AAD(config_parser).eval()
 	encoder = UNet(config_parser).eval()
+	generator = AAD(config_parser).eval()
 
 	source_tensor = torch.randn(1, 512)
 	target_tensor = torch.randn(1, 3, output_size, output_size)
 
-	target_attributes = encoder(target_tensor)
-	output_tensor = generator(source_tensor, target_attributes)
+	target_features = encoder(target_tensor)
+	output_tensor = generator(source_tensor, target_features)
 
 	assert output_tensor.shape == (1, 3, output_size, output_size)
 
@@ -50,8 +50,8 @@ def test_mask_net(output_size : int) -> None:
 	masker = MaskNet(config_parser).eval()
 
 	target_tensor = torch.randn(1, 3, output_size, output_size)
-	target_attribute = torch.randn(1, 64, output_size, output_size)
+	target_feature = torch.randn(1, 64, output_size, output_size)
 
-	output_tensor = masker(target_tensor, target_attribute)
+	output_tensor = masker(target_tensor, target_feature)
 
 	assert output_tensor.shape == (1, 1, output_size, output_size)

@@ -4,6 +4,8 @@ from typing import Tuple
 import torch
 from torch import Tensor, nn
 
+from face_swapper.src.types import Feature
+
 
 class UNet(nn.Module):
 	def __init__(self, config_parser : ConfigParser) -> None:
@@ -79,25 +81,25 @@ class UNet(nn.Module):
 
 		return up_samples
 
-	def forward(self, target_tensor : Tensor) -> Tuple[Tensor, ...]:
+	def forward(self, target_tensor : Tensor) -> Tuple[Feature, ...]:
 		down_features = []
 		up_features = []
-		temp_tensor = target_tensor
+		temp_feature = target_tensor
 
 		for down_sample in self.down_samples:
-			temp_tensor = down_sample(temp_tensor)
-			down_features.append(temp_tensor)
+			temp_feature = down_sample(temp_feature)
+			down_features.append(temp_feature)
 
-		bottleneck_tensor = down_features[-1]
-		temp_tensor = bottleneck_tensor
+		bottleneck_feature = down_features[-1]
+		temp_feature = bottleneck_feature
 
 		for index, up_sample in enumerate(self.up_samples):
 			skip_tensor = down_features[-(index + 2)]
-			temp_tensor = up_sample(temp_tensor, skip_tensor)
-			up_features.append(temp_tensor)
+			temp_feature = up_sample(temp_feature, skip_tensor)
+			up_features.append(temp_feature)
 
-		output_tensor = nn.functional.interpolate(temp_tensor, scale_factor = 2, mode = 'bilinear', align_corners = False)
-		return bottleneck_tensor, *up_features, output_tensor
+		final_feature = nn.functional.interpolate(temp_feature, scale_factor = 2, mode = 'bilinear', align_corners = False)
+		return bottleneck_feature, *up_features, final_feature
 
 
 class UpSample(nn.Module):

@@ -7,7 +7,7 @@ from torch import Tensor, nn
 from torchvision import transforms
 
 from ..helper import calc_embedding
-from ..types import Attribute, EmbedderModule, FaceParserModule, GazerModule, Loss, Mask, MotionExtractorModule
+from ..types import EmbedderModule, FaceParserModule, Feature, GazerModule, Loss, Mask, MotionExtractorModule
 
 
 class DiscriminatorLoss(nn.Module):
@@ -49,22 +49,22 @@ class AdversarialLoss(nn.Module):
 		return adversarial_loss, weighted_adversarial_loss
 
 
-class AttributeLoss(nn.Module):
+class FeautureLoss(nn.Module):
 	def __init__(self, config_parser : ConfigParser) -> None:
 		super().__init__()
 		self.config_batch_size = config_parser.getint('training.loader', 'batch_size')
-		self.config_attribute_weight = config_parser.getfloat('training.losses', 'attribute_weight')
+		self.config_feature_weight = config_parser.getfloat('training.losses', 'feature_weight')
 
-	def forward(self, target_attributes : Tuple[Attribute, ...], output_attributes : Tuple[Attribute, ...]) -> Tuple[Loss, Loss]:
+	def forward(self, target_features : Tuple[Feature, ...], output_features : Tuple[Feature, ...]) -> Tuple[Loss, Loss]:
 		temp_tensors = []
 
-		for target_attribute, output_attribute in zip(target_attributes, output_attributes):
-			temp_tensor = torch.mean(torch.pow(output_attribute - target_attribute, 2).reshape(self.config_batch_size, -1), dim = 1).mean()
+		for target_feature, output_feature in zip(target_features, output_features):
+			temp_tensor = torch.mean(torch.pow(output_feature - target_feature, 2).reshape(self.config_batch_size, -1), dim = 1).mean()
 			temp_tensors.append(temp_tensor)
 
-		attribute_loss = torch.stack(temp_tensors).mean() * 0.5
-		weighted_attribute_loss = attribute_loss * self.config_attribute_weight
-		return attribute_loss, weighted_attribute_loss
+		feature_loss = torch.stack(temp_tensors).mean() * 0.5
+		weighted_feature_loss = feature_loss * self.config_feature_weight
+		return feature_loss, weighted_feature_loss
 
 
 class ReconstructionLoss(nn.Module):

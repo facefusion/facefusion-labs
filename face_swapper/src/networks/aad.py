@@ -4,7 +4,7 @@ from typing import Tuple
 import torch
 from torch import Tensor, nn
 
-from ..types import Attribute, Embedding
+from ..types import Embedding, Feature
 
 
 class AAD(nn.Module):
@@ -57,16 +57,16 @@ class AAD(nn.Module):
 
 		return layers
 
-	def forward(self, source_embedding : Embedding, target_attributes : Tuple[Attribute, ...]) -> Tensor:
+	def forward(self, source_embedding : Embedding, target_features : Tuple[Feature, ...]) -> Tensor:
 		temp_tensors = self.pixel_shuffle_up_sample(source_embedding)
 
 		for index, layer in enumerate(self.layers[:-1]):
-			target_attribute = target_attributes[index]
-			temp_tensor = layer(temp_tensors, source_embedding, target_attribute)
+			target_feature = target_features[index]
+			temp_tensor = layer(temp_tensors, source_embedding, target_feature)
 			temp_tensors = nn.functional.interpolate(temp_tensor, scale_factor = 2, mode = 'bilinear', align_corners = False)
 
-		target_attribute = target_attributes[-1]
-		temp_tensors = self.layers[-1](temp_tensors, source_embedding, target_attribute)
+		target_feature = target_features[-1]
+		temp_tensors = self.layers[-1](temp_tensors, source_embedding, target_feature)
 		output_tensor = torch.tanh(temp_tensors)
 		return output_tensor
 
@@ -112,12 +112,12 @@ class AdaptiveFeatureModulation(nn.Module):
 
 		return shortcut_layers
 
-	def forward(self, input_tensor : Tensor, source_embedding : Embedding, target_attribute : Attribute) -> Tensor:
+	def forward(self, input_tensor : Tensor, source_embedding : Embedding, target_feature : Feature) -> Tensor:
 		primary_tensor = input_tensor
 
 		for primary_layer in self.primary_layers:
 			if isinstance(primary_layer, FeatureModulation):
-				primary_tensor = primary_layer(primary_tensor, source_embedding, target_attribute)
+				primary_tensor = primary_layer(primary_tensor, source_embedding, target_feature)
 			else:
 				primary_tensor = primary_layer(primary_tensor)
 
@@ -126,7 +126,7 @@ class AdaptiveFeatureModulation(nn.Module):
 
 			for shortcut_layer in self.shortcut_layers:
 				if isinstance(shortcut_layer, FeatureModulation):
-					shortcut_tensor = shortcut_layer(shortcut_tensor, source_embedding, target_attribute)
+					shortcut_tensor = shortcut_layer(shortcut_tensor, source_embedding, target_feature)
 				else:
 					shortcut_tensor = shortcut_layer(shortcut_tensor)
 
@@ -146,15 +146,15 @@ class FeatureModulation(nn.Module):
 		self.linear2 = nn.Linear(source_channels, input_channels)
 		self.instance_norm = nn.InstanceNorm2d(input_channels)
 
-	def forward(self, input_tensor : Tensor, source_embedding : Embedding, target_attribute : Attribute) -> Tensor:
+	def forward(self, input_tensor : Tensor, source_embedding : Embedding, target_feature : Feature) -> Tensor:
 		temp_tensor = self.instance_norm(input_tensor)
 
 		source_scale = self.linear2(source_embedding).reshape(temp_tensor.shape[0], self.context_input_channels, 1, 1).expand_as(temp_tensor)
 		source_shift = self.linear1(source_embedding).reshape(temp_tensor.shape[0], self.context_input_channels, 1, 1).expand_as(temp_tensor)
 		source_modulation = source_scale * temp_tensor + source_shift
 
-		target_scale = self.conv1(target_attribute)
-		target_shift = self.conv2(target_attribute)
+		target_scale = self.conv1(target_feature)
+		target_shift = self.conv2(target_feature)
 		target_modulation = target_scale * temp_tensor + target_shift
 
 		temp_mask = torch.sigmoid(self.conv3(temp_tensor))
