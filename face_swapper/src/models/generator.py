@@ -4,8 +4,8 @@ from typing import Tuple
 from torch import Tensor, nn
 
 from ..networks.aad import AAD
-from ..networks.unet import UNet
 from ..networks.masknet import MaskNet
+from ..networks.unet import UNet
 from ..types import Embedding, Feature, Mask
 
 
