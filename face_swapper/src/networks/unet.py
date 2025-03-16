@@ -4,7 +4,7 @@ from typing import Tuple
 import torch
 from torch import Tensor, nn
 
-from face_swapper.src.types import Feature
+from ..types import Feature
 
 
 class UNet(nn.Module):
