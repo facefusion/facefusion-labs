@@ -182,16 +182,18 @@ class GazeLoss(nn.Module):
 class MaskLoss(nn.Module):
 	def __init__(self, config_parser : ConfigParser, face_parser : FaceParserModule) -> None:
 		super().__init__()
+		self.config_mask_weight = config_parser.getfloat('training.losses', 'mask_weight')
 		self.config_output_size = config_parser.getint('training.model.generator', 'output_size')
 		self.face_parser = face_parser
 		self.mse_loss = nn.MSELoss()
 
-	def forward(self, target_tensor : Tensor, output_mask : Mask) -> Loss:
+	def forward(self, target_tensor : Tensor, output_mask : Mask) -> Tuple[Loss, Loss]:
 		target_mask = self.calc_mask(target_tensor)
 		target_mask = target_mask.view(-1, self.config_output_size, self.config_output_size)
 		output_mask = output_mask.view(-1, self.config_output_size, self.config_output_size)
 		mask_loss = self.mse_loss(target_mask, output_mask)
-		return mask_loss
+		weighted_mask_loss = mask_loss * self.config_mask_weight
+		return mask_loss, weighted_mask_loss
 
 	def calc_mask(self, target_tensor : Tensor) -> Tensor:
 		target_tensor = torch.nn.functional.interpolate(target_tensor, (512, 512), mode = 'bilinear')

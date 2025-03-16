@@ -26,5 +26,5 @@ def infer() -> None:
 	source_tensor = io.read_image(config_source_path)
 	target_tensor = io.read_image(config_target_path)
 	source_embedding = calc_embedding(embedder, source_tensor, (0, 0, 0, 0))
-	output_tensor = generator(source_embedding, target_tensor)[0]
+	output_tensor, _ = generator(source_embedding, target_tensor)
 	io.write_jpeg(output_tensor, config_output_path)

@@ -17,7 +17,6 @@ from .helper import calc_embedding, overlay_mask
 from .models.discriminator import Discriminator
 from .models.generator import Generator
 from .models.loss import AdversarialLoss, DiscriminatorLoss, FeautureLoss, GazeLoss, IdentityLoss, MaskLoss, MotionLoss, ReconstructionLoss
-from .networks.masknet import MaskNet
 from .types import Batch, Embedding, Mask, OptimizerSet
 
 warnings.filterwarnings('ignore', category = UserWarning, module = 'torch')
@@ -42,7 +41,6 @@ class FaceSwapperTrainer(LightningModule):
 		self.face_parser = torch.jit.load(self.config_face_parser_path, map_location ='cpu').eval()
 		self.generator = Generator(config_parser)
 		self.discriminator = Discriminator(config_parser)
-		self.masker = MaskNet(config_parser)
 		self.discriminator_loss = DiscriminatorLoss()
 		self.adversarial_loss = AdversarialLoss(config_parser)
 		self.feature_loss = FeautureLoss(config_parser)
@@ -55,19 +53,15 @@ class FaceSwapperTrainer(LightningModule):
 
 	def forward(self, source_embedding : Embedding, target_tensor : Tensor) -> Tuple[Tensor, Mask]:
 		with torch.no_grad():
-			output_tensor, target_features = self.generator(source_embedding, target_tensor)
-			target_feature = target_features[-1]
-			output_mask = self.masker(target_tensor, target_feature)
+			output_tensor, output_mask = self.generator(source_embedding, target_tensor)
 
 		return output_tensor, output_mask
 
-	def configure_optimizers(self) -> Tuple[OptimizerSet, OptimizerSet, OptimizerSet]:
+	def configure_optimizers(self) -> Tuple[OptimizerSet, OptimizerSet]:
 		generator_optimizer = torch.optim.AdamW(self.generator.parameters(), lr = self.config_learning_rate, betas = (0.0, 0.999), weight_decay = 1e-4)
 		discriminator_optimizer = torch.optim.AdamW(self.discriminator.parameters(), lr = self.config_learning_rate, betas = (0.0, 0.999), weight_decay = 1e-4)
-		masker_optimizer = torch.optim.AdamW(self.masker.parameters(), lr = self.config_learning_rate, betas = (0.0, 0.999), weight_decay = 1e-4)
 		generator_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(generator_optimizer, T_0 = 300, T_mult = 2)
 		discriminator_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(discriminator_optimizer, T_0 = 300, T_mult = 2)
-		masker_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(masker_optimizer, T_0 = 300, T_mult = 2)
 
 		generator_config =\
 		{
@@ -87,24 +81,16 @@ class FaceSwapperTrainer(LightningModule):
 				'interval': 'step'
 			}
 		}
-		masker_config =\
-		{
-			'optimizer': masker_optimizer,
-			'lr_scheduler':
-			{
-				'scheduler': masker_scheduler,
-				'interval': 'step'
-			}
-		}
-		return generator_config, discriminator_config, masker_config
+		return generator_config, discriminator_config
 
 	def training_step(self, batch : Batch, batch_index : int) -> Tensor:
 		source_tensor, target_tensor = batch
 		do_update = (batch_index + 1) % self.config_accumulate_size == 0
-		generator_optimizer, discriminator_optimizer, masker_optimizer = self.optimizers() #type:ignore[attr-defined]
+		generator_optimizer, discriminator_optimizer = self.optimizers() #type:ignore[attr-defined]
 
 		source_embedding = calc_embedding(self.embedder, source_tensor, (0, 0, 0, 0))
-		generator_output_tensor, generator_target_features = self.generator(source_embedding, target_tensor)
+		generator_output_tensor, generator_output_mask = self.generator(source_embedding, target_tensor)
+		generator_target_features = self.generator.encode_features(target_tensor)
 		generator_output_features = self.generator.encode_features(generator_output_tensor)
 		discriminator_output_tensors = self.discriminator(generator_output_tensor)
 		adversarial_loss, weighted_adversarial_loss = self.adversarial_loss(discriminator_output_tensors)
@@ -113,15 +99,12 @@ class FaceSwapperTrainer(LightningModule):
 		identity_loss, weighted_identity_loss = self.identity_loss(generator_output_tensor, source_tensor)
 		pose_loss, weighted_pose_loss, expression_loss, weighted_expression_loss = self.motion_loss(target_tensor, generator_output_tensor)
 		gaze_loss, weighted_gaze_loss = self.gaze_loss(target_tensor, generator_output_tensor)
-		generator_loss = weighted_adversarial_loss + weighted_feature_loss + weighted_reconstruction_loss + weighted_identity_loss + weighted_pose_loss + weighted_gaze_loss + weighted_expression_loss
+		mask_loss, weighted_mask_loss = self.mask_loss(target_tensor, generator_output_mask)
+		generator_loss = weighted_adversarial_loss + weighted_feature_loss + weighted_reconstruction_loss + weighted_identity_loss + weighted_pose_loss + weighted_gaze_loss + weighted_expression_loss + weighted_mask_loss
 
 		discriminator_source_tensors = self.discriminator(source_tensor)
 		discriminator_output_tensors = self.discriminator(generator_output_tensor.detach())
 		discriminator_loss = self.discriminator_loss(discriminator_source_tensors, discriminator_output_tensors)
-
-		generator_output_feature = generator_output_features[-1]
-		generator_output_mask = self.masker(generator_output_tensor.detach(), generator_output_feature.detach())
-		mask_loss = self.mask_loss(target_tensor, generator_output_mask)
 
 		self.toggle_optimizer(generator_optimizer)
 		self.manual_backward(generator_loss)
@@ -136,13 +119,6 @@ class FaceSwapperTrainer(LightningModule):
 			discriminator_optimizer.step()
 			discriminator_optimizer.zero_grad()
 		self.untoggle_optimizer(discriminator_optimizer)
-
-		self.toggle_optimizer(masker_optimizer)
-		self.manual_backward(mask_loss)
-		if do_update:
-			masker_optimizer.step()
-			masker_optimizer.zero_grad()
-		self.untoggle_optimizer(masker_optimizer)
 
 		if self.global_step % self.config_preview_frequency == 0:
 			self.generate_preview(source_tensor, target_tensor, generator_output_tensor, generator_output_mask)
