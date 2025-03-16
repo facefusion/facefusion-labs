@@ -46,7 +46,7 @@ class EmbeddingConverterTrainer(LightningModule):
 			source_embedding = self.source_embedder(batch)
 		output_embedding = self(source_embedding)
 		validation_score = (nn.functional.cosine_similarity(source_embedding, output_embedding).mean() + 1) * 0.5
-		self.log('validation_score', validation_score, prog_bar = True)
+		self.log('validation_score', validation_score, sync_dist = True, prog_bar = True)
 		return validation_score
 
 	def configure_optimizers(self) -> OptimizerSet:
