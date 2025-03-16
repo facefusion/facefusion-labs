@@ -82,6 +82,7 @@ identity_weight = 20.0
 gaze_weight = 0.05
 pose_weight = 0.05
 expression_weight = 0.05
+mask_weight = 0.5
 ```
 
 ```
@@ -93,7 +94,7 @@ strategy = auto
 precision = 16-mixed
 logger_path = .logs
 logger_name = face_swapper
-preview_frequency = 250
+preview_frequency = 100
 ```
 
 ```
