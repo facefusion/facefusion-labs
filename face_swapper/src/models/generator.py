@@ -24,6 +24,7 @@ class Generator(nn.Module):
 		output_tensor = self.generator(source_embedding, target_features)
 		target_feature = target_features[-1]
 		output_mask = self.masker(target_tensor, target_feature)
+		output_tensor = output_tensor * output_mask + target_tensor * (1 - output_mask)
 		return output_tensor, output_mask
 
 	def encode_features(self, input_tensor : Tensor) -> Tuple[Feature, ...]:
