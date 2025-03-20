@@ -130,6 +130,7 @@ class FaceSwapperTrainer(LightningModule):
 		self.log('reconstruction_loss', reconstruction_loss)
 		self.log('identity_loss', identity_loss)
 		self.log('pose_loss', pose_loss)
+		self.log('expression_loss', expression_loss)
 		self.log('gaze_loss', gaze_loss)
 		self.log('mask_loss', mask_loss)
 		return generator_loss
