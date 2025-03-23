@@ -1,7 +1,7 @@
 Face Swapper
 ============
 
-> Face shape and feature aware identity transfer.
+> Face shape and occlusion aware identity transfer.
 
 ![License](https://img.shields.io/badge/license-ResearchRAIL--MS-red)
 

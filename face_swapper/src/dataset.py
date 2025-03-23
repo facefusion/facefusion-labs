@@ -84,12 +84,13 @@ class AugmentTransform:
 	def compose_transforms() -> albumentations.Compose:
 		return albumentations.Compose(
 		[
-			albumentations.RandomBrightnessContrast(p = 0.3),
+			albumentations.HorizontalFlip(),
 			albumentations.OneOf(
 			[
 				albumentations.MotionBlur(p = 0.1),
 				albumentations.MedianBlur(p = 0.1)
 			], p = 0.3),
+			albumentations.RandomBrightnessContrast(p = 0.3),
 			albumentations.ColorJitter(p = 0.1)
 		])
 
