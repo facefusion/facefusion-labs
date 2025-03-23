@@ -53,7 +53,8 @@ class FaceSwapperTrainer(LightningModule):
 
 	def forward(self, source_embedding : Embedding, target_tensor : Tensor) -> Tuple[Tensor, Mask]:
 		with torch.no_grad():
-			output_tensor, output_mask = self.generator(source_embedding, target_tensor)
+			generator_target_features = self.generator.encode_features(target_tensor)
+			output_tensor, output_mask = self.generator(source_embedding, target_tensor, generator_target_features)
 
 		return output_tensor, output_mask
 
@@ -89,8 +90,8 @@ class FaceSwapperTrainer(LightningModule):
 		generator_optimizer, discriminator_optimizer = self.optimizers() #type:ignore[attr-defined]
 
 		source_embedding = calc_embedding(self.embedder, source_tensor, (0, 0, 0, 0))
-		generator_output_tensor, generator_output_mask = self.generator(source_embedding, target_tensor)
 		generator_target_features = self.generator.encode_features(target_tensor)
+		generator_output_tensor, generator_output_mask = self.generator(source_embedding, target_tensor, generator_target_features)
 		generator_output_features = self.generator.encode_features(generator_output_tensor)
 		discriminator_output_tensors = self.discriminator(generator_output_tensor)
 		adversarial_loss, weighted_adversarial_loss = self.adversarial_loss(discriminator_output_tensors)
@@ -138,7 +139,7 @@ class FaceSwapperTrainer(LightningModule):
 	def validation_step(self, batch : Batch, batch_index : int) -> Tensor:
 		source_tensor, target_tensor = batch
 		source_embedding = calc_embedding(self.embedder, source_tensor, (0, 0, 0, 0))
-		output_tensor, _ = self.generator(source_embedding, target_tensor)
+		output_tensor, _ = self(source_embedding, target_tensor)
 		output_embedding = calc_embedding(self.embedder, output_tensor, (0, 0, 0, 0))
 		validation_score = (nn.functional.cosine_similarity(source_embedding, output_embedding).mean() + 1) * 0.5
 		self.log('validation_score', validation_score, sync_dist = True, prog_bar = True)
