@@ -5,20 +5,20 @@ from .types import EmbedderModule, Embedding, Mask, Padding, WarpTemplate, WarpT
 
 WARP_TEMPLATE_SET : WarpTemplateSet =\
 {
-	'vgg_face_hq_to_arcface_128_v2': torch.tensor(
+	'arcface_128_v2_to_arcface_112_v2': torch.tensor(
 	[
-		[ 1.01305414, -0.00140513, -0.00585911 ],
-		[ 0.00140513, 1.01305414, 0.11169602 ]
+		[ 8.75000016e-01, -1.07193451e-08, 3.80446920e-10 ],
+		[ 1.07193451e-08, 8.75000016e-01, -1.25000007e-01 ]
 	]),
 	'ffhq_to_arcface_128_v2': torch.tensor(
 	[
 		[ 8.50048894e-01, -1.29486822e-04, 1.90956388e-03 ],
 		[ 1.29486822e-04, 8.50048894e-01, 9.56254653e-02 ]
 	]),
-	'arcface_128_v2_to_arcface_112_v2': torch.tensor(
+	'vgg_face_hq_to_arcface_128_v2': torch.tensor(
 	[
-		[ 8.75000016e-01, -1.07193451e-08, 3.80446920e-10 ],
-		[ 1.07193451e-08, 8.75000016e-01, -1.25000007e-01 ]
+		[ 1.01305414, -0.00140513, -0.00585911 ],
+		[ 0.00140513, 1.01305414, 0.11169602 ]
 	])
 }
 
