@@ -43,7 +43,7 @@ split_ratio = 0.9995
 
 ```
 [training.model]
-embedder_path = .models/arcface.pt
+embedder_path = .models/blendface.pt
 gazer_path = .models/gazer.pt
 motion_extractor_path = .models/motion_extractor.pt
 face_masker_path = .models/face_masker.pt
@@ -82,7 +82,7 @@ identity_weight = 20.0
 gaze_weight = 0.05
 pose_weight = 0.05
 expression_weight = 0.05
-mask_weight = 0.5
+mask_weight = 5.0
 ```
 
 ```
