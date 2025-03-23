@@ -38,11 +38,12 @@ class DynamicDataset(Dataset[Tensor]):
 		return len(self.file_set)
 
 	def resolve_file_set(self) -> FileSet:
-		file_set : FileSet = {}
+		file_set = {}
 
 		for warp_template, file_pattern in self.config_parser.items('training.dataset.files'):
+			warp_template = cast(WarpTemplate, warp_template)
 			if file_pattern:
-				file_set[warp_template] = glob.glob(file_pattern) # type:ignore
+				file_set[warp_template] = glob.glob(file_pattern)
 
 		return file_set
 

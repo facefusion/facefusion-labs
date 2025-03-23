@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal, Tuple, TypeAlias
+from typing import Any, Dict, List, Literal, Tuple, TypeAlias
 
 from torch import Tensor
 from torch.nn import Module
@@ -24,4 +24,4 @@ OptimizerSet : TypeAlias = Any
 WarpTemplate = Literal['arcface_128_v2_to_arcface_112_v2', 'ffhq_to_arcface_128_v2', 'vgg_face_hq_to_arcface_128_v2']
 WarpTemplateSet : TypeAlias = Dict[WarpTemplate, Tensor]
 
-FileSet : TypeAlias = Dict[WarpTemplate, str]
+FileSet : TypeAlias = Dict[WarpTemplate, List[str]]
