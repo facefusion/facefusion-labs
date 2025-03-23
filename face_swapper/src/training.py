@@ -31,14 +31,14 @@ class FaceSwapperTrainer(LightningModule):
 		self.config_embedder_path = config_parser.get('training.model', 'embedder_path')
 		self.config_gazer_path = config_parser.get('training.model', 'gazer_path')
 		self.config_motion_extractor_path = config_parser.get('training.model', 'motion_extractor_path')
-		self.config_face_parser_path = config_parser.get('training.model', 'face_parser_path')
+		self.config_face_masker_path = config_parser.get('training.model', 'face_masker_path')
 		self.config_accumulate_size = config_parser.getfloat('training.trainer', 'accumulate_size')
 		self.config_learning_rate = config_parser.getfloat('training.trainer', 'learning_rate')
 		self.config_preview_frequency = config_parser.getint('training.trainer', 'preview_frequency')
 		self.embedder = torch.jit.load(self.config_embedder_path, map_location = 'cpu').eval()
 		self.gazer = torch.jit.load(self.config_gazer_path, map_location = 'cpu').eval()
 		self.motion_extractor = torch.jit.load(self.config_motion_extractor_path, map_location = 'cpu').eval()
-		self.face_parser = torch.jit.load(self.config_face_parser_path, map_location ='cpu').eval()
+		self.face_masker = torch.jit.load(self.config_face_masker_path, map_location ='cpu').eval()
 		self.generator = Generator(config_parser)
 		self.discriminator = Discriminator(config_parser)
 		self.discriminator_loss = DiscriminatorLoss()
@@ -48,7 +48,7 @@ class FaceSwapperTrainer(LightningModule):
 		self.identity_loss = IdentityLoss(config_parser, self.embedder)
 		self.motion_loss = MotionLoss(config_parser, self.motion_extractor)
 		self.gaze_loss = GazeLoss(config_parser, self.gazer)
-		self.mask_loss = MaskLoss(config_parser, self.face_parser)
+		self.mask_loss = MaskLoss(config_parser, self.face_masker)
 		self.automatic_optimization = False
 
 	def forward(self, source_embedding : Embedding, target_tensor : Tensor) -> Tuple[Tensor, Mask]:

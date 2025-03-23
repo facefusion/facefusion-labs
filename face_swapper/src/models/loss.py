@@ -7,7 +7,7 @@ from torch import Tensor, nn
 from torchvision import transforms
 
 from ..helper import calc_embedding
-from ..types import EmbedderModule, FaceParserModule, Feature, GazerModule, Loss, Mask, MotionExtractorModule
+from ..types import EmbedderModule, FaceMaskerModule, Feature, GazerModule, Loss, Mask, MotionExtractorModule
 
 
 class DiscriminatorLoss(nn.Module):
@@ -180,11 +180,11 @@ class GazeLoss(nn.Module):
 
 
 class MaskLoss(nn.Module):
-	def __init__(self, config_parser : ConfigParser, face_parser : FaceParserModule) -> None:
+	def __init__(self, config_parser : ConfigParser, face_masker : FaceMaskerModule) -> None:
 		super().__init__()
 		self.config_mask_weight = config_parser.getfloat('training.losses', 'mask_weight')
 		self.config_output_size = config_parser.getint('training.model.generator', 'output_size')
-		self.face_parser = face_parser
+		self.face_masker = face_masker
 		self.mse_loss = nn.MSELoss()
 
 	def forward(self, target_tensor : Tensor, output_mask : Mask) -> Tuple[Loss, Loss]:
@@ -200,7 +200,7 @@ class MaskLoss(nn.Module):
 		target_tensor = (target_tensor.clip(-1, 1) + 1) * 0.5
 
 		with torch.no_grad():
-			output_tensor = self.face_parser(target_tensor)
+			output_tensor = self.face_masker(target_tensor)
 			output_tensor = output_tensor.clamp(0, 1)
 			output_tensor = torch.nn.functional.interpolate(output_tensor, (self.config_output_size, self.config_output_size), mode = 'bilinear')
 
