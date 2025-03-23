@@ -1,7 +1,6 @@
 import os
 from configparser import ConfigParser
 
-
 import torch
 
 from .training import FaceSwapperTrainer
