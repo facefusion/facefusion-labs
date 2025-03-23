@@ -53,15 +53,9 @@ class DynamicDataset(Dataset[Tensor]):
 			transforms.ToPILImage(),
 			transforms.Resize((self.config_transform_size, self.config_transform_size), interpolation = transforms.InterpolationMode.BICUBIC),
 			transforms.ToTensor(),
-			transforms.Lambda(self.warp_tensor),
+			WarpTransform(),
 			transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 		])
-
-	@staticmethod
-	def warp_tensor(input_tensor_and_warp_template : Tuple[Tensor, WarpTemplate]) -> Tensor:
-		input_tensor, warp_template = input_tensor_and_warp_template
-		temp_tensor = input_tensor.unsqueeze(0)
-		return warp_tensor(temp_tensor, warp_template).squeeze(0)
 
 	def prepare_different_batch(self, source_path : str, warp_template : WarpTemplate) -> Batch:
 		_, file_paths = random.choice(list(self.file_set.items()))
@@ -108,3 +102,11 @@ class AugmentTransform:
 			], p = 0.3),
 			albumentations.ColorJitter(p = 0.1)
 		])
+
+
+class WarpTransform:
+	def __call__(self, input_tensor_and_warp_template : Tuple[Tensor, WarpTemplate]) -> Tensor:
+		input_tensor, warp_template = input_tensor_and_warp_template
+		temp_tensor = input_tensor.unsqueeze(0)
+		output_tensor = warp_tensor(temp_tensor, warp_template).squeeze(0)
+		return output_tensor
