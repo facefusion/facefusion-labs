@@ -9,7 +9,7 @@ from lightning import LightningModule, Trainer
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
 from torch import Tensor, nn
-from torch.utils.data import Dataset, random_split
+from torch.utils.data import ConcatDataset, Dataset, random_split
 from torchdata.stateful_dataloader import StatefulDataLoader
 
 from .dataset import DynamicDataset
@@ -179,6 +179,23 @@ def split_dataset(dataset : Dataset[Tensor]) -> Tuple[Dataset[Tensor], Dataset[T
 	return training_dataset, validate_dataset
 
 
+def combine_datasets() -> Dataset[Tensor]:
+	datasets = []
+
+	for config_section in CONFIG_PARSER.sections():
+
+		if config_section.startswith('training.dataset'):
+			dataset_config = ConfigParser()
+			dataset_config.add_section('training.dataset')
+
+			for key, value in CONFIG_PARSER.items(config_section):
+				dataset_config.set('training.dataset', key, value)
+			datasets.append(DynamicDataset(dataset_config))
+
+	combined_dataset = ConcatDataset(datasets)
+	return combined_dataset
+
+
 def create_trainer() -> Trainer:
 	config_max_epochs = CONFIG_PARSER.getint('training.trainer', 'max_epochs')
 	config_strategy = CONFIG_PARSER.get('training.trainer', 'strategy')
@@ -216,8 +233,8 @@ def train() -> None:
 	if torch.cuda.is_available():
 		torch.set_float32_matmul_precision('high')
 
-	dataset = DynamicDataset(CONFIG_PARSER)
-	training_loader, validation_loader = create_loaders(dataset)
+	combine_dataset = combine_datasets()
+	training_loader, validation_loader = create_loaders(combine_dataset)
 	face_swapper_trainer = FaceSwapperTrainer(CONFIG_PARSER)
 	trainer = create_trainer()
 
