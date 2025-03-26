@@ -192,8 +192,8 @@ def combine_datasets() -> Dataset[Tensor]:
 				dataset_config.set('training.dataset', key, value)
 			datasets.append(DynamicDataset(dataset_config))
 
-	combined_dataset = ConcatDataset(datasets)
-	return combined_dataset
+	combine_dataset = ConcatDataset(datasets)
+	return combine_dataset
 
 
 def create_trainer() -> Trainer:
