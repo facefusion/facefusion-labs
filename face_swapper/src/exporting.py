@@ -12,7 +12,7 @@ CONFIG_PARSER = ConfigParser()
 CONFIG_PARSER.read('config.ini')
 
 
-class HalfPrecisionModel(nn.Module):
+class HalfPrecision(nn.Module):
 	def __init__(self, model : Module) -> None:
 		super().__init__()
 		self.model = model.half()
@@ -38,8 +38,8 @@ def export() -> None:
 	os.makedirs(config_directory_path, exist_ok = True)
 	model = FaceSwapperTrainer.load_from_checkpoint(config_source_path, config_parser = CONFIG_PARSER, map_location = 'cpu').eval()
 
-	if config_precision == 'fp16':
-		model = HalfPrecisionModel(model).eval()
+	if config_precision == 'half':
+		model = HalfPrecision(model).eval()
 
 	model.ir_version = torch.tensor(config_ir_version)
 	source_tensor = torch.randn(1, 512)
