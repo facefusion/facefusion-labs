@@ -112,6 +112,7 @@ target_path = .exports/face_swapper.onnx
 target_size = 256
 ir_version = 10
 opset_version = 15
+precision = full
 ```
 
 ```
