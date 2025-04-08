@@ -43,7 +43,8 @@ split_ratio = 0.9995
 
 ```
 [training.model]
-embedder_path = .models/blendface.pt
+generator_embedder_path = .models/blendface.pt
+loss_embedder_path = .models/adaface.pt
 gazer_path = .models/gazer.pt
 motion_extractor_path = .models/motion_extractor.pt
 face_masker_path = .models/face_masker.pt
