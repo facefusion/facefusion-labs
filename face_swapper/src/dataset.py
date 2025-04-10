@@ -88,10 +88,13 @@ class AugmentTransform:
 			albumentations.OneOf(
 			[
 				albumentations.MotionBlur(p = 0.1),
-				albumentations.MedianBlur(p = 0.1)
-			], p = 0.3),
-			albumentations.RandomBrightnessContrast(p = 0.3),
-			albumentations.ColorJitter(p = 0.1)
+				albumentations.ZoomBlur(p = 0.1)
+			], p = 0.2),
+			albumentations.RandomBrightnessContrast(p = 0.7),
+			albumentations.ColorJitter(p = 0.2),
+			albumentations.RGBShift(p = 0.7),
+			albumentations.Illumination(p = 0.2),
+			albumentations.Affine(translate_percent = (-0.03, 0.03), scale = (0.98, 1.02), rotate = (-2, 2), border_mode = 1, p = 0.7)
 		])
 
 
