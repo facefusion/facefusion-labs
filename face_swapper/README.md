@@ -77,6 +77,7 @@ num_filters = 16
 ```
 [training.losses]
 adversarial_weight = 1.0
+cycle_weight = 1.0
 feature_weight = 10.0
 reconstruction_weight = 10.0
 identity_weight = 20.0
