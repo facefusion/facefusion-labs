@@ -16,7 +16,7 @@ from .dataset import DynamicDataset
 from .helper import calc_embedding, overlay_mask
 from .models.discriminator import Discriminator
 from .models.generator import Generator
-from .models.loss import AdversarialLoss, DiscriminatorLoss, FeautureLoss, GazeLoss, IdentityLoss, MaskLoss, MotionLoss, ReconstructionLoss
+from .models.loss import AdversarialLoss, DiscriminatorLoss, FeatureLoss, GazeLoss, IdentityLoss, MaskLoss, MotionLoss, ReconstructionLoss
 from .types import Batch, Embedding, Mask, OptimizerSet
 
 warnings.filterwarnings('ignore', category = UserWarning, module = 'torch')
@@ -45,7 +45,7 @@ class FaceSwapperTrainer(LightningModule):
 		self.discriminator = Discriminator(config_parser)
 		self.discriminator_loss = DiscriminatorLoss()
 		self.adversarial_loss = AdversarialLoss(config_parser)
-		self.feature_loss = FeautureLoss(config_parser)
+		self.feature_loss = FeatureLoss(config_parser)
 		self.reconstruction_loss = ReconstructionLoss(config_parser, self.loss_embedder)
 		self.identity_loss = IdentityLoss(config_parser, self.loss_embedder)
 		self.motion_loss = MotionLoss(config_parser, self.motion_extractor)

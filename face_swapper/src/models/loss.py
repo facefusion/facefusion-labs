@@ -49,7 +49,7 @@ class AdversarialLoss(nn.Module):
 		return adversarial_loss, weighted_adversarial_loss
 
 
-class FeautureLoss(nn.Module):
+class FeatureLoss(nn.Module):
 	def __init__(self, config_parser : ConfigParser) -> None:
 		super().__init__()
 		self.config_batch_size = config_parser.getint('training.loader', 'batch_size')
