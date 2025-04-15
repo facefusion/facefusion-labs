@@ -16,7 +16,7 @@ from .dataset import DynamicDataset
 from .helper import calc_embedding, overlay_mask
 from .models.discriminator import Discriminator
 from .models.generator import Generator
-from .models.loss import AdversarialLoss, DiscriminatorLoss, FeatureLoss, GazeLoss, IdentityLoss, MaskLoss, MotionLoss, ReconstructionLoss
+from .models.loss import AdversarialLoss, CycleLoss, DiscriminatorLoss, FeatureLoss, GazeLoss, IdentityLoss, MaskLoss, MotionLoss, ReconstructionLoss
 from .types import Batch, Embedding, Mask, OptimizerSet
 
 warnings.filterwarnings('ignore', category = UserWarning, module = 'torch')
@@ -45,6 +45,7 @@ class FaceSwapperTrainer(LightningModule):
 		self.discriminator = Discriminator(config_parser)
 		self.discriminator_loss = DiscriminatorLoss()
 		self.adversarial_loss = AdversarialLoss(config_parser)
+		self.cycle_loss = CycleLoss(config_parser)
 		self.feature_loss = FeatureLoss(config_parser)
 		self.reconstruction_loss = ReconstructionLoss(config_parser, self.loss_embedder)
 		self.identity_loss = IdentityLoss(config_parser, self.loss_embedder)
@@ -92,11 +93,15 @@ class FaceSwapperTrainer(LightningModule):
 		generator_optimizer, discriminator_optimizer = self.optimizers() #type:ignore[attr-defined]
 
 		source_embedding = calc_embedding(self.generator_embedder, source_tensor, (0, 0, 0, 0))
+		target_embedding = calc_embedding(self.generator_embedder, target_tensor, (0, 0, 0, 0))
 		generator_target_features = self.generator.encode_features(target_tensor)
 		generator_output_tensor, generator_output_mask = self.generator(source_embedding, target_tensor, generator_target_features)
 		generator_output_features = self.generator.encode_features(generator_output_tensor)
+		cycle_output_tensor, cycle_output_mask = self.generator(target_embedding, generator_output_tensor, generator_output_features)
+		cycle_output_features = self.generator.encode_features(cycle_output_tensor)
 		discriminator_output_tensors = self.discriminator(generator_output_tensor)
 		adversarial_loss, weighted_adversarial_loss = self.adversarial_loss(discriminator_output_tensors)
+		cycle_loss, weighted_cycle_loss = self.cycle_loss(target_tensor, cycle_output_tensor, generator_target_features, cycle_output_features)
 		feature_loss, weighted_feature_loss = self.feature_loss(generator_target_features, generator_output_features)
 		reconstruction_loss, weighted_reconstruction_loss = self.reconstruction_loss(source_tensor, target_tensor, generator_output_tensor)
 		identity_loss, weighted_identity_loss = self.identity_loss(generator_output_tensor, source_tensor)
@@ -111,6 +116,7 @@ class FaceSwapperTrainer(LightningModule):
 
 		self.toggle_optimizer(generator_optimizer)
 		self.manual_backward(generator_loss)
+
 		if do_update:
 			generator_optimizer.step()
 			generator_optimizer.zero_grad()
@@ -118,6 +124,7 @@ class FaceSwapperTrainer(LightningModule):
 
 		self.toggle_optimizer(discriminator_optimizer)
 		self.manual_backward(discriminator_loss)
+
 		if do_update:
 			discriminator_optimizer.step()
 			discriminator_optimizer.zero_grad()
@@ -129,6 +136,7 @@ class FaceSwapperTrainer(LightningModule):
 		self.log('generator_loss', generator_loss, prog_bar = True)
 		self.log('discriminator_loss', discriminator_loss, prog_bar = True)
 		self.log('adversarial_loss', adversarial_loss)
+		self.log('cycle_loss', cycle_loss)
 		self.log('feature_loss', feature_loss)
 		self.log('reconstruction_loss', reconstruction_loss)
 		self.log('identity_loss', identity_loss)
