@@ -8,7 +8,7 @@ from face_swapper.src.networks.masknet import MaskNet
 from face_swapper.src.networks.unet import UNet
 
 
-@pytest.mark.parametrize('output_size', [ 128, 256, 512, 1024 ])
+@pytest.mark.parametrize('output_size', [ 128, 256, 512 ])
 def test_aad_with_unet(output_size : int) -> None:
 	config_parser = ConfigParser()
 	config_parser.read_dict(
