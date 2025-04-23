@@ -26,7 +26,7 @@ WARP_TEMPLATE_SET : WarpTemplateSet =\
 def warp_tensor(input_tensor : Tensor, warp_template : WarpTemplate) -> Tensor:
 	normed_warp_template = WARP_TEMPLATE_SET.get(warp_template).repeat(input_tensor.shape[0], 1, 1)
 	affine_grid = nn.functional.affine_grid(normed_warp_template.to(input_tensor.device), list(input_tensor.shape))
-	output_tensor = nn.functional.grid_sample(input_tensor, affine_grid, align_corners = False, padding_mode = 'reflection')
+	output_tensor = nn.functional.grid_sample(input_tensor, affine_grid, padding_mode = 'reflection')
 	return output_tensor
 
 

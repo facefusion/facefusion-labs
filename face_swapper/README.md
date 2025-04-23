@@ -23,7 +23,7 @@ pip install -r requirements.txt
 Setup
 -----
 
-This `config.ini` utilizes the MegaFace dataset to train the Face Swapper model.
+This `config.ini` utilizes the VGGFace2 dataset to train the Face Swapper model.
 
 ```
 [training.dataset]
@@ -44,7 +44,7 @@ split_ratio = 0.9995
 ```
 [training.model]
 generator_embedder_path = .models/blendface.pt
-loss_embedder_path = .models/adaface.pt
+loss_embedder_path = .models/arcface.pt
 gazer_path = .models/gazer.pt
 face_masker_path = .models/face_masker.pt
 ```
