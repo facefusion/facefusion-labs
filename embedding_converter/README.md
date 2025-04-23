@@ -9,7 +9,7 @@ Embedding Converter
 Preview
 -------
 
-![Preview](https://raw.githubusercontent.com/facefusion/facefusion-labs/next/.github/previews/embedding_converter.png?sanitize=true)
+![Preview](https://raw.githubusercontent.com/facefusion/facefusion-labs/master/.github/previews/embedding_converter.png?sanitize=true)
 
 
 Installation
