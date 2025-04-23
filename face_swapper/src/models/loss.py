@@ -7,7 +7,7 @@ from torch import Tensor, nn
 from torchvision import transforms
 
 from ..helper import calc_embedding
-from ..types import EmbedderModule, FaceMaskerModule, Feature, GazerModule, Loss, Mask, MotionExtractorModule
+from ..types import EmbedderModule, FaceMaskerModule, Feature, GazerModule, Loss, Mask
 
 
 class DiscriminatorLoss(nn.Module):
@@ -124,48 +124,6 @@ class IdentityLoss(nn.Module):
 		identity_loss = (1 - torch.cosine_similarity(source_embedding, output_embedding)).mean()
 		weighted_identity_loss = identity_loss * self.config_identity_weight
 		return identity_loss, weighted_identity_loss
-
-
-class MotionLoss(nn.Module):
-	def __init__(self, config_parser : ConfigParser, motion_extractor : MotionExtractorModule):
-		super().__init__()
-		self.config_pose_weight = config_parser.getfloat('training.losses', 'pose_weight')
-		self.config_expression_weight = config_parser.getfloat('training.losses', 'expression_weight')
-		self.motion_extractor = motion_extractor
-		self.mse_loss = nn.MSELoss()
-
-	def forward(self, target_tensor : Tensor, output_tensor : Tensor) -> Tuple[Loss, Loss, Loss, Loss]:
-		target_poses, target_expression = self.detect_motions(target_tensor)
-		output_poses, output_expression = self.detect_motions(output_tensor)
-		pose_loss, weighted_pose_loss = self.calc_pose_loss(target_poses, output_poses)
-		expression_loss, weighted_expression_loss = self.calc_expression_loss(target_expression, output_expression)
-		return pose_loss, weighted_pose_loss, expression_loss, weighted_expression_loss
-
-	def calc_pose_loss(self, target_poses : Tuple[Tensor, ...], output_poses : Tuple[Tensor, ...]) -> Tuple[Loss, Loss]:
-		temp_tensors = []
-
-		for target_pose, output_pose in zip(target_poses, output_poses):
-			temp_tensor = self.mse_loss(target_pose, output_pose)
-			temp_tensors.append(temp_tensor)
-
-		pose_loss = torch.stack(temp_tensors).mean()
-		weighted_pose_loss = pose_loss * self.config_pose_weight
-		return pose_loss, weighted_pose_loss
-
-	def calc_expression_loss(self, target_expression : Tensor, output_expression : Tensor) -> Tuple[Loss, Loss]:
-		expression_loss = (1 - torch.cosine_similarity(target_expression, output_expression)).mean()
-		weighted_expression_loss = expression_loss * self.config_expression_weight
-		return expression_loss, weighted_expression_loss
-
-	def detect_motions(self, input_tensor : Tensor) -> Tuple[Tuple[Tensor, ...], Tensor]:
-		input_tensor = (input_tensor + 1) * 0.5
-
-		with torch.no_grad():
-			pitch, yaw, roll, translation, expression, scale, motion_points = self.motion_extractor(input_tensor)
-
-		rotation = torch.cat([ pitch, yaw, roll ], dim = 1)
-		pose = translation, scale, rotation, motion_points
-		return pose, expression
 
 
 class GazeLoss(nn.Module):

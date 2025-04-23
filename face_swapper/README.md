@@ -46,7 +46,6 @@ split_ratio = 0.9995
 generator_embedder_path = .models/blendface.pt
 loss_embedder_path = .models/adaface.pt
 gazer_path = .models/gazer.pt
-motion_extractor_path = .models/motion_extractor.pt
 face_masker_path = .models/face_masker.pt
 ```
 
@@ -82,8 +81,6 @@ feature_weight = 10.0
 reconstruction_weight = 10.0
 identity_weight = 20.0
 gaze_weight = 0.05
-pose_weight = 0.05
-expression_weight = 0.05
 mask_weight = 5.0
 ```
 
