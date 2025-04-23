@@ -1,3 +1,10 @@
 __pycache__
+.assets
+.datasets
 .idea
+.inputs
+.exports
+.logs
+.models
+.outputs
 .vscode
