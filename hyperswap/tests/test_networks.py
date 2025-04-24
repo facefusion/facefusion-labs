@@ -3,9 +3,9 @@ from configparser import ConfigParser
 import pytest
 import torch
 
-from face_swapper.src.networks.aad import AAD
-from face_swapper.src.networks.masknet import MaskNet
-from face_swapper.src.networks.unet import UNet
+from hyperswap.src.networks.aad import AAD
+from hyperswap.src.networks.masknet import MaskNet
+from hyperswap.src.networks.unet import UNet
 
 
 @pytest.mark.parametrize('output_size', [ 128, 256, 512 ])

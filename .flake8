@@ -1,5 +1,5 @@
 [flake8]
 select = E22, E23, E24, E27, E3, E4, E7, F, I1, I2
 plugins = flake8-import-order
-application_import_names = embedding_converter, face_swapper
+application_import_names = crossface, hyperswap
 import-order-style = pycharm

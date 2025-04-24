@@ -5,7 +5,7 @@ from typing import Tuple
 import torch
 from torch import Tensor, nn
 
-from .training import FaceSwapperTrainer
+from .training import HyperSwapTrainer
 from .types import Embedding, Mask, Module
 
 CONFIG_PARSER = ConfigParser()
@@ -36,7 +36,7 @@ def export() -> None:
 	config_precision = CONFIG_PARSER.get('exporting', 'precision')
 
 	os.makedirs(config_directory_path, exist_ok = True)
-	model = FaceSwapperTrainer.load_from_checkpoint(config_source_path, config_parser = CONFIG_PARSER, map_location = 'cpu').eval()
+	model = HyperSwapTrainer.load_from_checkpoint(config_source_path, config_parser = CONFIG_PARSER, map_location ='cpu').eval()
 
 	if config_precision == 'half':
 		model = HalfPrecision(model).eval()
