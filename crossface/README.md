@@ -1,7 +1,7 @@
-Embedding Converter
-===================
+CrossFace
+=========
 
-> Convert face embeddings between various models.
+> Unlock seamless convertion between face embedding models.
 
 ![License](https://img.shields.io/badge/license-OpenRAIL--MS-green)
 
@@ -9,7 +9,7 @@ Embedding Converter
 Preview
 -------
 
-![Preview](https://raw.githubusercontent.com/facefusion/facefusion-labs/master/.github/previews/embedding_converter.png?sanitize=true)
+![Preview](https://raw.githubusercontent.com/facefusion/facefusion-labs/master/.github/previews/crossface.png?sanitize=true)
 
 
 Installation
@@ -23,7 +23,7 @@ pip install -r requirements.txt
 Setup
 -----
 
-This `config.ini` utilizes the MegaFace dataset to train the Embedding Converter for SimSwap.
+This `config.ini` utilizes the MegaFace dataset to train CrossFace for SimSwap.
 
 ```
 [training.dataset]
@@ -50,13 +50,13 @@ max_epochs = 4096
 strategy = auto
 precision = 16-mixed
 logger_path = .logs
-logger_name = arcface_converter_simswap
+logger_name = crossface_for_simswap
 ```
 
 ```
 [training.output]
 directory_path = .outputs
-file_pattern = arcface_converter_simswap_{epoch}_{step}
+file_pattern = crossface_for_simswap_{epoch}_{step}
 resume_path = .outputs/last.ckpt
 ```
 
@@ -64,7 +64,7 @@ resume_path = .outputs/last.ckpt
 [exporting]
 directory_path = .exports
 source_path = .outputs/last.ckpt
-target_path = .exports/arcface_converter_simswap.onnx
+target_path = .exports/crossface_for_simswap.onnx
 ir_version = 10
 opset_version = 15
 ```
@@ -73,7 +73,7 @@ opset_version = 15
 Training
 --------
 
-Train the Embedding Converter model.
+Train the model.
 
 ```
 python train.py

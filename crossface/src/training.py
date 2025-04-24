@@ -11,26 +11,26 @@ from torch.utils.data import Dataset, random_split
 from torchdata.stateful_dataloader import StatefulDataLoader
 
 from .dataset import StaticDataset
-from .models.embedding_converter import EmbeddingConverter
+from .models.crossface import CrossFace
 from .types import Batch, Embedding, OptimizerSet
 
 CONFIG_PARSER = ConfigParser()
 CONFIG_PARSER.read('config.ini')
 
 
-class EmbeddingConverterTrainer(LightningModule):
+class CrossFaceTrainer(LightningModule):
 	def __init__(self, config_parser : ConfigParser) -> None:
 		super().__init__()
 		self.config_source_path = config_parser.get('training.model', 'source_path')
 		self.config_target_path = config_parser.get('training.model', 'target_path')
 		self.config_learning_rate = config_parser.getfloat('training.trainer', 'learning_rate')
-		self.embedding_converter = EmbeddingConverter()
+		self.crossface = CrossFace()
 		self.source_embedder = torch.jit.load(self.config_source_path, map_location = 'cpu').eval()
 		self.target_embedder = torch.jit.load(self.config_target_path, map_location = 'cpu').eval()
 		self.mse_loss = nn.MSELoss()
 
 	def forward(self, source_embedding : Embedding) -> Embedding:
-		return self.embedding_converter(source_embedding)
+		return self.crossface(source_embedding)
 
 	def training_step(self, batch : Batch, batch_index : int) -> Tensor:
 		with torch.no_grad():
@@ -125,10 +125,10 @@ def train() -> None:
 
 	dataset = StaticDataset(CONFIG_PARSER)
 	training_loader, validation_loader = create_loaders(dataset)
-	embedding_converter_trainer = EmbeddingConverterTrainer(CONFIG_PARSER)
+	crossface_trainer = CrossFaceTrainer(CONFIG_PARSER)
 	trainer = create_trainer()
 
 	if os.path.exists(config_resume_path):
-		trainer.fit(embedding_converter_trainer, training_loader, validation_loader, ckpt_path = config_resume_path)
+		trainer.fit(crossface_trainer, training_loader, validation_loader, ckpt_path = config_resume_path)
 	else:
-		trainer.fit(embedding_converter_trainer, training_loader, validation_loader)
+		trainer.fit(crossface_trainer, training_loader, validation_loader)
