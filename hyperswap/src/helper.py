@@ -5,17 +5,17 @@ from .types import EmbedderModule, Embedding, Mask, Padding, WarpTemplate, WarpT
 
 WARP_TEMPLATE_SET : WarpTemplateSet =\
 {
-	'arcface_128_v2_to_arcface_112_v2': torch.tensor(
+	'arcface_128_to_arcface_112_v2': torch.tensor(
 	[
 		[ 8.75000016e-01, -1.07193451e-08, 3.80446920e-10 ],
 		[ 1.07193451e-08, 8.75000016e-01, -1.25000007e-01 ]
 	]),
-	'ffhq_to_arcface_128_v2': torch.tensor(
+	'ffhq_512_to_arcface_128': torch.tensor(
 	[
 		[ 8.50048894e-01, -1.29486822e-04, 1.90956388e-03 ],
 		[ 1.29486822e-04, 8.50048894e-01, 9.56254653e-02 ]
 	]),
-	'vgg_face_hq_to_arcface_128_v2': torch.tensor(
+	'vggfacehq_512_to_arcface_128': torch.tensor(
 	[
 		[ 1.01305414, -0.00140513, -0.00585911 ],
 		[ 0.00140513, 1.01305414, 0.11169602 ]
@@ -31,7 +31,7 @@ def warp_tensor(input_tensor : Tensor, warp_template : WarpTemplate) -> Tensor:
 
 
 def calc_embedding(embedder : EmbedderModule, input_tensor : Tensor, padding : Padding) -> Embedding:
-	crop_tensor = warp_tensor(input_tensor, 'arcface_128_v2_to_arcface_112_v2')
+	crop_tensor = warp_tensor(input_tensor, 'arcface_128_to_arcface_112_v2')
 	crop_tensor = nn.functional.interpolate(crop_tensor, size = 112, mode = 'area')
 	crop_tensor[:, :, :padding[0], :] = 0
 	crop_tensor[:, :, 112 - padding[1]:, :] = 0

@@ -2,7 +2,7 @@ import torch
 from torch import Tensor, nn
 
 
-class EmbeddingConverter(nn.Module):
+class CrossFace(nn.Module):
 	def __init__(self) -> None:
 		super().__init__()
 		self.layers = self.create_layers()

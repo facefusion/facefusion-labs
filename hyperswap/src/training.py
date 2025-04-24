@@ -25,7 +25,7 @@ CONFIG_PARSER = ConfigParser()
 CONFIG_PARSER.read('config.ini')
 
 
-class FaceSwapperTrainer(LightningModule):
+class HyperSwapTrainer(LightningModule):
 	def __init__(self, config_parser : ConfigParser) -> None:
 		super().__init__()
 		self.config_generator_embedder_path = config_parser.get('training.model', 'generator_embedder_path')
@@ -239,10 +239,10 @@ def train() -> None:
 
 	dataset = ConcatDataset(prepare_datasets(CONFIG_PARSER))
 	training_loader, validation_loader = create_loaders(dataset)
-	face_swapper_trainer = FaceSwapperTrainer(CONFIG_PARSER)
+	hyperswap_trainer = HyperSwapTrainer(CONFIG_PARSER)
 	trainer = create_trainer()
 
 	if os.path.isfile(config_resume_path):
-		trainer.fit(face_swapper_trainer, training_loader, validation_loader, ckpt_path = config_resume_path)
+		trainer.fit(hyperswap_trainer, training_loader, validation_loader, ckpt_path = config_resume_path)
 	else:
-		trainer.fit(face_swapper_trainer, training_loader, validation_loader)
+		trainer.fit(hyperswap_trainer, training_loader, validation_loader)

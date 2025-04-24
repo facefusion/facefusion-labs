@@ -1,7 +1,7 @@
-Face Swapper
-============
+HyperSwap
+=========
 
-> Face shape and occlusion aware identity transfer.
+> Hyper accurate face swapping for everyone.
 
 ![License](https://img.shields.io/badge/license-ResearchRAIL--MS-red)
 
@@ -23,12 +23,12 @@ pip install -r requirements.txt
 Setup
 -----
 
-This `config.ini` utilizes the VGGFace2 dataset to train the Face Swapper model.
+This `config.ini` utilizes the VGGFace2 dataset to train the HyperSwap model.
 
 ```
 [training.dataset]
 file_pattern = .datasets/vggface2/**/*.jpg
-warp_template = vgg_face_hq_to_arcface_128_v2
+warp_template = vggfacehq_512_to_arcface_128
 transform_size = 256
 batch_mode = equal
 batch_ratio = 0.2
@@ -92,14 +92,14 @@ max_epochs = 50
 strategy = auto
 precision = 16-mixed
 logger_path = .logs
-logger_name = face_swapper
+logger_name = hyperswap
 preview_frequency = 100
 ```
 
 ```
 [training.output]
 directory_path = .outputs
-file_pattern = face_swapper_{epoch}_{step}
+file_pattern = hyperswap_{epoch}_{step}
 resume_path = .outputs/last.ckpt
 ```
 
@@ -127,7 +127,7 @@ output_path = .outputs/output.jpg
 Training
 --------
 
-Train the Face Swapper model.
+Train the model.
 
 ```
 python train.py
