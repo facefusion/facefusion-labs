@@ -9,7 +9,7 @@ HyperSwap
 Preview
 -------
 
-![Preview](https://raw.githubusercontent.com/facefusion/facefusion-labs/master/.github/previews/face_swapper.png?sanitize=true)
+![Preview](https://raw.githubusercontent.com/facefusion/facefusion-labs/master/.github/previews/hyperswap.png?sanitize=true)
 
 
 Installation
