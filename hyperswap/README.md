@@ -3,7 +3,7 @@ HyperSwap
 
 > Hyper accurate face swapping for everyone.
 
-![License](https://img.shields.io/badge/license-ResearchRAIL--MS-red)
+![License](https://img.shields.io/badge/license-ResearchRAIL--MS-orange)
 
 
 Preview

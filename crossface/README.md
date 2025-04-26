@@ -1,7 +1,7 @@
 CrossFace
 =========
 
-> Seamless transform face embeddings across embedder models.
+> Seamless face embedding across various models.
 
 ![License](https://img.shields.io/badge/license-OpenRAIL--MS-green)
 
