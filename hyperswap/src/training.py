@@ -114,6 +114,11 @@ class HyperSwapTrainer(LightningModule):
 		self.manual_backward(generator_loss)
 
 		if do_update:
+			self.clip_gradients(
+				generator_optimizer,
+				gradient_clip_val = 1.0,
+				gradient_clip_algorithm = 'value'
+			)
 			generator_optimizer.step()
 			generator_optimizer.zero_grad()
 		self.untoggle_optimizer(generator_optimizer)
@@ -122,6 +127,11 @@ class HyperSwapTrainer(LightningModule):
 		self.manual_backward(discriminator_loss)
 
 		if do_update:
+			self.clip_gradients(
+				discriminator_optimizer,
+				gradient_clip_val = 1.0,
+				gradient_clip_algorithm = 'value'
+			)
 			discriminator_optimizer.step()
 			discriminator_optimizer.zero_grad()
 		self.untoggle_optimizer(discriminator_optimizer)
@@ -223,7 +233,7 @@ def create_trainer() -> Trainer:
 				dirpath = config_directory_path,
 				filename = config_file_pattern,
 				every_n_train_steps = 1000,
-				save_top_k = 3,
+				save_top_k = 10,
 				save_last = True
 			)
 		],
