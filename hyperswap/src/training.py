@@ -34,6 +34,7 @@ class HyperSwapTrainer(LightningModule):
 		self.config_face_masker_path = config_parser.get('training.model', 'face_masker_path')
 		self.config_accumulate_size = config_parser.getfloat('training.trainer', 'accumulate_size')
 		self.config_learning_rate = config_parser.getfloat('training.trainer', 'learning_rate')
+		self.config_gradient_clip = config_parser.getfloat('training.trainer', 'gradient_clip')
 		self.config_preview_frequency = config_parser.getint('training.trainer', 'preview_frequency')
 		self.generator_embedder = torch.jit.load(self.config_generator_embedder_path, map_location = 'cpu').eval()
 		self.loss_embedder = torch.jit.load(self.config_loss_embedder_path, map_location = 'cpu').eval()
@@ -114,11 +115,12 @@ class HyperSwapTrainer(LightningModule):
 		self.manual_backward(generator_loss)
 
 		if do_update:
-			self.clip_gradients(
-				generator_optimizer,
-				gradient_clip_val = 1.0,
-				gradient_clip_algorithm = 'value'
-			)
+			if self.config_gradient_clip:
+				self.clip_gradients(
+					generator_optimizer,
+					gradient_clip_val = self.config_gradient_clip,
+					gradient_clip_algorithm = 'value'
+				)
 			generator_optimizer.step()
 			generator_optimizer.zero_grad()
 		self.untoggle_optimizer(generator_optimizer)
@@ -127,11 +129,12 @@ class HyperSwapTrainer(LightningModule):
 		self.manual_backward(discriminator_loss)
 
 		if do_update:
-			self.clip_gradients(
-				discriminator_optimizer,
-				gradient_clip_val = 1.0,
-				gradient_clip_algorithm = 'value'
-			)
+			if self.config_gradient_clip:
+				self.clip_gradients(
+					discriminator_optimizer,
+					gradient_clip_val = self.config_gradient_clip,
+					gradient_clip_algorithm = 'value'
+				)
 			discriminator_optimizer.step()
 			discriminator_optimizer.zero_grad()
 		self.untoggle_optimizer(discriminator_optimizer)
