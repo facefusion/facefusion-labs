@@ -236,7 +236,7 @@ def create_trainer() -> Trainer:
 				dirpath = config_directory_path,
 				filename = config_file_pattern,
 				every_n_train_steps = 1000,
-				save_top_k = 10,
+				save_top_k = 5,
 				save_last = True
 			)
 		],
