@@ -110,7 +110,7 @@ def create_trainer() -> Trainer:
 				dirpath = config_directory_path,
 				filename = config_file_pattern,
 				every_n_epochs = 1,
-				save_top_k = 3,
+				save_top_k = 5,
 				save_last = True
 			)
 		]
