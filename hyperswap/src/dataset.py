@@ -5,7 +5,6 @@ from configparser import ConfigParser
 from typing import cast
 
 import albumentations
-import torch.nn
 from torch import Tensor
 from torch.utils.data import Dataset
 from torchvision import io, transforms
@@ -45,7 +44,7 @@ class DynamicDataset(Dataset[Tensor]):
 			transforms.ToPILImage(),
 			transforms.Resize((self.config_transform_size, self.config_transform_size), interpolation = transforms.InterpolationMode.BICUBIC),
 			transforms.ToTensor(),
-			ConvertTransform(self.config_parser) if self.config_parser.get('training.dataset', 'convert_template') else torch.nn.Identity,
+			ConvertTransform(self.config_parser) if self.config_parser.get('training.dataset', 'convert_template') else transforms.Lambda(lambda tensor : tensor),
 			transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 		])
 
