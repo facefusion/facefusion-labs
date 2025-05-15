@@ -13,7 +13,7 @@ from torch.utils.data import ConcatDataset, Dataset, random_split
 from torchdata.stateful_dataloader import StatefulDataLoader
 
 from .dataset import DynamicDataset
-from .helper import calc_embedding, overlay_mask
+from .helper import calc_embedding, inject_noise, overlay_mask
 from .models.discriminator import Discriminator
 from .models.generator import Generator
 from .models.loss import AdversarialLoss, CycleLoss, DiscriminatorLoss, FeatureLoss, GazeLoss, IdentityLoss, MaskLoss, ReconstructionLoss
@@ -89,9 +89,10 @@ class HyperSwapTrainer(LightningModule):
 		source_tensor, target_tensor = batch
 		do_update = (batch_index + 1) % self.config_accumulate_size == 0
 		generator_optimizer, discriminator_optimizer = self.optimizers() #type:ignore[attr-defined]
-
 		source_embedding = calc_embedding(self.generator_embedder, source_tensor, (0, 0, 0, 0))
 		target_embedding = calc_embedding(self.generator_embedder, target_tensor, (0, 0, 0, 0))
+		source_embedding = inject_noise(source_embedding, 0.05)
+		source_embedding = nn.functional.normalize(source_embedding, p = 2)
 		generator_target_features = self.generator.encode_features(target_tensor)
 		generator_output_tensor, generator_output_mask = self.generator(source_embedding, target_tensor, generator_target_features)
 		generator_output_features = self.generator.encode_features(generator_output_tensor)
