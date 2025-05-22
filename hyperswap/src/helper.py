@@ -1,9 +1,9 @@
 import torch
 from torch import Tensor, nn
 
-from .types import EmbedderModule, Embedding, Mask, Padding, WarpTemplate, WarpTemplateSet
+from .types import ConvertTemplate, ConvertTemplateSet, EmbedderModule, Embedding, Mask, Padding
 
-WARP_TEMPLATE_SET : WarpTemplateSet =\
+CONVERT_TEMPLATE_SET : ConvertTemplateSet =\
 {
 	'arcface_128_to_arcface_112_v2': torch.tensor(
 	[
@@ -23,15 +23,15 @@ WARP_TEMPLATE_SET : WarpTemplateSet =\
 }
 
 
-def warp_tensor(input_tensor : Tensor, warp_template : WarpTemplate) -> Tensor:
-	normed_warp_template = WARP_TEMPLATE_SET.get(warp_template).repeat(input_tensor.shape[0], 1, 1)
-	affine_grid = nn.functional.affine_grid(normed_warp_template.to(input_tensor.device), list(input_tensor.shape))
+def convert_tensor(input_tensor : Tensor, convert_template : ConvertTemplate) -> Tensor:
+	convert_matrix = CONVERT_TEMPLATE_SET.get(convert_template).repeat(input_tensor.shape[0], 1, 1)
+	affine_grid = nn.functional.affine_grid(convert_matrix.to(input_tensor.device), list(input_tensor.shape))
 	output_tensor = nn.functional.grid_sample(input_tensor, affine_grid, padding_mode = 'reflection')
 	return output_tensor
 
 
 def calc_embedding(embedder : EmbedderModule, input_tensor : Tensor, padding : Padding) -> Embedding:
-	crop_tensor = warp_tensor(input_tensor, 'arcface_128_to_arcface_112_v2')
+	crop_tensor = convert_tensor(input_tensor, 'arcface_128_to_arcface_112_v2')
 	crop_tensor = nn.functional.interpolate(crop_tensor, size = 112, mode = 'area')
 	crop_tensor[:, :, :padding[0], :] = 0
 	crop_tensor[:, :, 112 - padding[1]:, :] = 0

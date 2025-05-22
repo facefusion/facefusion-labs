@@ -89,7 +89,6 @@ class HyperSwapTrainer(LightningModule):
 		source_tensor, target_tensor = batch
 		do_update = (batch_index + 1) % self.config_accumulate_size == 0
 		generator_optimizer, discriminator_optimizer = self.optimizers() #type:ignore[attr-defined]
-
 		source_embedding = calc_embedding(self.generator_embedder, source_tensor, (0, 0, 0, 0))
 		target_embedding = calc_embedding(self.generator_embedder, target_tensor, (0, 0, 0, 0))
 		generator_target_features = self.generator.encode_features(target_tensor)

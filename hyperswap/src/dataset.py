@@ -9,8 +9,8 @@ from torch import Tensor
 from torch.utils.data import Dataset
 from torchvision import io, transforms
 
-from .helper import warp_tensor
-from .types import Batch, BatchMode, WarpTemplate
+from .helper import convert_tensor
+from .types import Batch, BatchMode, ConvertTemplate
 
 
 class DynamicDataset(Dataset[Tensor]):
@@ -38,15 +38,20 @@ class DynamicDataset(Dataset[Tensor]):
 		return len(self.file_paths)
 
 	def compose_transforms(self) -> transforms:
-		return transforms.Compose(
+		__transforms__ =\
 		[
 			AugmentTransform(),
 			transforms.ToPILImage(),
 			transforms.Resize((self.config_transform_size, self.config_transform_size), interpolation = transforms.InterpolationMode.BICUBIC),
-			transforms.ToTensor(),
-			WarpTransform(self.config_parser),
-			transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-		])
+			transforms.ToTensor()
+		]
+
+		if self.config_parser.get('training.dataset', 'convert_template'):
+			__transforms__.append(ConvertTensorTransform(self.config_parser))
+
+		__transforms__.append(transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)))
+
+		return transforms.Compose(__transforms__)
 
 	def prepare_different_batch(self, source_path : str) -> Batch:
 		target_path = random.choice(self.file_paths)
@@ -98,10 +103,10 @@ class AugmentTransform:
 		])
 
 
-class WarpTransform:
+class ConvertTensorTransform:
 	def __init__(self, config_parser : ConfigParser) -> None:
-		self.config_warp_template = cast(WarpTemplate, config_parser.get('training.dataset', 'warp_template'))
+		self.config_convert_template = cast(ConvertTemplate, config_parser.get('training.dataset', 'convert_template'))
 
 	def __call__(self, input_tensor : Tensor) -> Tensor:
 		temp_tensor = input_tensor.unsqueeze(0)
-		return warp_tensor(temp_tensor, self.config_warp_template).squeeze(0)
+		return convert_tensor(temp_tensor, self.config_convert_template).squeeze(0)

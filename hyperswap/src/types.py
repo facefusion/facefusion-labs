@@ -20,5 +20,5 @@ FaceMaskerModule : TypeAlias = Module
 
 OptimizerSet : TypeAlias = Any
 
-WarpTemplate = Literal['arcface_128_to_arcface_112_v2', 'ffhq_512_to_arcface_128', 'vggfacehq_512_to_arcface_128']
-WarpTemplateSet : TypeAlias = Dict[WarpTemplate, Tensor]
+ConvertTemplate = Literal['arcface_128_to_arcface_112_v2', 'ffhq_512_to_arcface_128', 'vggfacehq_512_to_arcface_128']
+ConvertTemplateSet : TypeAlias = Dict[ConvertTemplate, Tensor]
