@@ -23,7 +23,7 @@ CONVERT_TEMPLATE_SET : ConvertTemplateSet =\
 }
 
 
-def convert_transform(input_tensor : Tensor, convert_template : ConvertTemplate) -> Tensor:
+def convert_tensor(input_tensor : Tensor, convert_template : ConvertTemplate) -> Tensor:
 	convert_matrix = CONVERT_TEMPLATE_SET.get(convert_template).repeat(input_tensor.shape[0], 1, 1)
 	affine_grid = nn.functional.affine_grid(convert_matrix.to(input_tensor.device), list(input_tensor.shape))
 	output_tensor = nn.functional.grid_sample(input_tensor, affine_grid, padding_mode = 'reflection')
@@ -31,7 +31,7 @@ def convert_transform(input_tensor : Tensor, convert_template : ConvertTemplate)
 
 
 def calc_embedding(embedder : EmbedderModule, input_tensor : Tensor, padding : Padding) -> Embedding:
-	crop_tensor = convert_transform(input_tensor, 'arcface_128_to_arcface_112_v2')
+	crop_tensor = convert_tensor(input_tensor, 'arcface_128_to_arcface_112_v2')
 	crop_tensor = nn.functional.interpolate(crop_tensor, size = 112, mode = 'area')
 	crop_tensor[:, :, :padding[0], :] = 0
 	crop_tensor[:, :, 112 - padding[1]:, :] = 0
@@ -48,10 +48,4 @@ def overlay_mask(input_tensor : Tensor, input_mask : Mask) -> Tensor:
 	overlay_tensor[:, 2, :, :] = 1
 	input_mask = input_mask.repeat(1, 3, 1, 1).clamp(0, 0.8)
 	output_tensor = input_tensor * (1 - input_mask) + overlay_tensor * input_mask
-	return output_tensor
-
-
-def inject_noise(input_tensor : Tensor, factor : float) -> Tensor:
-	noise = torch.randn_like(input_tensor) * factor
-	output_tensor = input_tensor + noise
 	return output_tensor
