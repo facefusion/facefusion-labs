@@ -91,7 +91,6 @@ class HyperSwapTrainer(LightningModule):
 		generator_optimizer, discriminator_optimizer = self.optimizers() #type:ignore[attr-defined]
 		source_embedding = calc_embedding(self.generator_embedder, source_tensor, (0, 0, 0, 0))
 		target_embedding = calc_embedding(self.generator_embedder, target_tensor, (0, 0, 0, 0))
-		source_embedding = nn.functional.normalize(source_embedding, p = 2)
 		generator_target_features = self.generator.encode_features(target_tensor)
 		generator_output_tensor, generator_output_mask = self.generator(source_embedding, target_tensor, generator_target_features)
 		generator_output_features = self.generator.encode_features(generator_output_tensor)
