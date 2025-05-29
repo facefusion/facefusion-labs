@@ -89,6 +89,7 @@ mask_weight = 5.0
 accumulate_size = 4
 learning_rate = 0.0004
 gradient_clip = 20.0
+noise_factor = 0.05
 max_epochs = 50
 strategy = auto
 precision = 16-mixed

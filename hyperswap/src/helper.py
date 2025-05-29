@@ -49,3 +49,9 @@ def overlay_mask(input_tensor : Tensor, input_mask : Mask) -> Tensor:
 	input_mask = input_mask.repeat(1, 3, 1, 1).clamp(0, 0.8)
 	output_tensor = input_tensor * (1 - input_mask) + overlay_tensor * input_mask
 	return output_tensor
+
+
+def apply_noise(input_tensor : Tensor, factor : float) -> Tensor:
+	noise_tensor = torch.randn_like(input_tensor) * factor
+	output_tensor = input_tensor + noise_tensor
+	return output_tensor
