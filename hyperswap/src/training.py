@@ -32,7 +32,7 @@ class HyperSwapTrainer(LightningModule):
 		self.config_loss_embedder_path = config_parser.get('training.model', 'loss_embedder_path')
 		self.config_gazer_path = config_parser.get('training.model', 'gazer_path')
 		self.config_face_masker_path = config_parser.get('training.model', 'face_masker_path')
-		self.config_noise_factor = config_parser.getint('training.trainer', 'noise_factor')
+		self.config_noise_factor = config_parser.getfloat('training.trainer', 'noise_factor')
 		self.config_accumulate_size = config_parser.getfloat('training.trainer', 'accumulate_size')
 		self.config_learning_rate = config_parser.getfloat('training.trainer', 'learning_rate')
 		self.config_gradient_clip = config_parser.getfloat('training.trainer', 'gradient_clip')
