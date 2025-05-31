@@ -2,7 +2,7 @@ import glob
 import os
 import random
 from configparser import ConfigParser
-from typing import cast, List
+from typing import List, cast
 
 import albumentations
 from torch import Tensor
