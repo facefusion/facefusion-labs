@@ -1,10 +1,18 @@
-from typing import Any, Dict, Literal, Tuple, TypeAlias
+from typing import Any, Dict, List, Literal, Tuple, TypeAlias, TypedDict
 
 from torch import Tensor
 from torch.nn import Module
 
 Batch : TypeAlias = Tuple[Tensor, Tensor]
 BatchMode = Literal['equal', 'same', 'different']
+UsageMode = Literal['source', 'target', 'both']
+
+FileSet = TypedDict('FileSet',
+{
+	'dataset_name' : str,
+	'usage_mode' : UsageMode,
+	'file_paths' : List[str]
+})
 
 Feature : TypeAlias = Tensor
 Embedding : TypeAlias = Tensor

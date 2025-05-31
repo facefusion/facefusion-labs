@@ -12,7 +12,7 @@ from torch import Tensor, nn
 from torch.utils.data import ConcatDataset, Dataset, random_split
 from torchdata.stateful_dataloader import StatefulDataLoader
 
-from .dataset import DynamicDataset
+from .dataset import DynamicDataset, FilePool
 from .helper import calc_embedding, overlay_mask
 from .models.discriminator import Discriminator
 from .models.generator import Generator
@@ -196,6 +196,7 @@ def split_dataset(dataset : Dataset[Tensor]) -> Tuple[Dataset[Tensor], Dataset[T
 
 
 def prepare_datasets(config_parser : ConfigParser) -> List[Dataset[Tensor]]:
+	file_pool = FilePool(config_parser)
 	datasets = []
 
 	for config_section in config_parser.sections():
@@ -204,10 +205,11 @@ def prepare_datasets(config_parser : ConfigParser) -> List[Dataset[Tensor]]:
 			current_config_parser = ConfigParser()
 			current_config_parser.add_section('training.dataset')
 
+			current_config_parser.set('training.dataset', 'dataset_name', config_section)
 			for key, value in config_parser.items(config_section):
 				current_config_parser.set('training.dataset', key, value)
 
-			datasets.append(DynamicDataset(current_config_parser))
+			datasets.append(DynamicDataset(current_config_parser, file_pool))
 
 	return datasets
 
