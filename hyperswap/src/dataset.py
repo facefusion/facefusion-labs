@@ -72,17 +72,17 @@ class DynamicDataset(Dataset[Tensor]):
 	def __getitem__(self, index : int) -> Batch:
 		file_path = self.file_pool.find_by_dataset_name(self.config_dataset_name)[index]
 
-		if self.config_usage_mode == 'source':
-			return self.prepare_source_batch(file_path)
-
-		if self.config_usage_mode == 'target':
-			return self.prepare_target_batch(file_path)
-
 		if random.random() < self.config_batch_ratio:
 			if self.config_batch_mode == 'equal':
 				return self.prepare_equal_batch(file_path)
 			if self.config_batch_mode == 'same':
 				return self.prepare_same_batch(file_path)
+
+		if self.config_usage_mode == 'source':
+			return self.prepare_source_batch(file_path)
+
+		if self.config_usage_mode == 'target':
+			return self.prepare_target_batch(file_path)
 
 		return self.prepare_different_batch(file_path)
 
