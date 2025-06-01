@@ -30,7 +30,8 @@ This `config.ini` utilizes the VGGFace2 dataset to train the HyperSwap model.
 file_pattern = .datasets/vggface2/**/*.jpg
 convert_template = vggfacehq_512_to_arcface_128
 transform_size = 256
-batch_mode = equal
+usage_mode = both
+batch_mode = same
 batch_ratio = 0.2
 ```
 
