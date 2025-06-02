@@ -7,11 +7,15 @@ Batch : TypeAlias = Tuple[Tensor, Tensor]
 BatchMode = Literal['equal', 'same', 'different']
 UsageMode = Literal['source', 'target', 'both']
 
+ConvertTemplate = Literal['arcface_128_to_arcface_112_v2', 'ffhq_512_to_arcface_128', 'vggfacehq_512_to_arcface_128']
+ConvertTemplateSet : TypeAlias = Dict[ConvertTemplate, Tensor]
+
 FileSet = TypedDict('FileSet',
 {
 	'dataset_name' : str,
+	'file_paths' : List[str],
 	'usage_mode' : UsageMode,
-	'file_paths' : List[str]
+	'convert_template': ConvertTemplate
 })
 
 Feature : TypeAlias = Tensor
@@ -27,6 +31,3 @@ GazerModule : TypeAlias = Module
 FaceMaskerModule : TypeAlias = Module
 
 OptimizerSet : TypeAlias = Any
-
-ConvertTemplate = Literal['arcface_128_to_arcface_112_v2', 'ffhq_512_to_arcface_128', 'vggfacehq_512_to_arcface_128']
-ConvertTemplateSet : TypeAlias = Dict[ConvertTemplate, Tensor]
