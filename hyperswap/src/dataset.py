@@ -34,21 +34,12 @@ class FilePool:
 					'dataset_name': config_section,
 					'file_paths': file_paths,
 					'convert_template': convert_template,
-					'usage_mode': usage_mode,
+					'usage_mode': usage_mode
 				})
 
 		return file_pool
 
-	def find_by_dataset_name(self, dataset_name : str) -> List[FileSet]:
-		file_pool : List[FileSet] = []
-
-		for value in self.file_pool:
-			if value.get('dataset_name') == dataset_name:
-				file_pool.append(value)
-
-		return file_pool
-
-	def find_by_usage_mode(self, usage_mode: UsageMode) -> List[FileSet]:
+	def find_by_usage_mode(self, usage_mode : UsageMode) -> List[FileSet]:
 		file_pool : List[FileSet] = []
 
 		for value in self.file_pool:
@@ -60,20 +51,19 @@ class FilePool:
 
 class DynamicDataset(Dataset[Tensor]):
 	def __init__(self, config_parser : ConfigParser, file_pool : FilePool) -> None:
-		self.config_dataset_name = config_parser.get('training.dataset', 'dataset_name')
 		self.config_file_pattern = config_parser.get('training.dataset', 'file_pattern')
 		self.config_convert_template = cast(ConvertTemplate, config_parser.get('training.dataset', 'convert_template'))
 		self.config_transform_size = config_parser.getint('training.dataset', 'transform_size')
-		self.config_usage_mode = cast(BatchMode, config_parser.get('training.dataset', 'usage_mode'))
+		self.config_usage_mode = cast(UsageMode, config_parser.get('training.dataset', 'usage_mode'))
 		self.config_batch_mode = cast(BatchMode, config_parser.get('training.dataset', 'batch_mode'))
 		self.config_batch_ratio = config_parser.getfloat('training.dataset', 'batch_ratio')
 		self.config_parser = config_parser
 		self.file_pool = file_pool
 		self.transforms = self.compose_transforms()
+		self.file_paths = glob.glob(self.config_file_pattern)
 
 	def __getitem__(self, index : int) -> Batch:
-		file_set = random.choice(self.file_pool.find_by_dataset_name(self.config_dataset_name))
-		file_path = file_set.get('file_paths')[index]
+		file_path = self.file_paths[index]
 
 		if random.random() < self.config_batch_ratio:
 			if self.config_batch_mode == 'equal':
@@ -90,7 +80,7 @@ class DynamicDataset(Dataset[Tensor]):
 		return self.prepare_different_batch(file_path)
 
 	def __len__(self) -> int:
-		return len(self.file_pool.find_by_dataset_name(self.config_dataset_name))
+		return len(self.file_paths)
 
 	def compose_transforms(self) -> transforms:
 		return transforms.Compose(
@@ -143,14 +133,13 @@ class DynamicDataset(Dataset[Tensor]):
 		return source_tensor, target_tensor
 
 	def prepare_different_batch(self, source_path : str) -> Batch:
-		file_set = random.choice(self.file_pool.find_by_dataset_name(self.config_dataset_name))
-		target_path = random.choice(file_set.get('file_paths'))
+		target_path = random.choice(self.file_paths)
 		source_tensor = io.read_image(source_path)
 		source_tensor = self.transforms(source_tensor)
 		source_tensor = self.conditional_convert_tensor(source_tensor, self.config_convert_template)
 		target_tensor = io.read_image(target_path)
 		target_tensor = self.transforms(target_tensor)
-		target_tensor = self.conditional_convert_tensor(target_tensor, file_set.get('convert_template'))
+		target_tensor = self.conditional_convert_tensor(target_tensor, self.config_convert_template)
 		return source_tensor, target_tensor
 
 	@staticmethod

@@ -205,7 +205,6 @@ def prepare_datasets(config_parser : ConfigParser) -> List[Dataset[Tensor]]:
 			current_config_parser = ConfigParser()
 			current_config_parser.add_section('training.dataset')
 
-			current_config_parser.set('training.dataset', 'dataset_name', config_section)
 			for key, value in config_parser.items(config_section):
 				current_config_parser.set('training.dataset', key, value)
 
