@@ -44,7 +44,7 @@ class FilePool:
 
 		for value in self.file_pool:
 			if value.get('dataset_name') == dataset_name:
-				file_pool.extend(value)
+				file_pool.append(value)
 
 		return file_pool
 
@@ -53,7 +53,7 @@ class FilePool:
 
 		for value in self.file_pool:
 			if value.get('usage_mode') == usage_mode:
-				file_pool.extend(value)
+				file_pool.append(value)
 
 		return file_pool
 
@@ -72,8 +72,8 @@ class DynamicDataset(Dataset[Tensor]):
 		self.transforms = self.compose_transforms()
 
 	def __getitem__(self, index : int) -> Batch:
-		file_pool = self.file_pool.find_by_dataset_name(self.config_dataset_name)
-		file_path = file_pool.get('file_paths')[index]
+		file_set = random.choice(self.file_pool.find_by_dataset_name(self.config_dataset_name))
+		file_path = file_set.get('file_paths')[index]
 
 		if random.random() < self.config_batch_ratio:
 			if self.config_batch_mode == 'equal':
@@ -121,36 +121,36 @@ class DynamicDataset(Dataset[Tensor]):
 		return source_tensor, target_tensor
 
 	def prepare_source_batch(self, source_path : str) -> Batch:
-		file_pool = self.file_pool.find_by_usage_mode('both')
-		target_path = random.choice(file_pool.get('file_paths'))
+		file_set = random.choice(self.file_pool.find_by_usage_mode('both'))
+		target_path = random.choice(file_set.get('file_paths'))
 		source_tensor = io.read_image(source_path)
 		source_tensor = self.transforms(source_tensor)
 		source_tensor = self.conditional_convert_tensor(source_tensor, self.config_convert_template)
 		target_tensor = io.read_image(target_path)
 		target_tensor = self.transforms(target_tensor)
-		target_tensor = self.conditional_convert_tensor(target_tensor, file_pool.get('convert_template'))
+		target_tensor = self.conditional_convert_tensor(target_tensor, file_set.get('convert_template'))
 		return source_tensor, target_tensor
 
 	def prepare_target_batch(self, target_path : str) -> Batch:
-		file_pool = self.file_pool.find_by_usage_mode('both')
-		source_path = random.choice(file_pool.get('file_paths'))
+		file_set = random.choice(self.file_pool.find_by_usage_mode('both'))
+		source_path = random.choice(file_set.get('file_paths'))
 		source_tensor = io.read_image(source_path)
 		source_tensor = self.transforms(source_tensor)
-		source_tensor = self.conditional_convert_tensor(source_tensor, file_pool.get('convert_template'))
+		source_tensor = self.conditional_convert_tensor(source_tensor, file_set.get('convert_template'))
 		target_tensor = io.read_image(target_path)
 		target_tensor = self.transforms(target_tensor)
 		target_tensor = self.conditional_convert_tensor(target_tensor, self.config_convert_template)
 		return source_tensor, target_tensor
 
 	def prepare_different_batch(self, source_path : str) -> Batch:
-		file_pool = self.file_pool.find_by_usage_mode('both')
-		target_path = random.choice(file_pool.get('file_paths'))
+		file_set = random.choice(self.file_pool.find_by_dataset_name(self.config_dataset_name))
+		target_path = random.choice(file_set.get('file_paths'))
 		source_tensor = io.read_image(source_path)
 		source_tensor = self.transforms(source_tensor)
 		source_tensor = self.conditional_convert_tensor(source_tensor, self.config_convert_template)
 		target_tensor = io.read_image(target_path)
 		target_tensor = self.transforms(target_tensor)
-		target_tensor = self.conditional_convert_tensor(target_tensor, self.config_convert_template)
+		target_tensor = self.conditional_convert_tensor(target_tensor, file_set.get('convert_template'))
 		return source_tensor, target_tensor
 
 	@staticmethod
