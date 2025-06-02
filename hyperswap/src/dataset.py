@@ -26,7 +26,7 @@ class FilePool:
 			if config_section.startswith('training.dataset'):
 				file_pattern = self.config_parser.get(config_section, 'file_pattern')
 				file_paths = glob.glob(file_pattern)
-				convert_template = self.config_parser.get(config_section, 'convert_template')
+				convert_template = cast(ConvertTemplate, self.config_parser.get(config_section, 'convert_template'))
 				usage_mode = cast(UsageMode, self.config_parser.get(config_section, 'usage_mode'))
 
 				file_pool.append(
