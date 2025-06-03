@@ -74,22 +74,30 @@ class DynamicDataset(Dataset[Tensor]):
 		return source_tensor, target_tensor
 
 	def prepare_source_batch(self, source_path : str) -> Batch:
-		config_parser = random.choice(self.filter_config_by_usage_mode('both').sections())
-		target_path = random.choice(glob.glob(config_parser.get('file_pattern')))
+		config_parser = self.filter_config_by_usage_mode('both')
+		config_section = random.choice(config_parser.sections())
+		config_file_pattern = config_parser.get(config_section, 'file_pattern')
+		config_convert_template = cast(ConvertTemplate, config_parser.get(config_section, 'convert_template'))
+
+		target_path = random.choice(glob.glob(config_file_pattern))
 		source_tensor = io.read_image(source_path)
 		source_tensor = self.transforms(source_tensor)
 		source_tensor = self.conditional_convert_tensor(source_tensor, self.config_convert_template)
 		target_tensor = io.read_image(target_path)
 		target_tensor = self.transforms(target_tensor)
-		target_tensor = self.conditional_convert_tensor(target_tensor, config_parser.get('convert_template'))
+		target_tensor = self.conditional_convert_tensor(target_tensor, config_convert_template)
 		return source_tensor, target_tensor
 
 	def prepare_target_batch(self, target_path : str) -> Batch:
-		config_parser = random.choice(self.filter_config_by_usage_mode('both').sections())
-		source_path = random.choice(glob.glob(config_parser.get('file_pattern')))
+		config_parser = self.filter_config_by_usage_mode('both')
+		config_section = random.choice(config_parser.sections())
+		config_file_pattern = config_parser.get(config_section, 'file_pattern')
+		config_convert_template = cast(ConvertTemplate, config_parser.get(config_section, 'convert_template'))
+
+		source_path = random.choice(glob.glob(config_file_pattern))
 		source_tensor = io.read_image(source_path)
 		source_tensor = self.transforms(source_tensor)
-		source_tensor = self.conditional_convert_tensor(source_tensor, config_parser.get('convert_template'))
+		source_tensor = self.conditional_convert_tensor(source_tensor, config_convert_template)
 		target_tensor = io.read_image(target_path)
 		target_tensor = self.transforms(target_tensor)
 		target_tensor = self.conditional_convert_tensor(target_tensor, self.config_convert_template)
