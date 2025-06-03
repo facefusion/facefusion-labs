@@ -116,14 +116,15 @@ class DynamicDataset(Dataset[Tensor]):
 	def filter_config_by_usage_mode(self, usage_mode : UsageMode) -> ConfigParser:
 		config_parser = ConfigParser()
 
-		for section in self.config_parser.sections():
+		for config_section in self.config_parser.sections():
 
-			current_usage_mode = cast(UsageMode, self.config_parser.get(section, 'usage_mode'))
-			if current_usage_mode == usage_mode:
-				config_parser.add_section(section)
+			if config_section.startswith('training.dataset'):
+				current_usage_mode = cast(UsageMode, self.config_parser.get(config_section, 'usage_mode'))
+				if current_usage_mode == usage_mode:
+					config_parser.add_section(config_section)
 
-				for key, value in self.config_parser.items(section):
-					config_parser.set(section, key, value)
+					for key, value in self.config_parser.items(config_section):
+						config_parser.set(config_section, key, value)
 
 		return config_parser
 
