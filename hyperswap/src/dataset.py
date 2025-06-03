@@ -2,7 +2,7 @@ import glob
 import os
 import random
 from configparser import ConfigParser
-from typing import List, cast
+from typing import cast
 
 import albumentations
 from torch import Tensor
@@ -10,55 +10,18 @@ from torch.utils.data import Dataset
 from torchvision import io, transforms
 
 from .helper import convert_tensor
-from .types import Batch, BatchMode, ConvertTemplate, FileSet, UsageMode
-
-
-class FilePool:
-	def __init__(self, config_parser : ConfigParser) -> None:
-		self.config_parser = config_parser
-		self.file_pool = self.create_file_pool()
-
-	def create_file_pool(self) -> List[FileSet]:
-		file_pool : List[FileSet] = []
-
-		for config_section in self.config_parser.sections():
-
-			if config_section.startswith('training.dataset'):
-				file_pattern = self.config_parser.get(config_section, 'file_pattern')
-				file_paths = glob.glob(file_pattern)
-				convert_template = cast(ConvertTemplate, self.config_parser.get(config_section, 'convert_template'))
-				usage_mode = cast(UsageMode, self.config_parser.get(config_section, 'usage_mode'))
-
-				file_pool.append(
-				{
-					'dataset_name': config_section,
-					'file_paths': file_paths,
-					'convert_template': convert_template,
-					'usage_mode': usage_mode
-				})
-
-		return file_pool
-
-	def find_by_usage_mode(self, usage_mode : UsageMode) -> List[FileSet]:
-		file_pool : List[FileSet] = []
-
-		for value in self.file_pool:
-			if value.get('usage_mode') == usage_mode:
-				file_pool.append(value)
-
-		return file_pool
+from .types import Batch, BatchMode, ConvertTemplate, UsageMode
 
 
 class DynamicDataset(Dataset[Tensor]):
-	def __init__(self, config_parser : ConfigParser, file_pool : FilePool) -> None:
-		self.config_file_pattern = config_parser.get('training.dataset', 'file_pattern')
-		self.config_convert_template = cast(ConvertTemplate, config_parser.get('training.dataset', 'convert_template'))
-		self.config_transform_size = config_parser.getint('training.dataset', 'transform_size')
-		self.config_usage_mode = cast(UsageMode, config_parser.get('training.dataset', 'usage_mode'))
-		self.config_batch_mode = cast(BatchMode, config_parser.get('training.dataset', 'batch_mode'))
-		self.config_batch_ratio = config_parser.getfloat('training.dataset', 'batch_ratio')
+	def __init__(self, config_parser : ConfigParser) -> None:
+		self.config_file_pattern = config_parser.get('training.dataset.current', 'file_pattern')
+		self.config_convert_template = cast(ConvertTemplate, config_parser.get('training.dataset.current', 'convert_template'))
+		self.config_transform_size = config_parser.getint('training.dataset.current', 'transform_size')
+		self.config_usage_mode = cast(UsageMode, config_parser.get('training.dataset.current', 'usage_mode'))
+		self.config_batch_mode = cast(BatchMode, config_parser.get('training.dataset.current', 'batch_mode'))
+		self.config_batch_ratio = config_parser.getfloat('training.dataset.current', 'batch_ratio')
 		self.config_parser = config_parser
-		self.file_pool = file_pool
 		self.transforms = self.compose_transforms()
 		self.file_paths = glob.glob(self.config_file_pattern)
 
@@ -111,22 +74,22 @@ class DynamicDataset(Dataset[Tensor]):
 		return source_tensor, target_tensor
 
 	def prepare_source_batch(self, source_path : str) -> Batch:
-		file_set = random.choice(self.file_pool.find_by_usage_mode('both'))
-		target_path = random.choice(file_set.get('file_paths'))
+		config_parser = random.choice(self.filter_config_by_usage_mode('both').sections())
+		target_path = random.choice(glob.glob(config_parser.get('file_pattern')))
 		source_tensor = io.read_image(source_path)
 		source_tensor = self.transforms(source_tensor)
 		source_tensor = self.conditional_convert_tensor(source_tensor, self.config_convert_template)
 		target_tensor = io.read_image(target_path)
 		target_tensor = self.transforms(target_tensor)
-		target_tensor = self.conditional_convert_tensor(target_tensor, file_set.get('convert_template'))
+		target_tensor = self.conditional_convert_tensor(target_tensor, config_parser.get('convert_template'))
 		return source_tensor, target_tensor
 
 	def prepare_target_batch(self, target_path : str) -> Batch:
-		file_set = random.choice(self.file_pool.find_by_usage_mode('both'))
-		source_path = random.choice(file_set.get('file_paths'))
+		config_parser = random.choice(self.filter_config_by_usage_mode('both').sections())
+		source_path = random.choice(glob.glob(config_parser.get('file_pattern')))
 		source_tensor = io.read_image(source_path)
 		source_tensor = self.transforms(source_tensor)
-		source_tensor = self.conditional_convert_tensor(source_tensor, file_set.get('convert_template'))
+		source_tensor = self.conditional_convert_tensor(source_tensor, config_parser.get('convert_template'))
 		target_tensor = io.read_image(target_path)
 		target_tensor = self.transforms(target_tensor)
 		target_tensor = self.conditional_convert_tensor(target_tensor, self.config_convert_template)
@@ -141,6 +104,20 @@ class DynamicDataset(Dataset[Tensor]):
 		target_tensor = self.transforms(target_tensor)
 		target_tensor = self.conditional_convert_tensor(target_tensor, self.config_convert_template)
 		return source_tensor, target_tensor
+
+	def filter_config_by_usage_mode(self, usage_mode : UsageMode) -> ConfigParser:
+		config_parser = ConfigParser()
+
+		for section in self.config_parser.sections():
+
+			current_usage_mode = cast(UsageMode, self.config_parser.get(section, 'usage_mode'))
+			if current_usage_mode == usage_mode:
+				config_parser.add_section(section)
+
+				for key, value in self.config_parser.items(section):
+					config_parser.set(section, key, value)
+
+		return config_parser
 
 	@staticmethod
 	def conditional_convert_tensor(input_tensor : Tensor, convert_template : ConvertTemplate) -> Tensor:
