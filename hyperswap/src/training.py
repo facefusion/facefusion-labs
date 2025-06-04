@@ -1,6 +1,7 @@
 import os
 import warnings
 from configparser import ConfigParser
+from copy import deepcopy
 from typing import List, Tuple
 
 import torch
@@ -207,13 +208,14 @@ def prepare_datasets(config_parser : ConfigParser) -> List[Dataset[Tensor]]:
 	for config_section in config_parser.sections():
 
 		if config_section.startswith('training.dataset'):
-			current_config_parser = ConfigParser()
-			current_config_parser.add_section('training.dataset')
+			__config_parser__ = deepcopy(config_parser)
+			__config_parser__.remove_section(config_section)
+			__config_parser__.add_section('training.dataset.current')
 
 			for key, value in config_parser.items(config_section):
-				current_config_parser.set('training.dataset', key, value)
+				__config_parser__.set('training.dataset.current', key, value)
 
-			datasets.append(DynamicDataset(current_config_parser))
+			datasets.append(DynamicDataset(__config_parser__))
 
 	return datasets
 
