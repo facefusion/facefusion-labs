@@ -31,6 +31,7 @@ file_pattern = .datasets/vggface2/**/*.jpg
 convert_template = vggfacehq_512_to_arcface_128
 transform_size = 256
 usage_mode = both
+usage_rate = 1
 batch_mode = same
 batch_ratio = 0.2
 ```

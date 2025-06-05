@@ -208,6 +208,7 @@ def prepare_datasets(config_parser : ConfigParser) -> List[Dataset[Tensor]]:
 	for config_section in config_parser.sections():
 
 		if config_section.startswith('training.dataset'):
+			config_usage_rate = config_parser.getint(config_section, 'usage_rate')
 			__config_parser__ = deepcopy(config_parser)
 			__config_parser__.remove_section(config_section)
 			__config_parser__.add_section('training.dataset.current')
@@ -215,7 +216,8 @@ def prepare_datasets(config_parser : ConfigParser) -> List[Dataset[Tensor]]:
 			for key, value in config_parser.items(config_section):
 				__config_parser__.set('training.dataset.current', key, value)
 
-			datasets.append(DynamicDataset(__config_parser__))
+			dynamic_dataset = DynamicDataset(__config_parser__)
+			datasets.extend([ dynamic_dataset ] * config_usage_rate)
 
 	return datasets
 
