@@ -1,3 +1,7 @@
+import glob
+from functools import lru_cache
+from typing import List
+
 import torch
 from torch import Tensor, nn
 
@@ -55,3 +59,8 @@ def apply_noise(input_tensor : Tensor, factor : float) -> Tensor:
 	noise_tensor = torch.randn_like(input_tensor) * factor
 	output_tensor = input_tensor + noise_tensor
 	return output_tensor
+
+
+@lru_cache(maxsize = None)
+def resolve_static_file_pattern(file_pattern : str) -> List[str]:
+	return sorted(glob.glob(file_pattern))
