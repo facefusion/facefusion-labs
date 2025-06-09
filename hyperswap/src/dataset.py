@@ -146,15 +146,29 @@ class AugmentTransform:
 	def compose_transforms() -> albumentations.Compose:
 		return albumentations.Compose(
 		[
-			albumentations.HorizontalFlip(),
+			albumentations.HorizontalFlip(p = 0.5),
 			albumentations.OneOf(
 			[
-				albumentations.MotionBlur(p = 0.1),
-				albumentations.ZoomBlur(max_factor = (1.0, 1.1), p = 0.1)
+				albumentations.MotionBlur(),
+				albumentations.ZoomBlur(max_factor = (1.0, 1.2))
+			], p = 0.1),
+			albumentations.OneOf(
+			[
+				albumentations.RandomGamma(),
+				albumentations.RandomBrightnessContrast(),
+				albumentations.Illumination()
 			], p = 0.2),
-			albumentations.RandomBrightnessContrast(p = 0.7),
-			albumentations.ColorJitter(p = 0.2),
-			albumentations.RGBShift(p = 0.7),
-			albumentations.Illumination(p = 0.2),
-			albumentations.Affine(translate_percent = (-0.03, 0.03), scale = (0.98, 1.02), rotate = (-2, 2), border_mode = 1, p = 0.3)
+			albumentations.OneOf(
+			[
+				albumentations.ColorJitter(),
+				albumentations.RGBShift(),
+				albumentations.HueSaturationValue()
+			], p = 0.2),
+			albumentations.Affine(
+				translate_percent = (-0.05, 0.05),
+				scale = (0.95, 1.05),
+				rotate = (-2, 2),
+				border_mode = 1,
+				p = 0.2
+			)
 		])
