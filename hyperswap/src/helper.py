@@ -71,5 +71,5 @@ def dilate_mask(input_tensor : Tensor, factor : float) -> Tensor:
 	kernel_size = 1 + 2 * padding
 	kernel = torch.ones((1, 1, kernel_size, kernel_size), dtype = input_tensor.dtype, device = input_tensor.device)
 	output_tensor = nn.functional.conv2d(input_tensor, kernel, padding = padding)
-	output_tensor = (output_tensor > 0).to(input_tensor.dtype)
+	output_tensor = torch.sigmoid(2 * (output_tensor - 0.5))
 	return output_tensor

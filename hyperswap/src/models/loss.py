@@ -1,6 +1,7 @@
 from configparser import ConfigParser
 from typing import List, Tuple
 
+import random
 import torch
 from pytorch_msssim import ssim
 from torch import Tensor, nn
@@ -168,8 +169,11 @@ class MaskLoss(nn.Module):
 		self.mse_loss = nn.MSELoss()
 
 	def forward(self, target_tensor : Tensor, output_mask : Mask) -> Tuple[Loss, Loss]:
+		random_dilate_1 = random.uniform(0.005, 0.025)
+		random_dilate_2 = random.uniform(0.005, 0.025)
 		target_mask = self.calc_mask(target_tensor)
-		target_mask = dilate_mask(target_mask, 0.02)
+		target_mask = dilate_mask(target_mask, random_dilate_1)
+		output_mask = dilate_mask(output_mask, random_dilate_2)
 		target_mask = target_mask.view(-1, self.config_output_size, self.config_output_size)
 		output_mask = output_mask.view(-1, self.config_output_size, self.config_output_size)
 		mask_loss = self.mse_loss(target_mask, output_mask)
