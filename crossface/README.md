@@ -45,10 +45,18 @@ target_path = .models/arcface_simswap.pt
 
 ```
 [training.trainer]
-learning_rate = 0.001
 max_epochs = 4096
 strategy = auto
 precision = 16-mixed
+```
+
+```
+[training.optimizer]
+learning_rate = 0.001
+```
+
+```
+[training.logger]
 logger_path = .logs
 logger_name = crossface_simswap
 ```
