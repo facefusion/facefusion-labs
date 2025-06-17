@@ -64,3 +64,12 @@ def apply_noise(input_tensor : Tensor, factor : float) -> Tensor:
 @lru_cache(maxsize = None)
 def resolve_static_file_pattern(file_pattern : str) -> List[str]:
 	return sorted(glob.glob(file_pattern))
+
+
+def dilate_mask(input_tensor : Tensor, factor : float) -> Tensor:
+	padding = round(input_tensor.shape[2] * factor)
+	kernel_size = 1 + 2 * padding
+	kernel = torch.ones((1, 1, kernel_size, kernel_size), dtype = input_tensor.dtype, device = input_tensor.device)
+	dilate_tensor = nn.functional.conv2d(input_tensor, kernel, padding = padding)
+	dilate_tensor = torch.sigmoid(2 * (dilate_tensor - 0.5))
+	return dilate_tensor
