@@ -35,16 +35,16 @@ class HyperSwapTrainer(LightningModule):
 		self.config_face_masker_path = config_parser.get('training.model', 'face_masker_path')
 		self.config_noise_factor = config_parser.getfloat('training.trainer', 'noise_factor')
 		self.config_accumulate_size = config_parser.getfloat('training.trainer', 'accumulate_size')
-		self.config_generator_learning_rate = config_parser.getfloat('training.optimizer.generator', 'learning_rate')
-		self.config_discriminator_learning_rate = config_parser.getfloat('training.optimizer.discriminator', 'learning_rate')
-		self.config_generator_momentum = config_parser.getfloat('training.optimizer.generator', 'momentum')
-		self.config_discriminator_momentum = config_parser.getfloat('training.optimizer.discriminator', 'momentum')
-		self.config_generator_scheduler_factor = config_parser.getfloat('training.optimizer.generator', 'scheduler_factor')
-		self.config_discriminator_scheduler_factor = config_parser.getfloat('training.optimizer.discriminator', 'scheduler_factor')
-		self.config_generator_scheduler_patience = config_parser.getint('training.optimizer.generator', 'scheduler_patience')
-		self.config_discriminator_scheduler_patience = config_parser.getint('training.optimizer.discriminator', 'scheduler_patience')
 		self.config_gradient_clip = config_parser.getfloat('training.trainer', 'gradient_clip')
 		self.config_preview_frequency = config_parser.getint('training.trainer', 'preview_frequency')
+		self.config_generator_learning_rate = config_parser.getfloat('training.optimizer.generator', 'learning_rate')
+		self.config_generator_momentum = config_parser.getfloat('training.optimizer.generator', 'momentum')
+		self.config_generator_scheduler_factor = config_parser.getfloat('training.optimizer.generator', 'scheduler_factor')
+		self.config_generator_scheduler_patience = config_parser.getint('training.optimizer.generator', 'scheduler_patience')
+		self.config_discriminator_learning_rate = config_parser.getfloat('training.optimizer.discriminator', 'learning_rate')
+		self.config_discriminator_momentum = config_parser.getfloat('training.optimizer.discriminator', 'momentum')
+		self.config_discriminator_scheduler_factor = config_parser.getfloat('training.optimizer.discriminator', 'scheduler_factor')
+		self.config_discriminator_scheduler_patience = config_parser.getint('training.optimizer.discriminator', 'scheduler_patience')
 		self.generator_embedder = torch.jit.load(self.config_generator_embedder_path, map_location = 'cpu').eval()
 		self.loss_embedder = torch.jit.load(self.config_loss_embedder_path, map_location = 'cpu').eval()
 		self.gazer = torch.jit.load(self.config_gazer_path, map_location = 'cpu').eval()
@@ -163,11 +163,11 @@ class HyperSwapTrainer(LightningModule):
 		self.log('identity_loss', identity_loss)
 		self.log('gaze_loss', gaze_loss)
 		self.log('mask_loss', mask_loss)
-		
+
 		if do_update:
 			generator_scheduler.step(generator_loss)
 			discriminator_scheduler.step(discriminator_loss)
-		
+
 		return generator_loss
 
 	def validation_step(self, batch : Batch, batch_index : int) -> Tensor:
