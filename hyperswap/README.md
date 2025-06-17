@@ -98,12 +98,6 @@ preview_frequency = 100
 ```
 
 ```
-[training.logger]
-logger_path = .logs
-logger_name = hyperswap
-```
-
-```
 [training.optimizer.generator]
 learning_rate = 0.0004
 momentum = 0.5
@@ -117,6 +111,12 @@ learning_rate = 0.0002
 momentum = 0.5
 scheduler_factor = 0.7
 scheduler_patience = 2000
+```
+
+```
+[training.logger]
+logger_path = .logs
+logger_name = hyperswap
 ```
 
 ```
