@@ -35,11 +35,14 @@ class HyperSwapTrainer(LightningModule):
 		self.config_face_masker_path = config_parser.get('training.model', 'face_masker_path')
 		self.config_noise_factor = config_parser.getfloat('training.trainer', 'noise_factor')
 		self.config_accumulate_size = config_parser.getfloat('training.trainer', 'accumulate_size')
-		self.config_generator_learning_rate = config_parser.getfloat('training.trainer', 'generator_learning_rate')
-		self.config_discriminator_learning_rate = config_parser.getfloat('training.trainer', 'discriminator_learning_rate')
-		self.config_momentum = config_parser.getfloat('training.trainer', 'momentum')
-		self.config_scheduler_factor = config_parser.getfloat('training.trainer', 'scheduler_factor')
-		self.config_scheduler_patience = config_parser.getint('training.trainer', 'scheduler_patience')
+		self.config_generator_learning_rate = config_parser.getfloat('training.generator', 'learning_rate')
+		self.config_discriminator_learning_rate = config_parser.getfloat('training.discriminator', 'learning_rate')
+		self.config_generator_momentum = config_parser.getfloat('training.generator', 'momentum')
+		self.config_discriminator_momentum = config_parser.getfloat('training.discriminator', 'momentum')
+		self.config_generator_scheduler_factor = config_parser.getfloat('training.generator', 'scheduler_factor')
+		self.config_discriminator_scheduler_factor = config_parser.getfloat('training.discriminator', 'scheduler_factor')
+		self.config_generator_scheduler_patience = config_parser.getint('training.generator', 'scheduler_patience')
+		self.config_discriminator_scheduler_patience = config_parser.getint('training.discriminator', 'scheduler_patience')
 		self.config_gradient_clip = config_parser.getfloat('training.trainer', 'gradient_clip')
 		self.config_preview_frequency = config_parser.getint('training.trainer', 'preview_frequency')
 		self.generator_embedder = torch.jit.load(self.config_generator_embedder_path, map_location = 'cpu').eval()
@@ -66,10 +69,10 @@ class HyperSwapTrainer(LightningModule):
 		return output_tensor, output_mask
 
 	def configure_optimizers(self) -> Tuple[OptimizerSet, OptimizerSet]:
-		generator_optimizer = torch.optim.AdamW(self.generator.parameters(), lr = self.config_generator_learning_rate, betas = (self.config_momentum, 0.999), weight_decay = 1e-4, eps = 1e-8)
-		discriminator_optimizer = torch.optim.AdamW(self.discriminator.parameters(), lr = self.config_discriminator_learning_rate, betas = (self.config_momentum, 0.999), weight_decay = 1e-4, eps = 1e-8)
-		generator_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(generator_optimizer, mode = 'min', factor = self.config_scheduler_factor, patience = self.config_scheduler_patience, min_lr = 1e-8)
-		discriminator_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(discriminator_optimizer, mode = 'min', factor = self.config_scheduler_factor, patience = self.config_scheduler_patience, min_lr = 1e-8)
+		generator_optimizer = torch.optim.AdamW(self.generator.parameters(), lr = self.config_generator_learning_rate, betas = (self.config_generator_momentum, 0.999), weight_decay = 1e-4, eps = 1e-8)
+		discriminator_optimizer = torch.optim.AdamW(self.discriminator.parameters(), lr = self.config_discriminator_learning_rate, betas = (self.config_discriminator_momentum, 0.999), weight_decay = 1e-4, eps = 1e-8)
+		generator_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(generator_optimizer, mode = 'min', factor = self.config_generator_scheduler_factor, patience = self.config_generator_scheduler_patience, min_lr = 1e-8)
+		discriminator_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(discriminator_optimizer, mode = 'min', factor = self.config_discriminator_scheduler_factor, patience = self.config_discriminator_scheduler_patience, min_lr = 1e-8)
 
 		generator_config =\
 		{
@@ -234,8 +237,8 @@ def create_trainer() -> Trainer:
 	config_max_epochs = CONFIG_PARSER.getint('training.trainer', 'max_epochs')
 	config_strategy = CONFIG_PARSER.get('training.trainer', 'strategy')
 	config_precision = CONFIG_PARSER.get('training.trainer', 'precision')
-	config_logger_path = CONFIG_PARSER.get('training.trainer', 'logger_path')
-	config_logger_name = CONFIG_PARSER.get('training.trainer', 'logger_name')
+	config_logger_path = CONFIG_PARSER.get('training.logger', 'logger_path')
+	config_logger_name = CONFIG_PARSER.get('training.logger', 'logger_name')
 	config_directory_path = CONFIG_PARSER.get('training.output', 'directory_path')
 	config_file_pattern = CONFIG_PARSER.get('training.output', 'file_pattern')
 	logger = TensorBoardLogger(config_logger_path, config_logger_name)

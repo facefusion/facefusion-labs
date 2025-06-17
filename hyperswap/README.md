@@ -89,19 +89,34 @@ mask_weight = 5.0
 ```
 [training.trainer]
 accumulate_size = 4
-generator_learning_rate = 0.0004
-discriminator_learning_rate = 0.0002
-momentum = 0.5
 gradient_clip = 20.0
 noise_factor = 0.05
-scheduler_factor = 0.7
-scheduler_patience = 2000
 max_epochs = 50
 strategy = auto
 precision = 16-mixed
+preview_frequency = 100
+```
+
+```
+[training.logger]
 logger_path = .logs
 logger_name = hyperswap
-preview_frequency = 100
+```
+
+```
+[training.generator]
+learning_rate = 0.0004
+momentum = 0.5
+scheduler_factor = 0.7
+scheduler_patience = 2000
+```
+
+```
+[training.discriminator]
+learning_rate = 0.0002
+momentum = 0.5
+scheduler_factor = 0.7
+scheduler_patience = 2000
 ```
 
 ```
