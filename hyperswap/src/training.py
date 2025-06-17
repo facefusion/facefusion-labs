@@ -35,7 +35,11 @@ class HyperSwapTrainer(LightningModule):
 		self.config_face_masker_path = config_parser.get('training.model', 'face_masker_path')
 		self.config_noise_factor = config_parser.getfloat('training.trainer', 'noise_factor')
 		self.config_accumulate_size = config_parser.getfloat('training.trainer', 'accumulate_size')
-		self.config_learning_rate = config_parser.getfloat('training.trainer', 'learning_rate')
+		self.config_generator_learning_rate = config_parser.getfloat('training.trainer', 'generator_learning_rate')
+		self.config_discriminator_learning_rate = config_parser.getfloat('training.trainer', 'discriminator_learning_rate')
+		self.config_momentum = config_parser.getfloat('training.trainer', 'momentum')
+		self.config_scheduler_factor = config_parser.getfloat('training.trainer', 'scheduler_factor')
+		self.config_scheduler_patience = config_parser.getint('training.trainer', 'scheduler_patience')
 		self.config_gradient_clip = config_parser.getfloat('training.trainer', 'gradient_clip')
 		self.config_preview_frequency = config_parser.getint('training.trainer', 'preview_frequency')
 		self.generator_embedder = torch.jit.load(self.config_generator_embedder_path, map_location = 'cpu').eval()
@@ -62,10 +66,10 @@ class HyperSwapTrainer(LightningModule):
 		return output_tensor, output_mask
 
 	def configure_optimizers(self) -> Tuple[OptimizerSet, OptimizerSet]:
-		generator_optimizer = torch.optim.AdamW(self.generator.parameters(), lr = self.config_learning_rate, betas = (0.5, 0.999), weight_decay = 1e-4, eps = 1e-8)
-		discriminator_optimizer = torch.optim.AdamW(self.discriminator.parameters(), lr = self.config_learning_rate * 0.5, betas = (0.5, 0.999), weight_decay = 1e-4, eps = 1e-8)
-		generator_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(generator_optimizer, mode = 'min', factor = 0.7, patience = 2000, min_lr = 1e-8)
-		discriminator_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(discriminator_optimizer, mode = 'min', factor = 0.7, patience = 2000, min_lr = 1e-8)
+		generator_optimizer = torch.optim.AdamW(self.generator.parameters(), lr = self.config_generator_learning_rate, betas = (self.config_momentum, 0.999), weight_decay = 1e-4, eps = 1e-8)
+		discriminator_optimizer = torch.optim.AdamW(self.discriminator.parameters(), lr = self.config_discriminator_learning_rate, betas = (self.config_momentum, 0.999), weight_decay = 1e-4, eps = 1e-8)
+		generator_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(generator_optimizer, mode = 'min', factor = self.config_scheduler_factor, patience = self.config_scheduler_patience, min_lr = 1e-8)
+		discriminator_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(discriminator_optimizer, mode = 'min', factor = self.config_scheduler_factor, patience = self.config_scheduler_patience, min_lr = 1e-8)
 
 		generator_config =\
 		{
