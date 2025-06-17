@@ -130,7 +130,7 @@ resume_path = .outputs/last.ckpt
 [exporting]
 directory_path = .exports
 source_path = .outputs/last.ckpt
-target_path = .exports/face_swapper.onnx
+target_path = .exports/hyperswap_256.onnx
 target_size = 256
 ir_version = 10
 opset_version = 15
