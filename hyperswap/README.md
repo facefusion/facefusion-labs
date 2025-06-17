@@ -104,7 +104,7 @@ logger_name = hyperswap
 ```
 
 ```
-[training.generator]
+[training.optimizer.generator]
 learning_rate = 0.0004
 momentum = 0.5
 scheduler_factor = 0.7
@@ -112,7 +112,7 @@ scheduler_patience = 2000
 ```
 
 ```
-[training.discriminator]
+[training.optimizer.discriminator]
 learning_rate = 0.0002
 momentum = 0.5
 scheduler_factor = 0.7
