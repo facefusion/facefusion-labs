@@ -69,7 +69,14 @@ def resolve_static_file_pattern(file_pattern : str) -> List[str]:
 def dilate_mask(input_tensor : Tensor, factor : float) -> Tensor:
 	padding = round(input_tensor.shape[2] * factor)
 	kernel_size = 1 + 2 * padding
-	kernel = torch.ones((1, 1, kernel_size, kernel_size), dtype = input_tensor.dtype, device = input_tensor.device)
-	dilate_tensor = nn.functional.conv2d(input_tensor, kernel, padding = padding)
-	dilate_tensor = torch.sigmoid(2 * (dilate_tensor - 0.5))
+	pad_tensor = nn.functional.pad(input_tensor, (padding, padding, padding, padding), mode = 'replicate')
+	dilate_tensor = nn.functional.max_pool2d(pad_tensor, kernel_size = kernel_size, stride = 1, padding = 0)
+	return dilate_tensor
+
+
+def erode_mask(input_tensor : Tensor, factor : float) -> Tensor:
+	padding = round(input_tensor.shape[2] * factor)
+	kernel_size = 1 + 2 * padding
+	pad_tensor = 1 - nn.functional.pad(input_tensor, (padding, padding, padding, padding), mode = 'replicate')
+	dilate_tensor = 1 - nn.functional.max_pool2d(pad_tensor, kernel_size = kernel_size, stride = 1, padding = 0)
 	return dilate_tensor

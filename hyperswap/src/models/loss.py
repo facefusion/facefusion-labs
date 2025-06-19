@@ -170,7 +170,10 @@ class MaskLoss(nn.Module):
 
 	def forward(self, target_tensor : Tensor, output_mask : Mask) -> Tuple[Loss, Loss]:
 		target_mask = self.calc_mask(target_tensor)
-		target_mask = dilate_mask(target_mask, self.config_mask_dilate)
+
+		if self.config_mask_dilate > 0:
+			target_mask = dilate_mask(target_mask, self.config_mask_dilate)
+
 		target_mask = target_mask.view(-1, self.config_output_size, self.config_output_size)
 		output_mask = output_mask.view(-1, self.config_output_size, self.config_output_size)
 		mask_loss = self.mse_loss(target_mask, output_mask)
