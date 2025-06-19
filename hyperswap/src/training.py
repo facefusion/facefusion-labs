@@ -56,6 +56,8 @@ class HyperSwapTrainer(LightningModule):
 		freeze_model_parameters(self.face_masker)
 		self.generator = Generator(config_parser)
 		self.discriminator = Discriminator(config_parser)
+		self.generator = torch.compile(self.generator)
+		self.discriminator = torch.compile(self.discriminator)
 		self.discriminator_loss = DiscriminatorLoss()
 		self.adversarial_loss = AdversarialLoss(config_parser)
 		self.cycle_loss = CycleLoss(config_parser)
