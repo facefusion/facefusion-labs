@@ -208,7 +208,7 @@ def create_loaders(dataset : Dataset[Tensor]) -> Tuple[StatefulDataLoader[Tensor
 	config_num_workers = CONFIG_PARSER.getint('training.loader', 'num_workers')
 
 	training_dataset, validate_dataset = split_dataset(dataset)
-	training_loader = StatefulDataLoader(training_dataset, batch_size = config_batch_size, shuffle = True, num_workers = config_num_workers, drop_last = True, pin_memory = True, persistent_workers = True)
+	training_loader = StatefulDataLoader(training_dataset, batch_size = config_batch_size, shuffle = True, num_workers = config_num_workers, drop_last = True, pin_memory = True, persistent_workers = True, prefetch_factor = 2)
 	validation_loader = StatefulDataLoader(validate_dataset, batch_size = config_batch_size, shuffle = False, num_workers = config_num_workers, pin_memory = True, persistent_workers = True)
 	return training_loader, validation_loader
 
