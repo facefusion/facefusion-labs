@@ -161,7 +161,7 @@ class HyperSwapTrainer(LightningModule):
 			discriminator_optimizer.zero_grad()
 		self.untoggle_optimizer(discriminator_optimizer)
 
-		if self.global_step % self.config_preview_frequency == 0:
+		if batch_index % self.config_preview_frequency == 0:
 			self.generate_preview(source_tensor, target_tensor, generator_output_tensor, generator_output_mask)
 
 		self.log('generator_loss', generator_loss, prog_bar = True)
