@@ -14,7 +14,7 @@ from torch.utils.data import ConcatDataset, Dataset, random_split
 from torchdata.stateful_dataloader import StatefulDataLoader
 
 from .dataset import DynamicDataset
-from .helper import apply_noise, calc_embedding, erode_mask, overlay_mask
+from .helper import apply_noise, calc_embedding, erode_mask, freeze_model_parameters, overlay_mask
 from .models.discriminator import Discriminator
 from .models.generator import Generator
 from .models.loss import AdversarialLoss, CycleLoss, DiscriminatorLoss, FeatureLoss, GazeLoss, IdentityLoss, MaskLoss, ReconstructionLoss
@@ -50,6 +50,10 @@ class HyperSwapTrainer(LightningModule):
 		self.loss_embedder = torch.jit.load(self.config_loss_embedder_path, map_location = 'cpu').eval()
 		self.gazer = torch.jit.load(self.config_gazer_path, map_location = 'cpu').eval()
 		self.face_masker = torch.jit.load(self.config_face_masker_path, map_location ='cpu').eval()
+		freeze_model_parameters(self.generator_embedder)
+		freeze_model_parameters(self.loss_embedder)
+		freeze_model_parameters(self.gazer)
+		freeze_model_parameters(self.face_masker)
 		self.generator = Generator(config_parser)
 		self.discriminator = Discriminator(config_parser)
 		self.discriminator_loss = DiscriminatorLoss()

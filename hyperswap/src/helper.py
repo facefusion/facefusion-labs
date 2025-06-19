@@ -5,7 +5,7 @@ from typing import List
 import torch
 from torch import Tensor, nn
 
-from .types import ConvertTemplate, ConvertTemplateSet, EmbedderModule, Embedding, Mask, Padding
+from .types import ConvertTemplate, ConvertTemplateSet, EmbedderModule, Embedding, Mask, Module, Padding
 
 CONVERT_TEMPLATE_SET : ConvertTemplateSet =\
 {
@@ -83,3 +83,8 @@ def erode_mask(input_tensor : Tensor, factor : float) -> Tensor:
 	pad_tensor = 1 - nn.functional.pad(input_tensor, (padding, padding, padding, padding), mode = 'replicate')
 	dilate_tensor = 1 - nn.functional.max_pool2d(pad_tensor, kernel_size = kernel_size, stride = 1, padding = 0)
 	return dilate_tensor
+
+
+def freeze_model_parameters(module : Module) -> None:
+	for parameter in module.parameters():
+		parameter.requires_grad = False
