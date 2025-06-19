@@ -34,17 +34,20 @@ def convert_tensor(input_tensor : Tensor, convert_template : ConvertTemplate) ->
 	return output_tensor
 
 
-def calc_embedding(embedder : EmbedderModule, input_tensor : Tensor, padding : Padding) -> Embedding:
-	crop_tensor = convert_tensor(input_tensor, 'arcface_128_to_arcface_112_v2')
-	crop_tensor = nn.functional.interpolate(crop_tensor, size = 112, mode = 'area')
-	crop_tensor[:, :, :padding[0], :] = 0
-	crop_tensor[:, :, 112 - padding[1]:, :] = 0
-	crop_tensor[:, :, :, :padding[2]] = 0
-	crop_tensor[:, :, :, 112 - padding[3]:] = 0
-
-	embedding = embedder(crop_tensor)
-	embedding = nn.functional.normalize(embedding, p = 2)
-	return embedding
+def calc_embedding(embedder: EmbedderModule, input_tensor: Tensor, padding: Padding) -> Embedding:
+    crop_tensor = convert_tensor(input_tensor, 'arcface_128_to_arcface_112_v2')
+    crop_tensor = nn.functional.interpolate(crop_tensor, size = 112, mode = 'area')
+    batch_size, channels, height, width = crop_tensor.shape
+    y_indices = torch.arange(height, device = crop_tensor.device).view(1, 1, height, 1)
+    x_indices = torch.arange(width, device = crop_tensor.device).view(1, 1, 1, width)
+    mask_y = ((y_indices >= padding[0]) & (y_indices < height - padding[1])).float()
+    mask_x = ((x_indices >= padding[2]) & (x_indices < width - padding[3])).float()
+    mask = mask_y * mask_x
+    mask = mask.expand(batch_size, channels, height, width)
+    crop_tensor = crop_tensor * mask
+    embedding = embedder(crop_tensor)
+    embedding = nn.functional.normalize(embedding, p = 2, dim = 1)
+    return embedding
 
 
 def overlay_mask(input_tensor : Tensor, input_mask : Mask) -> Tensor:
