@@ -33,9 +33,10 @@ class HyperSwapTrainer(LightningModule):
 		self.config_loss_embedder_path = config_parser.get('training.model', 'loss_embedder_path')
 		self.config_gazer_path = config_parser.get('training.model', 'gazer_path')
 		self.config_face_masker_path = config_parser.get('training.model', 'face_masker_path')
-		self.config_noise_factor = config_parser.getfloat('training.trainer', 'noise_factor')
 		self.config_accumulate_size = config_parser.getfloat('training.trainer', 'accumulate_size')
 		self.config_gradient_clip = config_parser.getfloat('training.trainer', 'gradient_clip')
+		self.config_mask_factor = config_parser.getfloat('training.trainer', 'mask_factor')
+		self.config_noise_factor = config_parser.getfloat('training.trainer', 'noise_factor')
 		self.config_preview_frequency = config_parser.getint('training.trainer', 'preview_frequency')
 		self.config_generator_learning_rate = config_parser.getfloat('training.optimizer.generator', 'learning_rate')
 		self.config_generator_momentum = config_parser.getfloat('training.optimizer.generator', 'momentum')
@@ -45,7 +46,6 @@ class HyperSwapTrainer(LightningModule):
 		self.config_discriminator_momentum = config_parser.getfloat('training.optimizer.discriminator', 'momentum')
 		self.config_discriminator_scheduler_factor = config_parser.getfloat('training.optimizer.discriminator', 'scheduler_factor')
 		self.config_discriminator_scheduler_patience = config_parser.getint('training.optimizer.discriminator', 'scheduler_patience')
-		self.config_mask_dilate = config_parser.getfloat('training.losses', 'mask_dilate')
 		self.generator_embedder = torch.jit.load(self.config_generator_embedder_path, map_location = 'cpu').eval()
 		self.loss_embedder = torch.jit.load(self.config_loss_embedder_path, map_location = 'cpu').eval()
 		self.gazer = torch.jit.load(self.config_gazer_path, map_location = 'cpu').eval()
@@ -67,8 +67,8 @@ class HyperSwapTrainer(LightningModule):
 			generator_target_features = self.generator.encode_features(target_tensor)
 			output_tensor, output_mask = self.generator(source_embedding, target_tensor, generator_target_features)
 
-		if self.config_mask_dilate > 0:
-			output_mask = erode_mask(output_mask, self.config_mask_dilate)
+		if self.config_mask_factor > 0:
+			output_mask = erode_mask(output_mask, self.config_mask_factor)
 
 		return output_tensor, output_mask
 

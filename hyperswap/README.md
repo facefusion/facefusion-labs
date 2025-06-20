@@ -84,13 +84,13 @@ reconstruction_weight = 10.0
 identity_weight = 20.0
 gaze_weight = 0.05
 mask_weight = 5.0
-mask_dilate = 0.01
 ```
 
 ```
 [training.trainer]
 accumulate_size = 4
 gradient_clip = 20.0
+mask_factor = 0.01
 noise_factor = 0.05
 max_epochs = 50
 strategy = auto

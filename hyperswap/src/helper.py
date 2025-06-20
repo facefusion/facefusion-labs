@@ -55,6 +55,22 @@ def overlay_mask(input_tensor : Tensor, input_mask : Mask) -> Tensor:
 	return output_tensor
 
 
+def dilate_mask(input_tensor : Tensor, factor : float) -> Tensor:
+	padding = round(input_tensor.shape[2] * factor)
+	kernel_size = 1 + 2 * padding
+	temp_tensor = nn.functional.pad(input_tensor, (padding, padding, padding, padding), mode = 'replicate')
+	output_tensor = nn.functional.max_pool2d(temp_tensor, kernel_size = kernel_size, stride = 1, padding = 0)
+	return output_tensor
+
+
+def erode_mask(input_tensor : Tensor, factor : float) -> Tensor:
+	padding = round(input_tensor.shape[2] * factor)
+	kernel_size = 1 + 2 * padding
+	temp_tensor = 1 - nn.functional.pad(input_tensor, (padding, padding, padding, padding), mode = 'replicate')
+	output_tensor = 1 - nn.functional.max_pool2d(temp_tensor, kernel_size = kernel_size, stride = 1, padding = 0)
+	return output_tensor
+
+
 def apply_noise(input_tensor : Tensor, factor : float) -> Tensor:
 	noise_tensor = torch.randn_like(input_tensor) * factor
 	output_tensor = input_tensor + noise_tensor
@@ -64,19 +80,3 @@ def apply_noise(input_tensor : Tensor, factor : float) -> Tensor:
 @lru_cache(maxsize = None)
 def resolve_static_file_pattern(file_pattern : str) -> List[str]:
 	return sorted(glob.glob(file_pattern))
-
-
-def dilate_mask(input_tensor : Tensor, factor : float) -> Tensor:
-	padding = round(input_tensor.shape[2] * factor)
-	kernel_size = 1 + 2 * padding
-	pad_tensor = nn.functional.pad(input_tensor, (padding, padding, padding, padding), mode = 'replicate')
-	dilate_tensor = nn.functional.max_pool2d(pad_tensor, kernel_size = kernel_size, stride = 1, padding = 0)
-	return dilate_tensor
-
-
-def erode_mask(input_tensor : Tensor, factor : float) -> Tensor:
-	padding = round(input_tensor.shape[2] * factor)
-	kernel_size = 1 + 2 * padding
-	pad_tensor = 1 - nn.functional.pad(input_tensor, (padding, padding, padding, padding), mode = 'replicate')
-	dilate_tensor = 1 - nn.functional.max_pool2d(pad_tensor, kernel_size = kernel_size, stride = 1, padding = 0)
-	return dilate_tensor
