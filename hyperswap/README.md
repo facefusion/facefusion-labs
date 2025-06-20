@@ -90,12 +90,16 @@ mask_weight = 5.0
 [training.trainer]
 accumulate_size = 4
 gradient_clip = 20.0
-mask_factor = 0.01
-noise_factor = 0.05
 max_epochs = 50
 strategy = auto
 precision = 16-mixed
 preview_frequency = 100
+```
+
+```
+[training.modifier]
+mask_factor = 0.01
+noise_factor = 0.05
 ```
 
 ```
