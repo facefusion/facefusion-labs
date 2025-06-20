@@ -6,7 +6,7 @@ from pytorch_msssim import ssim
 from torch import Tensor, nn
 from torchvision import transforms
 
-from ..helper import calc_embedding
+from ..helper import calc_embedding, dilate_mask
 from ..types import EmbedderModule, FaceMaskerModule, Feature, GazerModule, Loss, Mask
 
 
@@ -163,12 +163,17 @@ class MaskLoss(nn.Module):
 	def __init__(self, config_parser : ConfigParser, face_masker : FaceMaskerModule) -> None:
 		super().__init__()
 		self.config_mask_weight = config_parser.getfloat('training.losses', 'mask_weight')
+		self.config_mask_dilate = config_parser.getfloat('training.losses', 'mask_dilate')
 		self.config_output_size = config_parser.getint('training.model.generator', 'output_size')
 		self.face_masker = face_masker
 		self.mse_loss = nn.MSELoss()
 
 	def forward(self, target_tensor : Tensor, output_mask : Mask) -> Tuple[Loss, Loss]:
 		target_mask = self.calc_mask(target_tensor)
+
+		if self.config_mask_dilate > 0:
+			target_mask = dilate_mask(target_mask, self.config_mask_dilate)
+
 		target_mask = target_mask.view(-1, self.config_output_size, self.config_output_size)
 		output_mask = output_mask.view(-1, self.config_output_size, self.config_output_size)
 		mask_loss = self.mse_loss(target_mask, output_mask)

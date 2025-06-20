@@ -84,6 +84,7 @@ reconstruction_weight = 10.0
 identity_weight = 20.0
 gaze_weight = 0.05
 mask_weight = 5.0
+mask_dilate = 0.01
 ```
 
 ```

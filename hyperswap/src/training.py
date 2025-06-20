@@ -14,7 +14,7 @@ from torch.utils.data import ConcatDataset, Dataset, random_split
 from torchdata.stateful_dataloader import StatefulDataLoader
 
 from .dataset import DynamicDataset
-from .helper import apply_noise, calc_embedding, overlay_mask
+from .helper import apply_noise, calc_embedding, erode_mask, overlay_mask
 from .models.discriminator import Discriminator
 from .models.generator import Generator
 from .models.loss import AdversarialLoss, CycleLoss, DiscriminatorLoss, FeatureLoss, GazeLoss, IdentityLoss, MaskLoss, ReconstructionLoss
@@ -45,6 +45,7 @@ class HyperSwapTrainer(LightningModule):
 		self.config_discriminator_momentum = config_parser.getfloat('training.optimizer.discriminator', 'momentum')
 		self.config_discriminator_scheduler_factor = config_parser.getfloat('training.optimizer.discriminator', 'scheduler_factor')
 		self.config_discriminator_scheduler_patience = config_parser.getint('training.optimizer.discriminator', 'scheduler_patience')
+		self.config_mask_dilate = config_parser.getfloat('training.losses', 'mask_dilate')
 		self.generator_embedder = torch.jit.load(self.config_generator_embedder_path, map_location = 'cpu').eval()
 		self.loss_embedder = torch.jit.load(self.config_loss_embedder_path, map_location = 'cpu').eval()
 		self.gazer = torch.jit.load(self.config_gazer_path, map_location = 'cpu').eval()
@@ -65,6 +66,9 @@ class HyperSwapTrainer(LightningModule):
 		with torch.no_grad():
 			generator_target_features = self.generator.encode_features(target_tensor)
 			output_tensor, output_mask = self.generator(source_embedding, target_tensor, generator_target_features)
+
+		if self.config_mask_dilate > 0:
+			output_mask = erode_mask(output_mask, self.config_mask_dilate)
 
 		return output_tensor, output_mask
 
