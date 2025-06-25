@@ -6,7 +6,7 @@ from pytorch_msssim import ssim
 from torch import Tensor, nn
 from torchvision import transforms
 
-from ..helper import calc_embedding, dilate_mask
+from ..helper import calculate_embedding, dilate_mask
 from ..types import EmbedderModule, FaceMaskerModule, Feature, GazerModule, Loss, Mask
 
 
@@ -97,8 +97,8 @@ class ReconstructionLoss(nn.Module):
 
 	def forward(self, source_tensor : Tensor, target_tensor : Tensor, output_tensor : Tensor) -> Tuple[Loss, Loss]:
 		with torch.no_grad():
-			source_embedding = calc_embedding(self.embedder, source_tensor, (0, 0, 0, 0))
-			target_embedding = calc_embedding(self.embedder, target_tensor, (0, 0, 0, 0))
+			source_embedding = calculate_embedding(self.embedder, source_tensor, (0, 0, 0, 0))
+			target_embedding = calculate_embedding(self.embedder, target_tensor, (0, 0, 0, 0))
 
 		has_similar_identity = torch.cosine_similarity(source_embedding, target_embedding) > 0.8
 
@@ -120,8 +120,8 @@ class IdentityLoss(nn.Module):
 		self.embedder = embedder
 
 	def forward(self, source_tensor : Tensor, output_tensor : Tensor) -> Tuple[Loss, Loss]:
-		output_embedding = calc_embedding(self.embedder, output_tensor, (30, 0, 10, 10))
-		source_embedding = calc_embedding(self.embedder, source_tensor, (30, 0, 10, 10))
+		output_embedding = calculate_embedding(self.embedder, output_tensor, (30, 0, 10, 10))
+		source_embedding = calculate_embedding(self.embedder, source_tensor, (30, 0, 10, 10))
 		identity_loss = (1 - torch.cosine_similarity(source_embedding, output_embedding)).mean()
 		weighted_identity_loss = identity_loss * self.config_identity_weight
 		return identity_loss, weighted_identity_loss
@@ -169,7 +169,7 @@ class MaskLoss(nn.Module):
 		self.mse_loss = nn.MSELoss()
 
 	def forward(self, target_tensor : Tensor, output_mask : Mask) -> Tuple[Loss, Loss]:
-		target_mask = self.calc_mask(target_tensor)
+		target_mask = self.calculate_mask(target_tensor)
 
 		if self.config_mask_factor > 0:
 			target_mask = dilate_mask(target_mask, self.config_mask_factor)
@@ -180,7 +180,7 @@ class MaskLoss(nn.Module):
 		weighted_mask_loss = mask_loss * self.config_mask_weight
 		return mask_loss, weighted_mask_loss
 
-	def calc_mask(self, target_tensor : Tensor) -> Tensor:
+	def calculate_mask(self, target_tensor : Tensor) -> Tensor:
 		target_tensor = torch.nn.functional.interpolate(target_tensor, (256, 256), mode = 'bilinear')
 		target_tensor = (target_tensor.clip(-1, 1) + 1) * 0.5
 

@@ -34,7 +34,7 @@ def convert_tensor(input_tensor : Tensor, convert_template : ConvertTemplate) ->
 	return output_tensor
 
 
-def calc_embedding(embedder : EmbedderModule, input_tensor : Tensor, padding : Padding) -> Embedding:
+def calculate_embedding(embedder : EmbedderModule, input_tensor : Tensor, padding : Padding) -> Embedding:
 	crop_tensor = convert_tensor(input_tensor, 'arcface_128_to_arcface_112_v2')
 	crop_tensor = nn.functional.interpolate(crop_tensor, size = 112, mode = 'area')
 	crop_tensor[:, :, :padding[0], :] = 0
