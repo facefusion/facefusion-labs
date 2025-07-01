@@ -52,6 +52,11 @@ class HyperSwapTrainer(LightningModule):
 		self.face_masker = torch.jit.load(self.config_face_masker_path, map_location ='cpu').eval()
 		self.generator = Generator(config_parser)
 		self.discriminator = Discriminator(config_parser)
+
+		if torch.cuda.device_count() > 1:
+			self.generator = nn.SyncBatchNorm.convert_sync_batchnorm(self.generator)
+			self.discriminator = nn.SyncBatchNorm.convert_sync_batchnorm(self.discriminator)
+
 		self.discriminator_loss = DiscriminatorLoss()
 		self.adversarial_loss = AdversarialLoss(config_parser)
 		self.cycle_loss = CycleLoss(config_parser)

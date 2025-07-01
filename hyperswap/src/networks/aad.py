@@ -24,26 +24,26 @@ class AAD(nn.Module):
 			layers.extend(
 			[
 				AdaptiveFeatureModulation(512, 512, 512, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(512, 512, 1024, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(512, 512, 512, self.config_source_channels, self.config_num_blocks),
 				AdaptiveFeatureModulation(512, 512, 512, self.config_source_channels, self.config_num_blocks)
 			])
 
 		if self.config_output_size == 256:
 			layers.extend(
 			[
+				AdaptiveFeatureModulation(1024, 1024, 512, self.config_source_channels, self.config_num_blocks),
 				AdaptiveFeatureModulation(1024, 1024, 1024, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(1024, 1024, 2048, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(1024, 1024, 1024, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(1024, 1024, 768, self.config_source_channels, self.config_num_blocks),
 				AdaptiveFeatureModulation(1024, 512, 512, self.config_source_channels, self.config_num_blocks)
 			])
 
 		if self.config_output_size == 512:
 			layers.extend(
 			[
-				AdaptiveFeatureModulation(2048, 2048, 2048, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(2048, 2048, 4096, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(2048, 2048, 2048, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(2048, 1024, 1024, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(1024, 1024, 1024, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(1024, 1024, 2048, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(1024, 1024, 1536, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(1024, 1024, 768, self.config_source_channels, self.config_num_blocks),
 				AdaptiveFeatureModulation(1024, 512, 512, self.config_source_channels, self.config_num_blocks)
 			])
 
@@ -51,7 +51,7 @@ class AAD(nn.Module):
 			layers.extend(
 			[
 				AdaptiveFeatureModulation(4096, 4096, 4096, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(4096, 4096, 8192, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(4096, 4096, 4096, self.config_source_channels, self.config_num_blocks),
 				AdaptiveFeatureModulation(4096, 4096, 4096, self.config_source_channels, self.config_num_blocks),
 				AdaptiveFeatureModulation(4096, 2048, 2048, self.config_source_channels, self.config_num_blocks),
 				AdaptiveFeatureModulation(2048, 1024, 1024, self.config_source_channels, self.config_num_blocks),
