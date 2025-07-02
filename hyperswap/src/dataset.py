@@ -67,8 +67,8 @@ class DynamicDataset(Dataset[Tensor]):
 	def prepare_same_batch(self, source_path : str) -> Batch:
 		target_directory_path = os.path.dirname(source_path)
 		files_list = sorted(os.listdir(target_directory_path))
-		file_idx = hash(source_path) % len(files_list)
-		target_file_name_and_extension = files_list[file_idx]
+		file_index = hash(source_path) % len(files_list)
+		target_file_name_and_extension = files_list[file_index]
 		target_path = os.path.join(target_directory_path, target_file_name_and_extension)
 		source_tensor = io.read_image(source_path)
 		source_tensor = self.transforms(source_tensor)
@@ -81,13 +81,13 @@ class DynamicDataset(Dataset[Tensor]):
 	def prepare_source_batch(self, source_path : str) -> Batch:
 		config_parser = self.filter_config_by_usage_mode('both')
 		sections = config_parser.sections()
-		section_idx = hash(source_path) % len(sections)
-		config_section = sections[section_idx]
+		section_index = hash(source_path) % len(sections)
+		config_section = sections[section_index]
 		config_file_pattern = config_parser.get(config_section, 'file_pattern')
 		config_convert_template = cast(ConvertTemplate, config_parser.get(config_section, 'convert_template'))
 		target_files = resolve_static_file_pattern(config_file_pattern)
-		target_idx = hash(source_path + config_section) % len(target_files)
-		target_path = target_files[target_idx]
+		target_index = hash(source_path + config_section) % len(target_files)
+		target_path = target_files[target_index]
 		source_tensor = io.read_image(source_path)
 		source_tensor = self.transforms(source_tensor)
 		source_tensor = self.conditional_convert_tensor(source_tensor, self.config_convert_template)
@@ -99,14 +99,14 @@ class DynamicDataset(Dataset[Tensor]):
 	def prepare_target_batch(self, target_path : str) -> Batch:
 		config_parser = self.filter_config_by_usage_mode('both')
 		sections = config_parser.sections()
-		section_idx = hash(target_path) % len(sections)
-		config_section = sections[section_idx]
+		section_index = hash(target_path) % len(sections)
+		config_section = sections[section_index]
 		config_file_pattern = config_parser.get(config_section, 'file_pattern')
 		config_convert_template = cast(ConvertTemplate, config_parser.get(config_section, 'convert_template'))
 
 		source_files = resolve_static_file_pattern(config_file_pattern)
-		source_idx = hash(target_path + config_section) % len(source_files)
-		source_path = source_files[source_idx]
+		source_index = hash(target_path + config_section) % len(source_files)
+		source_path = source_files[source_index]
 		source_tensor = io.read_image(source_path)
 		source_tensor = self.transforms(source_tensor)
 		source_tensor = self.conditional_convert_tensor(source_tensor, config_convert_template)
@@ -116,8 +116,8 @@ class DynamicDataset(Dataset[Tensor]):
 		return source_tensor, target_tensor
 
 	def prepare_different_batch(self, source_path : str) -> Batch:
-		target_idx = hash(source_path + 'different') % len(self.file_paths)
-		target_path = self.file_paths[target_idx]
+		target_index = hash(source_path + 'different') % len(self.file_paths)
+		target_path = self.file_paths[target_index]
 		source_tensor = io.read_image(source_path)
 		source_tensor = self.transforms(source_tensor)
 		source_tensor = self.conditional_convert_tensor(source_tensor, self.config_convert_template)
