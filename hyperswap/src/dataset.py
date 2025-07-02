@@ -31,7 +31,7 @@ class DynamicDataset(Dataset[Tensor]):
 		shuffle_index = self.shuffle_indices[index % len(self.shuffle_indices)]
 		file_path = self.file_paths[shuffle_index]
 
-		if random.random() < self.config_batch_ratio:
+		if hash(file_path) % 100 < (self.config_batch_ratio * 100):
 			if self.config_batch_mode == 'equal':
 				return self.prepare_equal_batch(file_path)
 			if self.config_batch_mode == 'same':
