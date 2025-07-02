@@ -52,11 +52,6 @@ class HyperSwapTrainer(LightningModule):
 		self.face_masker = torch.jit.load(self.config_face_masker_path, map_location ='cpu').eval()
 		self.generator = Generator(config_parser)
 		self.discriminator = Discriminator(config_parser)
-
-		if torch.cuda.device_count() > 1:
-			self.generator = nn.SyncBatchNorm.convert_sync_batchnorm(self.generator)
-			self.discriminator = nn.SyncBatchNorm.convert_sync_batchnorm(self.discriminator)
-
 		self.discriminator_loss = DiscriminatorLoss()
 		self.adversarial_loss = AdversarialLoss(config_parser)
 		self.cycle_loss = CycleLoss(config_parser)
@@ -245,6 +240,7 @@ def prepare_datasets(config_parser : ConfigParser) -> List[Dataset[Tensor]]:
 def create_trainer() -> Trainer:
 	config_max_epochs = CONFIG_PARSER.getint('training.trainer', 'max_epochs')
 	config_strategy = CONFIG_PARSER.get('training.trainer', 'strategy')
+	config_sync_batchnorm = CONFIG_PARSER.getboolean('training.trainer', 'sync_batchnorm')
 	config_precision = CONFIG_PARSER.get('training.trainer', 'precision')
 	config_logger_path = CONFIG_PARSER.get('training.logger', 'logger_path')
 	config_logger_name = CONFIG_PARSER.get('training.logger', 'logger_name')
@@ -269,7 +265,8 @@ def create_trainer() -> Trainer:
 				save_last = True
 			)
 		],
-		val_check_interval = 1000
+		val_check_interval = 1000,
+		sync_batchnorm = config_sync_batchnorm
 	)
 
 
