@@ -23,15 +23,10 @@ class DynamicDataset(Dataset[Tensor]):
 		self.config_parser = config_parser
 		self.transforms = self.compose_transforms()
 
-		self.file_paths = resolve_static_file_pattern(self.config_file_pattern)
-		self.shuffle_indices = list(range(len(self.file_paths)))
-		random.shuffle(self.shuffle_indices)
-
 	def __getitem__(self, index : int) -> Batch:
-		shuffle_index = self.shuffle_indices[index % len(self.shuffle_indices)]
-		file_path = self.file_paths[shuffle_index]
+		file_path = resolve_static_file_pattern(self.config_file_pattern)[index]
 
-		if hash(file_path) % 100 < (self.config_batch_ratio * 100):
+		if random.random() < self.config_batch_ratio:
 			if self.config_batch_mode == 'equal':
 				return self.prepare_equal_batch(file_path)
 			if self.config_batch_mode == 'same':
@@ -46,7 +41,7 @@ class DynamicDataset(Dataset[Tensor]):
 		return self.prepare_different_batch(file_path)
 
 	def __len__(self) -> int:
-		return len(self.file_paths)
+		return len(resolve_static_file_pattern(self.config_file_pattern))
 
 	def compose_transforms(self) -> transforms:
 		return transforms.Compose(
@@ -66,9 +61,7 @@ class DynamicDataset(Dataset[Tensor]):
 
 	def prepare_same_batch(self, source_path : str) -> Batch:
 		target_directory_path = os.path.dirname(source_path)
-		files_list = sorted(os.listdir(target_directory_path))
-		file_index = hash(source_path) % len(files_list)
-		target_file_name_and_extension = files_list[file_index]
+		target_file_name_and_extension = random.choice(os.listdir(target_directory_path))
 		target_path = os.path.join(target_directory_path, target_file_name_and_extension)
 		source_tensor = io.read_image(source_path)
 		source_tensor = self.transforms(source_tensor)
@@ -80,14 +73,11 @@ class DynamicDataset(Dataset[Tensor]):
 
 	def prepare_source_batch(self, source_path : str) -> Batch:
 		config_parser = self.filter_config_by_usage_mode('both')
-		sections = config_parser.sections()
-		section_index = hash(source_path) % len(sections)
-		config_section = sections[section_index]
+		config_section = random.choice(config_parser.sections())
 		config_file_pattern = config_parser.get(config_section, 'file_pattern')
 		config_convert_template = cast(ConvertTemplate, config_parser.get(config_section, 'convert_template'))
-		target_files = resolve_static_file_pattern(config_file_pattern)
-		target_index = hash(source_path + config_section) % len(target_files)
-		target_path = target_files[target_index]
+
+		target_path = random.choice(resolve_static_file_pattern(config_file_pattern))
 		source_tensor = io.read_image(source_path)
 		source_tensor = self.transforms(source_tensor)
 		source_tensor = self.conditional_convert_tensor(source_tensor, self.config_convert_template)
@@ -98,15 +88,11 @@ class DynamicDataset(Dataset[Tensor]):
 
 	def prepare_target_batch(self, target_path : str) -> Batch:
 		config_parser = self.filter_config_by_usage_mode('both')
-		sections = config_parser.sections()
-		section_index = hash(target_path) % len(sections)
-		config_section = sections[section_index]
+		config_section = random.choice(config_parser.sections())
 		config_file_pattern = config_parser.get(config_section, 'file_pattern')
 		config_convert_template = cast(ConvertTemplate, config_parser.get(config_section, 'convert_template'))
 
-		source_files = resolve_static_file_pattern(config_file_pattern)
-		source_index = hash(target_path + config_section) % len(source_files)
-		source_path = source_files[source_index]
+		source_path = random.choice(resolve_static_file_pattern(config_file_pattern))
 		source_tensor = io.read_image(source_path)
 		source_tensor = self.transforms(source_tensor)
 		source_tensor = self.conditional_convert_tensor(source_tensor, config_convert_template)
@@ -116,8 +102,7 @@ class DynamicDataset(Dataset[Tensor]):
 		return source_tensor, target_tensor
 
 	def prepare_different_batch(self, source_path : str) -> Batch:
-		target_index = hash(source_path + 'different') % len(self.file_paths)
-		target_path = self.file_paths[target_index]
+		target_path = random.choice(resolve_static_file_pattern(self.config_file_pattern))
 		source_tensor = io.read_image(source_path)
 		source_tensor = self.transforms(source_tensor)
 		source_tensor = self.conditional_convert_tensor(source_tensor, self.config_convert_template)
