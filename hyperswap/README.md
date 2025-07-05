@@ -54,7 +54,6 @@ face_masker_path = .models/face_masker.pt
 ```
 [training.model.generator]
 source_channels = 512
-output_channels = 4096
 output_size = 256
 num_blocks = 2
 ```
