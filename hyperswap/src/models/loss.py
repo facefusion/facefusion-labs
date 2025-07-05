@@ -14,16 +14,16 @@ class DiscriminatorLoss(nn.Module):
 	def __init__(self) -> None:
 		super().__init__()
 
-	def forward(self, discriminator_source_tensors : List[Tensor], discriminator_output_tensors : List[Tensor]) -> Loss:
+	def forward(self, discriminator_real_tensors : List[Tensor], discriminator_fake_tensors : List[Tensor]) -> Loss:
 		positive_tensors = []
 		negative_tensors = []
 
-		for discriminator_source_tensor in discriminator_source_tensors:
-			positive_tensor = torch.relu(1 - discriminator_source_tensor).mean(dim = [ 1, 2, 3 ])
+		for discriminator_real_tensor in discriminator_real_tensors:
+			positive_tensor = torch.relu(1 - discriminator_real_tensor).mean(dim = [ 1, 2, 3 ])
 			positive_tensors.append(positive_tensor)
 
-		for discriminator_output_tensor in discriminator_output_tensors:
-			negative_tensor = torch.relu(discriminator_output_tensor + 1).mean(dim = [ 1, 2, 3 ])
+		for discriminator_fake_tensor in discriminator_fake_tensors:
+			negative_tensor = torch.relu(discriminator_fake_tensor + 1).mean(dim = [ 1, 2, 3 ])
 			negative_tensors.append(negative_tensor)
 
 		positive_loss = torch.stack(positive_tensors).mean()

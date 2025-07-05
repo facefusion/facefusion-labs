@@ -123,9 +123,12 @@ class HyperSwapTrainer(LightningModule):
 		mask_loss, weighted_mask_loss = self.mask_loss(target_tensor, generator_output_mask)
 		generator_loss = weighted_adversarial_loss + weighted_cycle_loss + weighted_feature_loss + weighted_reconstruction_loss + weighted_identity_loss + weighted_gaze_loss + weighted_mask_loss
 
-		discriminator_source_tensors = self.discriminator(source_tensor)
-		discriminator_output_tensors = self.discriminator(generator_output_tensor.detach())
-		discriminator_loss = self.discriminator_loss(discriminator_source_tensors, discriminator_output_tensors)
+		if torch.randn(1).item() > 0.5:
+			discriminator_real_tensors = self.discriminator(source_tensor)
+		else:
+			discriminator_real_tensors = self.discriminator(target_tensor)
+		discriminator_fake_tensors = self.discriminator(generator_output_tensor.detach())
+		discriminator_loss = self.discriminator_loss(discriminator_real_tensors, discriminator_fake_tensors)
 
 		self.toggle_optimizer(generator_optimizer)
 		self.manual_backward(generator_loss)
