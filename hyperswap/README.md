@@ -92,6 +92,7 @@ accumulate_size = 4
 gradient_clip = 20.0
 max_epochs = 50
 strategy = auto
+sync_batchnorm = false
 precision = 16-mixed
 preview_frequency = 100
 ```

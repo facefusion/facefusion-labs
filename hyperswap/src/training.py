@@ -240,6 +240,7 @@ def prepare_datasets(config_parser : ConfigParser) -> List[Dataset[Tensor]]:
 def create_trainer() -> Trainer:
 	config_max_epochs = CONFIG_PARSER.getint('training.trainer', 'max_epochs')
 	config_strategy = CONFIG_PARSER.get('training.trainer', 'strategy')
+	config_sync_batchnorm = CONFIG_PARSER.getboolean('training.trainer', 'sync_batchnorm')
 	config_precision = CONFIG_PARSER.get('training.trainer', 'precision')
 	config_logger_path = CONFIG_PARSER.get('training.logger', 'logger_path')
 	config_logger_name = CONFIG_PARSER.get('training.logger', 'logger_name')
@@ -252,6 +253,7 @@ def create_trainer() -> Trainer:
 		log_every_n_steps = 10,
 		max_epochs = config_max_epochs,
 		strategy = config_strategy,
+		sync_batchnorm = config_sync_batchnorm,
 		precision = config_precision,
 		callbacks =
 		[
