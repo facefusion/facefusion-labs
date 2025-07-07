@@ -34,6 +34,7 @@ class HyperSwapTrainer(LightningModule):
 		self.config_gazer_path = config_parser.get('training.model', 'gazer_path')
 		self.config_face_masker_path = config_parser.get('training.model', 'face_masker_path')
 		self.config_accumulate_size = config_parser.getfloat('training.trainer', 'accumulate_size')
+		self.config_discriminator_ratio = config_parser.getfloat('training.trainer', 'discriminator_ratio')
 		self.config_gradient_clip = config_parser.getfloat('training.trainer', 'gradient_clip')
 		self.config_preview_frequency = config_parser.getint('training.trainer', 'preview_frequency')
 		self.config_mask_factor = config_parser.getfloat('training.modifier', 'mask_factor')
@@ -123,7 +124,7 @@ class HyperSwapTrainer(LightningModule):
 		mask_loss, weighted_mask_loss = self.mask_loss(target_tensor, generator_output_mask)
 		generator_loss = weighted_adversarial_loss + weighted_cycle_loss + weighted_feature_loss + weighted_reconstruction_loss + weighted_identity_loss + weighted_gaze_loss + weighted_mask_loss
 
-		if torch.randn(1).item() > 0.5:
+		if torch.randn(1).item() < self.config_discriminator_ratio:
 			discriminator_real_tensors = self.discriminator(source_tensor)
 		else:
 			discriminator_real_tensors = self.discriminator(target_tensor)

@@ -88,6 +88,7 @@ mask_weight = 5.0
 ```
 [training.trainer]
 accumulate_size = 4
+discriminator_ratio = 0.4
 gradient_clip = 20.0
 max_epochs = 50
 strategy = auto
