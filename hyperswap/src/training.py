@@ -14,7 +14,7 @@ from torch.utils.data import ConcatDataset, Dataset, random_split
 from torchdata.stateful_dataloader import StatefulDataLoader
 
 from .dataset import DynamicDataset
-from .helper import apply_noise, calculate_embedding, erode_mask, overlay_mask
+from .helper import apply_noise, calculate_face_embedding, erode_mask, overlay_mask
 from .models.discriminator import Discriminator
 from .models.generator import Generator
 from .models.loss import AdversarialLoss, CycleLoss, DiscriminatorLoss, FeatureLoss, GazeLoss, IdentityLoss, MaskLoss, ReconstructionLoss
@@ -102,8 +102,8 @@ class HyperSwapTrainer(LightningModule):
 		do_update = (batch_index + 1) % self.config_accumulate_size == 0
 		generator_optimizer, discriminator_optimizer = self.optimizers() #type:ignore[attr-defined]
 		generator_scheduler, discriminator_scheduler = self.lr_schedulers() #type:ignore[attr-defined]
-		source_embedding = calculate_embedding(self.generator_embedder, source_tensor, (0, 0, 0, 0))
-		target_embedding = calculate_embedding(self.generator_embedder, target_tensor, (0, 0, 0, 0))
+		source_embedding = calculate_face_embedding(self.generator_embedder, source_tensor, (0, 0, 0, 0))
+		target_embedding = calculate_face_embedding(self.generator_embedder, target_tensor, (0, 0, 0, 0))
 
 		if self.config_noise_factor > 0:
 			source_embedding = apply_noise(source_embedding, self.config_noise_factor)
@@ -180,9 +180,9 @@ class HyperSwapTrainer(LightningModule):
 
 	def validation_step(self, batch : Batch, batch_index : int) -> Tensor:
 		source_tensor, target_tensor = batch
-		source_embedding = calculate_embedding(self.generator_embedder, source_tensor, (0, 0, 0, 0))
+		source_embedding = calculate_face_embedding(self.generator_embedder, source_tensor, (0, 0, 0, 0))
 		output_tensor, _ = self.forward(source_embedding, target_tensor)
-		output_embedding = calculate_embedding(self.generator_embedder, output_tensor, (0, 0, 0, 0))
+		output_embedding = calculate_face_embedding(self.generator_embedder, output_tensor, (0, 0, 0, 0))
 		validation_score = (nn.functional.cosine_similarity(source_embedding, output_embedding).mean() + 1) * 0.5
 		self.log('validation_score', validation_score, sync_dist = True, prog_bar = True)
 		return validation_score
