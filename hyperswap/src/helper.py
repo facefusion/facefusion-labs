@@ -56,7 +56,7 @@ def overlay_mask(input_tensor : Tensor, input_mask : Mask) -> Tensor:
 
 
 def dilate_mask(input_tensor : Tensor, factor : float) -> Tensor:
-	padding = round(input_tensor.shape[2] * factor)
+	padding = int(input_tensor.shape[2] * factor + 0.5)
 	kernel_size = 1 + 2 * padding
 	temp_tensor = nn.functional.pad(input_tensor, (padding, padding, padding, padding), mode = 'replicate')
 	output_tensor = nn.functional.max_pool2d(temp_tensor, kernel_size = kernel_size, stride = 1, padding = 0)
@@ -64,7 +64,7 @@ def dilate_mask(input_tensor : Tensor, factor : float) -> Tensor:
 
 
 def erode_mask(input_tensor : Tensor, factor : float) -> Tensor:
-	padding = round(input_tensor.shape[2] * factor)
+	padding = int(input_tensor.shape[2] * factor + 0.5)
 	kernel_size = 1 + 2 * padding
 	temp_tensor = 1 - nn.functional.pad(input_tensor, (padding, padding, padding, padding), mode = 'replicate')
 	output_tensor = 1 - nn.functional.max_pool2d(temp_tensor, kernel_size = kernel_size, stride = 1, padding = 0)
