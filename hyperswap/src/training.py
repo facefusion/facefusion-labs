@@ -1,7 +1,9 @@
 import os
+import shutil
 import warnings
 from configparser import ConfigParser
 from copy import deepcopy
+from pathlib import Path
 from typing import List, Tuple
 
 import torch
@@ -201,6 +203,13 @@ class HyperSwapTrainer(LightningModule):
 		self.logger.experiment.add_image('preview', preview_grid, self.global_step) # type:ignore[attr-defined]
 
 
+class ModelWithConfigCheckpoint(ModelCheckpoint):
+	def _save_checkpoint(self, trainer : Trainer, checkpoint_path : str) -> None:
+		super()._save_checkpoint(trainer, checkpoint_path)
+		config_path = Path(checkpoint_path).with_suffix('.ini')
+		shutil.copy2('config.ini', config_path)
+
+
 def create_loaders(dataset : Dataset[Tensor]) -> Tuple[StatefulDataLoader[Tensor], StatefulDataLoader[Tensor]]:
 	config_batch_size = CONFIG_PARSER.getint('training.loader', 'batch_size')
 	config_num_workers = CONFIG_PARSER.getint('training.loader', 'num_workers')
@@ -261,7 +270,7 @@ def create_trainer() -> Trainer:
 		precision = config_precision,
 		callbacks =
 		[
-			ModelCheckpoint(
+			ModelWithConfigCheckpoint(
 				monitor = 'generator_loss',
 				dirpath = config_directory_path,
 				filename = config_file_pattern,

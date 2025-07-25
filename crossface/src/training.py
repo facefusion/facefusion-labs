@@ -1,5 +1,7 @@
 import os
+import shutil
 from configparser import ConfigParser
+from pathlib import Path
 from typing import Tuple
 
 import torch
@@ -67,6 +69,13 @@ class CrossFaceTrainer(LightningModule):
 		return optimizer_set
 
 
+class ModelWithConfigCheckpoint(ModelCheckpoint):
+	def _save_checkpoint(self, trainer : Trainer, checkpoint_path : str) -> None:
+		super()._save_checkpoint(trainer, checkpoint_path)
+		config_path = Path(checkpoint_path).with_suffix('.ini')
+		shutil.copy2('config.ini', config_path)
+
+
 def create_loaders(dataset : Dataset[Tensor]) -> Tuple[StatefulDataLoader[Tensor], StatefulDataLoader[Tensor]]:
 	config_batch_size = CONFIG_PARSER.getint('training.loader', 'batch_size')
 	config_num_workers = CONFIG_PARSER.getint('training.loader', 'num_workers')
@@ -105,7 +114,7 @@ def create_trainer() -> Trainer:
 		precision = config_precision,
 		callbacks =
 		[
-			ModelCheckpoint(
+			ModelWithConfigCheckpoint(
 				monitor = 'training_loss',
 				dirpath = config_directory_path,
 				filename = config_file_pattern,
