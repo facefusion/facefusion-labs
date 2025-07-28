@@ -23,3 +23,5 @@ GazerModule : TypeAlias = Module
 FaceMaskerModule : TypeAlias = Module
 
 OptimizerSet : TypeAlias = Any
+
+PrecisionType = Literal["bf16-mixed", "16-mixed", "32-true", "64-true", "transformer-engine", "transformer-engine-float16"]
