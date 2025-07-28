@@ -1,0 +1,8 @@
+datasets
+logs
+*.jpg
+models/*
+mycfg.ini
+outputs
+verify_new_networks.py
+src/networks/*_old.py

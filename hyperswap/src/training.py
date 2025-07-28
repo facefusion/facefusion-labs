@@ -4,7 +4,7 @@ import warnings
 from configparser import ConfigParser
 from copy import deepcopy
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, cast, Literal, Union
 
 import torch
 import torchvision
@@ -14,6 +14,7 @@ from lightning.pytorch.loggers import TensorBoardLogger
 from torch import Tensor, nn
 from torch.utils.data import ConcatDataset, Dataset, random_split
 from torchdata.stateful_dataloader import StatefulDataLoader
+from torch.optim.lr_scheduler import LRScheduler
 
 from .dataset import DynamicDataset
 from .helper import apply_noise, calculate_face_embedding, erode_mask, overlay_mask
@@ -26,6 +27,10 @@ warnings.filterwarnings('ignore', category = UserWarning, module = 'torch')
 
 CONFIG_PARSER = ConfigParser()
 CONFIG_PARSER.read('config.ini')
+PrecisionType = Literal[
+    "bf16-mixed", "16-mixed", "32-true", "64-true", 
+    "transformer-engine", "transformer-engine-float16"
+	]
 
 
 class HyperSwapTrainer(LightningModule):
@@ -55,6 +60,9 @@ class HyperSwapTrainer(LightningModule):
 		self.face_masker = torch.jit.load(self.config_face_masker_path, map_location ='cpu').eval()
 		self.generator = Generator(config_parser)
 		self.discriminator = Discriminator(config_parser)
+		self.compile_mode = config_parser.get('training.trainer', 'compile_mode')
+		self.generator = torch.compile(self.generator, mode=self.compile_mode)
+		self.discriminator = torch.compile(self.discriminator, mode=self.compile_mode)
 		self.discriminator_loss = DiscriminatorLoss()
 		self.adversarial_loss = AdversarialLoss(config_parser)
 		self.cycle_loss = CycleLoss(config_parser)
@@ -102,8 +110,22 @@ class HyperSwapTrainer(LightningModule):
 	def training_step(self, batch : Batch, batch_index : int) -> Tensor:
 		source_tensor, target_tensor = batch
 		do_update = (batch_index + 1) % self.config_accumulate_size == 0
-		generator_optimizer, discriminator_optimizer = self.optimizers() #type:ignore[attr-defined]
-		generator_scheduler, discriminator_scheduler = self.lr_schedulers() #type:ignore[attr-defined]
+		optimizers = self.optimizers()
+		schedulers = self.lr_schedulers()
+		
+		generator_scheduler: LRScheduler | None
+		discriminator_scheduler: LRScheduler | None
+
+		if isinstance(optimizers, list):
+			generator_optimizer, discriminator_optimizer = optimizers
+		else:
+			generator_optimizer = discriminator_optimizer = optimizers
+		
+		if isinstance(schedulers, list):
+			generator_scheduler, discriminator_scheduler = schedulers
+		else: 
+			generator_scheduler = discriminator_scheduler = schedulers
+
 		source_embedding = calculate_face_embedding(self.generator_embedder, source_tensor, (0, 0, 0, 0))
 		target_embedding = calculate_face_embedding(self.generator_embedder, target_tensor, (0, 0, 0, 0))
 
@@ -113,6 +135,9 @@ class HyperSwapTrainer(LightningModule):
 
 		generator_target_features = self.generator.encode_features(target_tensor)
 		generator_output_tensor, generator_output_mask = self.generator(source_embedding, target_tensor, generator_target_features)
+
+		d_fake_input = generator_output_tensor.clone()
+
 		generator_output_features = self.generator.encode_features(generator_output_tensor)
 		cycle_output_tensor, cycle_output_mask = self.generator(target_embedding, generator_output_tensor, generator_output_features)
 		cycle_output_features = self.generator.encode_features(cycle_output_tensor)
@@ -130,7 +155,7 @@ class HyperSwapTrainer(LightningModule):
 			discriminator_real_tensors = self.discriminator(source_tensor)
 		else:
 			discriminator_real_tensors = self.discriminator(target_tensor)
-		discriminator_fake_tensors = self.discriminator(generator_output_tensor.detach())
+		discriminator_fake_tensors = self.discriminator(d_fake_input.detach())
 		discriminator_loss = self.discriminator_loss(discriminator_real_tensors, discriminator_fake_tensors)
 
 		self.toggle_optimizer(generator_optimizer)
@@ -139,7 +164,7 @@ class HyperSwapTrainer(LightningModule):
 		if do_update:
 			if self.config_gradient_clip:
 				self.clip_gradients(
-					generator_optimizer,
+					generator_optimizer.optimizer,
 					gradient_clip_val = self.config_gradient_clip,
 					gradient_clip_algorithm = 'norm'
 				)
@@ -153,7 +178,7 @@ class HyperSwapTrainer(LightningModule):
 		if do_update:
 			if self.config_gradient_clip:
 				self.clip_gradients(
-					discriminator_optimizer,
+					discriminator_optimizer.optimizer,
 					gradient_clip_val = self.config_gradient_clip,
 					gradient_clip_algorithm = 'norm'
 				)
@@ -175,8 +200,10 @@ class HyperSwapTrainer(LightningModule):
 		self.log('mask_loss', mask_loss)
 
 		if do_update:
-			generator_scheduler.step(generator_loss)
-			discriminator_scheduler.step(discriminator_loss)
+			if generator_scheduler is not None:
+				generator_scheduler.step(generator_loss)
+			if discriminator_scheduler is not None:
+				discriminator_scheduler.step(discriminator_loss)
 
 		return generator_loss
 
@@ -191,16 +218,24 @@ class HyperSwapTrainer(LightningModule):
 
 	def generate_preview(self, source_tensor : Tensor, target_tensor : Tensor, output_tensor : Tensor, output_mask : Mask) -> None:
 		preview_limit = 8
-		preview_cells = []
-		overlay_tensor = overlay_mask(output_tensor, output_mask)
+		overlay_batch = overlay_mask(output_tensor, output_mask)
+		preview_image_parts = []
 
-		for source_tensor, target_tensor, output_tensor, overlay_tensor in zip(source_tensor[:preview_limit], target_tensor[:preview_limit], output_tensor[:preview_limit], overlay_tensor[:preview_limit]):
-			preview_cell = torch.cat([ source_tensor, target_tensor, output_tensor, overlay_tensor ], dim = 2)
-			preview_cells.append(preview_cell)
+		zipped_tensors = zip(
+			    source_tensor[:preview_limit], 
+        		target_tensor[:preview_limit], 
+        		output_tensor[:preview_limit], 
+        		overlay_batch[:preview_limit]
+    		)
 
-		preview_cells = torch.cat(preview_cells, dim = 1).unsqueeze(0)
-		preview_grid = torchvision.utils.make_grid(preview_cells, normalize = True, scale_each = True)
-		self.logger.experiment.add_image('preview', preview_grid, self.global_step) # type:ignore[attr-defined]
+		for s_img, t_img, o_img, ov_img in zipped_tensors:
+			image_strip = torch.cat([s_img, t_img, o_img, ov_img], dim=2)
+			preview_image_parts.append(image_strip)
+
+		preview_batch = torch.cat(preview_image_parts, dim=1).unsqueeze(0)
+		preview_grid = torchvision.utils.make_grid(preview_batch, normalize=True, scale_each=True)
+		if self.logger and isinstance(self.logger, TensorBoardLogger):
+			self.logger.experiment.add_image('preview', preview_grid, self.global_step)
 
 
 class ModelWithConfigCheckpoint(ModelCheckpoint):
@@ -231,7 +266,7 @@ def split_dataset(dataset : Dataset[Tensor]) -> Tuple[Dataset[Tensor], Dataset[T
 
 
 def prepare_datasets(config_parser : ConfigParser) -> List[Dataset[Tensor]]:
-	datasets = []
+	datasets: List[Dataset[Tensor]] = []
 
 	for config_section in config_parser.sections():
 
@@ -254,11 +289,14 @@ def create_trainer() -> Trainer:
 	config_max_epochs = CONFIG_PARSER.getint('training.trainer', 'max_epochs')
 	config_strategy = CONFIG_PARSER.get('training.trainer', 'strategy')
 	config_sync_batchnorm = CONFIG_PARSER.getboolean('training.trainer', 'sync_batchnorm')
-	config_precision = CONFIG_PARSER.get('training.trainer', 'precision')
+	config_precision_str = CONFIG_PARSER.get('training.trainer', 'precision')
 	config_logger_path = CONFIG_PARSER.get('training.logger', 'logger_path')
 	config_logger_name = CONFIG_PARSER.get('training.logger', 'logger_name')
 	config_directory_path = CONFIG_PARSER.get('training.output', 'directory_path')
 	config_file_pattern = CONFIG_PARSER.get('training.output', 'file_pattern')
+	
+	config_precision = cast(PrecisionType, config_precision_str)
+
 	logger = TensorBoardLogger(config_logger_path, config_logger_name)
 
 	return Trainer(
@@ -279,7 +317,7 @@ def create_trainer() -> Trainer:
 				save_last = True
 			)
 		],
-		val_check_interval = 1000
+		val_check_interval = 100
 	)
 
 
@@ -289,7 +327,7 @@ def train() -> None:
 	if torch.cuda.is_available():
 		torch.set_float32_matmul_precision('high')
 
-	dataset = ConcatDataset(prepare_datasets(CONFIG_PARSER))
+	dataset: Dataset[Tensor] = ConcatDataset(prepare_datasets(CONFIG_PARSER))
 	training_loader, validation_loader = create_loaders(dataset)
 	hyperswap_trainer = HyperSwapTrainer(CONFIG_PARSER)
 	trainer = create_trainer()
