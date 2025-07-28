@@ -133,7 +133,7 @@ class UpSample(nn.Module):
 		return nn.Sequential(
 			nn.ConvTranspose2d(input_channels, output_channels, kernel_size = 4, stride = 2, padding = 1, bias = False),
 			nn.BatchNorm2d(output_channels),
-			nn.LeakyReLU(0.1, inplace = True)
+			nn.LeakyReLU(0.1)
 		)
 
 	def forward(self, input_tensor : Tensor, skip_tensor : Tensor) -> Tensor:
@@ -152,7 +152,7 @@ class DownSample(nn.Module):
 		return nn.Sequential(
 			nn.Conv2d(input_channels, output_channels, kernel_size = 4, stride = 2, padding = 1, bias = False),
 			nn.BatchNorm2d(output_channels),
-			nn.LeakyReLU(0.1, inplace = True)
+			nn.LeakyReLU(0.1)
 		)
 
 	def forward(self, input_tensor : Tensor) -> Tensor:

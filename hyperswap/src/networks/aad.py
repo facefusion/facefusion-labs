@@ -99,7 +99,7 @@ class AdaptiveFeatureModulation(nn.Module):
 			primary_layers.extend(
 			[
 				FeatureModulation(self.context_input_channels, self.context_target_channels, self.context_source_channels),
-				nn.ReLU(inplace = True)
+				nn.ReLU()
 			])
 
 			if index < self.context_num_blocks - 1:
@@ -116,7 +116,7 @@ class AdaptiveFeatureModulation(nn.Module):
 			shortcut_layers.extend(
 			[
 				FeatureModulation(self.context_input_channels, self.context_target_channels, self.context_source_channels),
-				nn.ReLU(inplace = True),
+				nn.ReLU(),
 				nn.Conv2d(self.context_input_channels, self.context_output_channels, kernel_size = 3, padding = 1, bias = False)
 			])
 

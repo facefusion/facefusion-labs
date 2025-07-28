@@ -20,7 +20,7 @@ class NLD(nn.Module):
 		layers = nn.ModuleList(
 		[
 			nn.Conv2d(self.config_input_channels, current_filters, kernel_size = self.config_kernel_size, stride = 2, padding = padding),
-			nn.LeakyReLU(0.2, True)
+			nn.LeakyReLU(0.2)
 		])
 
 		for _ in range(1, self.config_num_layers):
@@ -30,7 +30,7 @@ class NLD(nn.Module):
 			[
 				nn.Conv2d(previous_filters, current_filters, kernel_size = self.config_kernel_size, stride = 2, padding = padding),
 				nn.InstanceNorm2d(current_filters),
-				nn.LeakyReLU(0.2, True)
+				nn.LeakyReLU(0.2)
 			]
 
 		previous_filters = current_filters
@@ -39,7 +39,7 @@ class NLD(nn.Module):
 		[
 			nn.Conv2d(previous_filters, current_filters, kernel_size = self.config_kernel_size, padding = padding),
 			nn.InstanceNorm2d(current_filters),
-			nn.LeakyReLU(0.2, True),
+			nn.LeakyReLU(0.2),
 			nn.Conv2d(current_filters, 1, kernel_size = self.config_kernel_size, padding = padding)
 		]
 		return layers
