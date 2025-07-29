@@ -14,7 +14,7 @@ from torchdata.stateful_dataloader import StatefulDataLoader
 
 from .dataset import StaticDataset
 from .models.crossface import CrossFace
-from .types import Batch, Embedding, OptimizerSet, TrainerStrategy, TrainerPrecision
+from .types import Batch, Embedding, OptimizerSet, TrainerPrecision, TrainerStrategy
 
 CONFIG_PARSER = ConfigParser()
 CONFIG_PARSER.read('config.ini')
