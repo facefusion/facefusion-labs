@@ -2,7 +2,7 @@ import os
 import shutil
 from configparser import ConfigParser
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, cast
 
 import torch
 from lightning import LightningModule, Trainer
@@ -14,7 +14,7 @@ from torchdata.stateful_dataloader import StatefulDataLoader
 
 from .dataset import StaticDataset
 from .models.crossface import CrossFace
-from .types import Batch, Embedding, OptimizerSet
+from .types import Batch, Embedding, OptimizerSet, TrainerStrategy, TrainerPrecision
 
 CONFIG_PARSER = ConfigParser()
 CONFIG_PARSER.read('config.ini')
@@ -98,8 +98,8 @@ def split_dataset(dataset : Dataset[Tensor]) -> Tuple[Dataset[Tensor], Dataset[T
 
 def create_trainer() -> Trainer:
 	config_max_epochs = CONFIG_PARSER.getint('training.trainer', 'max_epochs')
-	config_strategy = CONFIG_PARSER.get('training.trainer', 'strategy')
-	config_precision = CONFIG_PARSER.get('training.trainer', 'precision')
+	config_strategy = cast(TrainerStrategy, CONFIG_PARSER.get('training.trainer', 'strategy'))
+	config_precision = cast(TrainerPrecision, CONFIG_PARSER.get('training.trainer', 'precision'))
 	config_logger_path = CONFIG_PARSER.get('training.logger', 'logger_path')
 	config_logger_name = CONFIG_PARSER.get('training.logger', 'logger_name')
 	config_directory_path = CONFIG_PARSER.get('training.output', 'directory_path')
