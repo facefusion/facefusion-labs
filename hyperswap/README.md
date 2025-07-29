@@ -92,8 +92,8 @@ discriminator_ratio = 0.4
 gradient_clip = 20.0
 max_epochs = 50
 strategy = auto
-sync_batchnorm = false
 precision = 16-mixed
+sync_batchnorm = false
 preview_frequency = 100
 ```
 

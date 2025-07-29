@@ -4,7 +4,7 @@ import warnings
 from configparser import ConfigParser
 from copy import deepcopy
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, cast
 
 import torch
 import torchvision
@@ -20,7 +20,7 @@ from .helper import apply_noise, calculate_face_embedding, erode_mask, overlay_m
 from .models.discriminator import Discriminator
 from .models.generator import Generator
 from .models.loss import AdversarialLoss, CycleLoss, DiscriminatorLoss, FeatureLoss, GazeLoss, IdentityLoss, MaskLoss, ReconstructionLoss
-from .types import Batch, Embedding, Mask, OptimizerSet
+from .types import Batch, Embedding, Mask, OptimizerSet, TrainerPrecision, TrainerStrategy
 
 warnings.filterwarnings('ignore', category = UserWarning, module = 'torch')
 
@@ -252,22 +252,21 @@ def prepare_datasets(config_parser : ConfigParser) -> List[Dataset[Tensor]]:
 
 def create_trainer() -> Trainer:
 	config_max_epochs = CONFIG_PARSER.getint('training.trainer', 'max_epochs')
-	config_strategy = CONFIG_PARSER.get('training.trainer', 'strategy')
+	config_strategy = cast(TrainerStrategy, CONFIG_PARSER.get('training.trainer', 'strategy'))
+	config_precision = cast(TrainerPrecision, CONFIG_PARSER.get('training.trainer', 'precision'))
 	config_sync_batchnorm = CONFIG_PARSER.getboolean('training.trainer', 'sync_batchnorm')
-	config_precision = CONFIG_PARSER.get('training.trainer', 'precision')
 	config_logger_path = CONFIG_PARSER.get('training.logger', 'logger_path')
 	config_logger_name = CONFIG_PARSER.get('training.logger', 'logger_name')
 	config_directory_path = CONFIG_PARSER.get('training.output', 'directory_path')
 	config_file_pattern = CONFIG_PARSER.get('training.output', 'file_pattern')
 	logger = TensorBoardLogger(config_logger_path, config_logger_name)
-
 	return Trainer(
 		logger = logger,
 		log_every_n_steps = 10,
 		max_epochs = config_max_epochs,
 		strategy = config_strategy,
-		sync_batchnorm = config_sync_batchnorm,
 		precision = config_precision,
+		sync_batchnorm = config_sync_batchnorm,
 		callbacks =
 		[
 			ModelWithConfigCheckpoint(
