@@ -282,7 +282,6 @@ def create_trainer() -> Trainer:
 	)
 
 
-
 def train() -> None:
 	config_resume_path = CONFIG_PARSER.get('training.output', 'resume_path')
 
