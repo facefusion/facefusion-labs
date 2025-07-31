@@ -55,6 +55,8 @@ class HyperSwapTrainer(LightningModule):
 		self.face_masker = torch.jit.load(self.config_face_masker_path, map_location ='cpu').eval()
 		self.generator = Generator(config_parser)
 		self.discriminator = Discriminator(config_parser)
+		self.generator = torch.compile(self.generator, mode="max-autotune")
+		self.discriminator = torch.compile(self.discriminator, mode="max-autotune")
 		self.discriminator_loss = DiscriminatorLoss()
 		self.adversarial_loss = AdversarialLoss(config_parser)
 		self.cycle_loss = CycleLoss(config_parser)
@@ -113,6 +115,8 @@ class HyperSwapTrainer(LightningModule):
 
 		generator_target_features = self.generator.encode_features(target_tensor)
 		generator_output_tensor, generator_output_mask = self.generator(source_embedding, target_tensor, generator_target_features)
+		d_fake_input = generator_output_tensor.clone()
+
 		generator_output_features = self.generator.encode_features(generator_output_tensor)
 		cycle_output_tensor, cycle_output_mask = self.generator(target_embedding, generator_output_tensor, generator_output_features)
 		cycle_output_features = self.generator.encode_features(cycle_output_tensor)
@@ -130,7 +134,7 @@ class HyperSwapTrainer(LightningModule):
 			discriminator_real_tensors = self.discriminator(source_tensor)
 		else:
 			discriminator_real_tensors = self.discriminator(target_tensor)
-		discriminator_fake_tensors = self.discriminator(generator_output_tensor.detach())
+		discriminator_fake_tensors = self.discriminator(d_fake_input.detach())
 		discriminator_loss = self.discriminator_loss(discriminator_real_tensors, discriminator_fake_tensors)
 
 		self.toggle_optimizer(generator_optimizer)
@@ -139,7 +143,7 @@ class HyperSwapTrainer(LightningModule):
 		if do_update:
 			if self.config_gradient_clip:
 				self.clip_gradients(
-					generator_optimizer,
+					generator_optimizer.optimizer,
 					gradient_clip_val = self.config_gradient_clip,
 					gradient_clip_algorithm = 'norm'
 				)
@@ -153,7 +157,7 @@ class HyperSwapTrainer(LightningModule):
 		if do_update:
 			if self.config_gradient_clip:
 				self.clip_gradients(
-					discriminator_optimizer,
+					discriminator_optimizer.optimizer,
 					gradient_clip_val = self.config_gradient_clip,
 					gradient_clip_algorithm = 'norm'
 				)
