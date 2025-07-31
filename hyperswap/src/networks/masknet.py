@@ -56,17 +56,17 @@ class BottleNeck(nn.Module):
 	def __init__(self, num_filters : int):
 		super().__init__()
 		self.sequences = self.create_sequences(num_filters)
-		self.relu = nn.ReLU(inplace = True)
+		self.relu = nn.ReLU()
 
 	@staticmethod
 	def create_sequences(num_filters : int) -> nn.Sequential:
 		return nn.Sequential(
 			nn.Conv2d(num_filters, num_filters, kernel_size = 3, padding = 1, bias = False),
 			nn.BatchNorm2d(num_filters),
-			nn.ReLU(inplace = True),
+			nn.ReLU(),
 			nn.Conv2d(num_filters, num_filters, kernel_size = 3, padding = 1, bias = False),
 			nn.BatchNorm2d(num_filters),
-			nn.ReLU(inplace = True)
+			nn.ReLU()
 		)
 
 	def forward(self, input_tensor : Tensor) -> Tensor:
@@ -84,7 +84,7 @@ class UpSample(nn.Module):
 	def create_sequences(input_channels : int, output_channels : int) -> nn.Sequential:
 		return nn.Sequential(
 			nn.ConvTranspose2d(input_channels, output_channels, kernel_size = 2, stride = 2),
-			nn.ReLU(inplace = True)
+			nn.ReLU()
 		)
 
 	def forward(self, input_tensor : Tensor) -> Tensor:
@@ -102,7 +102,7 @@ class DownSample(nn.Module):
 		return nn.Sequential(
 			nn.Conv2d(input_channels, output_channels, kernel_size = 3, padding = 1, bias = False),
 			nn.BatchNorm2d(output_channels),
-			nn.ReLU(inplace = True),
+			nn.ReLU(),
 			nn.MaxPool2d(2)
 		)
 
