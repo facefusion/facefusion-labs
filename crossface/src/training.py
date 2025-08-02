@@ -14,7 +14,7 @@ from torchdata.stateful_dataloader import StatefulDataLoader
 
 from .dataset import StaticDataset
 from .models.crossface import CrossFace
-from .types import Batch, Embedding, OptimizerSet, TrainerPrecision, TrainerStrategy
+from .types import Batch, Embedding, OptimizerSet, TrainerCompileMode, TrainerPrecision, TrainerStrategy
 
 CONFIG_PARSER = ConfigParser()
 CONFIG_PARSER.read('config.ini')
@@ -25,8 +25,11 @@ class CrossFaceTrainer(LightningModule):
 		super().__init__()
 		self.config_source_path = config_parser.get('training.model', 'source_path')
 		self.config_target_path = config_parser.get('training.model', 'target_path')
+		self.config_compile_mode = cast(TrainerCompileMode, config_parser.get('training.trainer', 'compile_mode'))
 		self.config_learning_rate = config_parser.getfloat('training.optimizer', 'learning_rate')
 		self.crossface = CrossFace()
+		if self.config_compile_mode:
+			self.crossface = torch.compile(self.crossface, mode = self.config_compile_mode)
 		self.source_embedder = torch.jit.load(self.config_source_path, map_location = 'cpu').eval()
 		self.target_embedder = torch.jit.load(self.config_target_path, map_location = 'cpu').eval()
 		self.mse_loss = nn.MSELoss()

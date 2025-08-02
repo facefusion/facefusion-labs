@@ -46,6 +46,7 @@ target_path = .models/arcface_simswap.pt
 ```
 [training.trainer]
 max_epochs = 4096
+compile_mode = reduce-overhead
 strategy = auto
 precision = 16-mixed
 ```

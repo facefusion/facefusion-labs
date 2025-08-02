@@ -20,7 +20,7 @@ from .helper import apply_noise, calculate_face_embedding, erode_mask, overlay_m
 from .models.discriminator import Discriminator
 from .models.generator import Generator
 from .models.loss import AdversarialLoss, CycleLoss, DiscriminatorLoss, FeatureLoss, GazeLoss, IdentityLoss, MaskLoss, ReconstructionLoss
-from .types import Batch, Embedding, Mask, OptimizerSet, TrainerPrecision, TrainerStrategy
+from .types import Batch, Embedding, Mask, OptimizerSet, TrainerCompileMode, TrainerPrecision, TrainerStrategy
 
 warnings.filterwarnings('ignore', category = UserWarning, module = 'torch')
 
@@ -38,6 +38,7 @@ class HyperSwapTrainer(LightningModule):
 		self.config_accumulate_size = config_parser.getfloat('training.trainer', 'accumulate_size')
 		self.config_discriminator_ratio = config_parser.getfloat('training.trainer', 'discriminator_ratio')
 		self.config_gradient_clip = config_parser.getfloat('training.trainer', 'gradient_clip')
+		self.config_compile_mode = cast(TrainerCompileMode, config_parser.get('training.trainer', 'compile_mode'))
 		self.config_preview_frequency = config_parser.getint('training.trainer', 'preview_frequency')
 		self.config_mask_factor = config_parser.getfloat('training.modifier', 'mask_factor')
 		self.config_noise_factor = config_parser.getfloat('training.modifier', 'noise_factor')
@@ -55,6 +56,9 @@ class HyperSwapTrainer(LightningModule):
 		self.face_masker = torch.jit.load(self.config_face_masker_path, map_location ='cpu').eval()
 		self.generator = Generator(config_parser)
 		self.discriminator = Discriminator(config_parser)
+		if self.config_compile_mode:
+			self.generator = torch.compile(self.generator, mode = self.config_compile_mode)
+			self.discriminator = torch.compile(self.discriminator, mode = self.config_compile_mode)
 		self.discriminator_loss = DiscriminatorLoss()
 		self.adversarial_loss = AdversarialLoss(config_parser)
 		self.cycle_loss = CycleLoss(config_parser)
