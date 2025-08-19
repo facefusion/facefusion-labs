@@ -1,15 +1,22 @@
-import torch
 from torch import Tensor, nn
 
 
 class CrossFace(nn.Module):
 	def __init__(self) -> None:
 		super().__init__()
-		self.layers = self.create_layers()
-		self.leaky_relu = nn.LeakyReLU()
+		self.linear_layers = self.create_linear_layers()
+		self.norm_layers = self.create_norm_layers()
+		self.leaky_relu = nn.LeakyReLU(0.2)
+		self.dropout = nn.Dropout(0.1)
+		self._init_weights()
+
+	def _init_weights(self):
+		for layer in self.linear_layers:
+			nn.init.xavier_uniform_(layer.weight)
+			nn.init.constant_(layer.bias, 0.01)
 
 	@staticmethod
-	def create_layers() -> nn.ModuleList:
+	def create_linear_layers() -> nn.ModuleList:
 		return nn.ModuleList(
 		[
 			nn.Linear(512, 1024),
@@ -18,11 +25,25 @@ class CrossFace(nn.Module):
 			nn.Linear(1024, 512)
 		])
 
+	@staticmethod
+	def create_norm_layers() -> nn.ModuleList:
+		return nn.ModuleList(
+		[
+			nn.LayerNorm(1024),
+			nn.LayerNorm(2048),
+			nn.LayerNorm(1024)
+		])
+
 	def forward(self, input_tensor : Tensor) -> Tensor:
-		output_tensor = input_tensor / torch.norm(input_tensor)
+		output_tensor = nn.functional.normalize(input_tensor, p = 2, dim = -1)
+		identity_tensor = output_tensor
 
-		for layer in self.layers[:-1]:
-			output_tensor = self.leaky_relu(layer(output_tensor))
+		for index, layer in enumerate(self.linear_layers[:-1]):
+			output_tensor = layer(output_tensor)
+			output_tensor = self.norm_layers[index](output_tensor)
+			output_tensor = self.leaky_relu(output_tensor)
+			output_tensor = self.dropout(output_tensor)
 
-		output_tensor = self.layers[-1](output_tensor)
+		output_tensor = self.linear_layers[-1](output_tensor)
+		output_tensor = output_tensor + 0.2 * identity_tensor
 		return output_tensor
