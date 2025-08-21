@@ -6,6 +6,7 @@ class CrossFace(nn.Module):
 		super().__init__()
 		self.linear_layers = self.create_linear_layers()
 		self.norm_layers = self.create_norm_layers()
+		self.skip_layer = nn.Linear(512, 512)
 		self.leaky_relu = nn.LeakyReLU(0.2)
 		self.dropout = nn.Dropout(0.1)
 		self._init_weights()
@@ -45,5 +46,5 @@ class CrossFace(nn.Module):
 			output_tensor = self.dropout(output_tensor)
 
 		output_tensor = self.linear_layers[-1](output_tensor)
-		output_tensor = output_tensor + 0.2 * identity_tensor
+		output_tensor = output_tensor + 0.2 * self.skip_layer(identity_tensor)
 		return output_tensor
