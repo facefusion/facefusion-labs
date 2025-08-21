@@ -6,7 +6,7 @@ from typing import Tuple, cast
 
 import torch
 from lightning import LightningModule, Trainer
-from lightning.pytorch.callbacks import ModelCheckpoint
+from lightning.pytorch.callbacks import ModelCheckpoint, StochasticWeightAveraging
 from lightning.pytorch.loggers import TensorBoardLogger
 from torch import Tensor, nn
 from torch.utils.data import Dataset, random_split
@@ -121,7 +121,8 @@ def create_trainer() -> Trainer:
 				every_n_epochs = 1,
 				save_top_k = 5,
 				save_last = True
-			)
+			),
+			StochasticWeightAveraging(swa_lrs = 1e-2)
 		]
 	)
 
