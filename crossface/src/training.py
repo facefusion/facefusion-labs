@@ -73,7 +73,7 @@ class ModelWithConfigCheckpoint(ModelCheckpoint):
 	def _save_checkpoint(self, trainer : Trainer, checkpoint_path : str) -> None:
 		super()._save_checkpoint(trainer, checkpoint_path)
 		config_path = Path(checkpoint_path).with_suffix('.ini')
-		shutil.copy2('config.ini', config_path)
+		shutil.copy('config.ini', config_path)
 
 
 def create_loaders(dataset : Dataset[Tensor]) -> Tuple[StatefulDataLoader[Tensor], StatefulDataLoader[Tensor]]:
