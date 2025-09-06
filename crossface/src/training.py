@@ -118,13 +118,13 @@ def create_trainer() -> Trainer:
 				monitor = 'training_loss',
 				dirpath = config_directory_path,
 				filename = config_file_pattern,
-				every_n_train_steps = 10000,
+				every_n_epochs = 1000,
 				save_top_k = 5,
 				save_last = True
 			),
 			StochasticWeightAveraging(swa_lrs = 1e-2)
 		],
-		val_check_interval = 10000
+		val_check_interval = 1000
 	)
 
 

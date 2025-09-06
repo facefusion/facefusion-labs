@@ -32,9 +32,9 @@ file_pattern = .datasets/megaface/**/*.jpg
 
 ```
 [training.loader]
-batch_size = 4
-num_workers = 64
-split_ratio = 0.9995
+batch_size = 128
+num_workers = 8
+split_ratio = 0.95
 ```
 
 ```
