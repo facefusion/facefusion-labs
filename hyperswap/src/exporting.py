@@ -36,7 +36,7 @@ def export() -> None:
 	config_precision = CONFIG_PARSER.get('exporting', 'precision')
 
 	os.makedirs(config_directory_path, exist_ok = True)
-	model = HyperSwapTrainer.load_from_checkpoint(config_source_path, config_parser = CONFIG_PARSER, map_location ='cpu').eval()
+	model = HyperSwapTrainer.load_from_checkpoint(config_source_path, config_parser = CONFIG_PARSER, map_location = 'cpu').eval()
 
 	if config_precision == 'half':
 		model = HalfPrecision(model).eval()

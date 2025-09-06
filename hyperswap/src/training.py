@@ -1,8 +1,10 @@
 import os
+import shutil
 import warnings
 from configparser import ConfigParser
 from copy import deepcopy
-from typing import List, Tuple
+from pathlib import Path
+from typing import List, Tuple, cast
 
 import torch
 import torchvision
@@ -14,11 +16,11 @@ from torch.utils.data import ConcatDataset, Dataset, random_split
 from torchdata.stateful_dataloader import StatefulDataLoader
 
 from .dataset import DynamicDataset
-from .helper import apply_noise, calculate_embedding, erode_mask, overlay_mask
+from .helper import apply_noise, calculate_face_embedding, erode_mask, overlay_mask
 from .models.discriminator import Discriminator
 from .models.generator import Generator
 from .models.loss import AdversarialLoss, CycleLoss, DiscriminatorLoss, FeatureLoss, GazeLoss, IdentityLoss, MaskLoss, ReconstructionLoss
-from .types import Batch, Embedding, Mask, OptimizerSet
+from .types import Batch, Embedding, Mask, OptimizerSet, TrainerPrecision, TrainerStrategy
 
 warnings.filterwarnings('ignore', category = UserWarning, module = 'torch')
 
@@ -34,6 +36,7 @@ class HyperSwapTrainer(LightningModule):
 		self.config_gazer_path = config_parser.get('training.model', 'gazer_path')
 		self.config_face_masker_path = config_parser.get('training.model', 'face_masker_path')
 		self.config_accumulate_size = config_parser.getfloat('training.trainer', 'accumulate_size')
+		self.config_discriminator_ratio = config_parser.getfloat('training.trainer', 'discriminator_ratio')
 		self.config_gradient_clip = config_parser.getfloat('training.trainer', 'gradient_clip')
 		self.config_preview_frequency = config_parser.getint('training.trainer', 'preview_frequency')
 		self.config_mask_factor = config_parser.getfloat('training.modifier', 'mask_factor')
@@ -101,8 +104,8 @@ class HyperSwapTrainer(LightningModule):
 		do_update = (batch_index + 1) % self.config_accumulate_size == 0
 		generator_optimizer, discriminator_optimizer = self.optimizers() #type:ignore[attr-defined]
 		generator_scheduler, discriminator_scheduler = self.lr_schedulers() #type:ignore[attr-defined]
-		source_embedding = calculate_embedding(self.generator_embedder, source_tensor, (0, 0, 0, 0))
-		target_embedding = calculate_embedding(self.generator_embedder, target_tensor, (0, 0, 0, 0))
+		source_embedding = calculate_face_embedding(self.generator_embedder, source_tensor, (0, 0, 0, 0))
+		target_embedding = calculate_face_embedding(self.generator_embedder, target_tensor, (0, 0, 0, 0))
 
 		if self.config_noise_factor > 0:
 			source_embedding = apply_noise(source_embedding, self.config_noise_factor)
@@ -123,9 +126,12 @@ class HyperSwapTrainer(LightningModule):
 		mask_loss, weighted_mask_loss = self.mask_loss(target_tensor, generator_output_mask)
 		generator_loss = weighted_adversarial_loss + weighted_cycle_loss + weighted_feature_loss + weighted_reconstruction_loss + weighted_identity_loss + weighted_gaze_loss + weighted_mask_loss
 
-		discriminator_source_tensors = self.discriminator(source_tensor)
-		discriminator_output_tensors = self.discriminator(generator_output_tensor.detach())
-		discriminator_loss = self.discriminator_loss(discriminator_source_tensors, discriminator_output_tensors)
+		if torch.randn(1).item() < self.config_discriminator_ratio:
+			discriminator_real_tensors = self.discriminator(source_tensor)
+		else:
+			discriminator_real_tensors = self.discriminator(target_tensor)
+		discriminator_fake_tensors = self.discriminator(generator_output_tensor.detach())
+		discriminator_loss = self.discriminator_loss(discriminator_real_tensors, discriminator_fake_tensors)
 
 		self.toggle_optimizer(generator_optimizer)
 		self.manual_backward(generator_loss)
@@ -176,9 +182,9 @@ class HyperSwapTrainer(LightningModule):
 
 	def validation_step(self, batch : Batch, batch_index : int) -> Tensor:
 		source_tensor, target_tensor = batch
-		source_embedding = calculate_embedding(self.generator_embedder, source_tensor, (0, 0, 0, 0))
+		source_embedding = calculate_face_embedding(self.generator_embedder, source_tensor, (0, 0, 0, 0))
 		output_tensor, _ = self.forward(source_embedding, target_tensor)
-		output_embedding = calculate_embedding(self.generator_embedder, output_tensor, (0, 0, 0, 0))
+		output_embedding = calculate_face_embedding(self.generator_embedder, output_tensor, (0, 0, 0, 0))
 		validation_score = (nn.functional.cosine_similarity(source_embedding, output_embedding).mean() + 1) * 0.5
 		self.log('validation_score', validation_score, sync_dist = True, prog_bar = True)
 		return validation_score
@@ -195,6 +201,13 @@ class HyperSwapTrainer(LightningModule):
 		preview_cells = torch.cat(preview_cells, dim = 1).unsqueeze(0)
 		preview_grid = torchvision.utils.make_grid(preview_cells, normalize = True, scale_each = True)
 		self.logger.experiment.add_image('preview', preview_grid, self.global_step) # type:ignore[attr-defined]
+
+
+class ModelWithConfigCheckpoint(ModelCheckpoint):
+	def _save_checkpoint(self, trainer : Trainer, checkpoint_path : str) -> None:
+		super()._save_checkpoint(trainer, checkpoint_path)
+		config_path = Path(checkpoint_path).with_suffix('.ini')
+		shutil.copy('config.ini', config_path)
 
 
 def create_loaders(dataset : Dataset[Tensor]) -> Tuple[StatefulDataLoader[Tensor], StatefulDataLoader[Tensor]]:
@@ -239,23 +252,24 @@ def prepare_datasets(config_parser : ConfigParser) -> List[Dataset[Tensor]]:
 
 def create_trainer() -> Trainer:
 	config_max_epochs = CONFIG_PARSER.getint('training.trainer', 'max_epochs')
-	config_strategy = CONFIG_PARSER.get('training.trainer', 'strategy')
-	config_precision = CONFIG_PARSER.get('training.trainer', 'precision')
+	config_strategy = cast(TrainerStrategy, CONFIG_PARSER.get('training.trainer', 'strategy'))
+	config_precision = cast(TrainerPrecision, CONFIG_PARSER.get('training.trainer', 'precision'))
+	config_sync_batchnorm = CONFIG_PARSER.getboolean('training.trainer', 'sync_batchnorm')
 	config_logger_path = CONFIG_PARSER.get('training.logger', 'logger_path')
 	config_logger_name = CONFIG_PARSER.get('training.logger', 'logger_name')
 	config_directory_path = CONFIG_PARSER.get('training.output', 'directory_path')
 	config_file_pattern = CONFIG_PARSER.get('training.output', 'file_pattern')
 	logger = TensorBoardLogger(config_logger_path, config_logger_name)
-
 	return Trainer(
 		logger = logger,
 		log_every_n_steps = 10,
 		max_epochs = config_max_epochs,
 		strategy = config_strategy,
 		precision = config_precision,
+		sync_batchnorm = config_sync_batchnorm,
 		callbacks =
 		[
-			ModelCheckpoint(
+			ModelWithConfigCheckpoint(
 				monitor = 'generator_loss',
 				dirpath = config_directory_path,
 				filename = config_file_pattern,

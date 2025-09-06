@@ -41,8 +41,8 @@ class UNet(nn.Module):
 			down_samples.extend(
 			[
 				DownSample(512, 1024),
-				DownSample(1024, 2048),
-				DownSample(2048, 2048)
+				DownSample(1024, 1024),
+				DownSample(1024, 1024)
 			])
 
 		if self.config_output_size == 1024:
@@ -50,8 +50,8 @@ class UNet(nn.Module):
 			[
 				DownSample(512, 1024),
 				DownSample(1024, 2048),
-				DownSample(2048, 4096),
-				DownSample(4096, 4096)
+				DownSample(2048, 2048),
+				DownSample(2048, 2048)
 			])
 
 		return down_samples
@@ -62,36 +62,39 @@ class UNet(nn.Module):
 		if self.config_output_size == 128:
 			up_samples.extend(
 			[
-				UpSample(512, 512)
+				UpSample(512, 512),
+				UpSample(1024, 256)
 			])
 
 		if self.config_output_size == 256:
 			up_samples.extend(
 			[
 				UpSample(1024, 1024),
-				UpSample(2048, 512)
+				UpSample(2048, 512),
+				UpSample(1024, 256)
 			])
 
 		if self.config_output_size == 512:
 			up_samples.extend(
 			[
-				UpSample(2048, 2048),
-				UpSample(4096, 1024),
-				UpSample(2048, 512)
+				UpSample(1024, 1024),
+				UpSample(2048, 512),
+				UpSample(1536, 256),
+				UpSample(768, 256)
 			])
 
 		if self.config_output_size == 1024:
 			up_samples.extend(
 			[
-				UpSample(4096, 4096),
-				UpSample(8192, 2048),
+				UpSample(2048, 2048),
 				UpSample(4096, 1024),
-				UpSample(2048, 512)
+				UpSample(3072, 512),
+				UpSample(1536, 256),
+				UpSample(768, 256)
 			])
 
 		up_samples.extend(
 		[
-			UpSample(1024, 256),
 			UpSample(512, 128),
 			UpSample(256, 64),
 			UpSample(128, 32)
@@ -130,7 +133,7 @@ class UpSample(nn.Module):
 		return nn.Sequential(
 			nn.ConvTranspose2d(input_channels, output_channels, kernel_size = 4, stride = 2, padding = 1, bias = False),
 			nn.BatchNorm2d(output_channels),
-			nn.LeakyReLU(0.1, inplace = True)
+			nn.LeakyReLU(0.1)
 		)
 
 	def forward(self, input_tensor : Tensor, skip_tensor : Tensor) -> Tensor:
@@ -149,7 +152,7 @@ class DownSample(nn.Module):
 		return nn.Sequential(
 			nn.Conv2d(input_channels, output_channels, kernel_size = 4, stride = 2, padding = 1, bias = False),
 			nn.BatchNorm2d(output_channels),
-			nn.LeakyReLU(0.1, inplace = True)
+			nn.LeakyReLU(0.1)
 		)
 
 	def forward(self, input_tensor : Tensor) -> Tensor:

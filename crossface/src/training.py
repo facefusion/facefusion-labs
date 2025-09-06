@@ -1,10 +1,12 @@
 import os
+import shutil
 from configparser import ConfigParser
-from typing import Tuple
+from pathlib import Path
+from typing import Tuple, cast
 
 import torch
 from lightning import LightningModule, Trainer
-from lightning.pytorch.callbacks import ModelCheckpoint
+from lightning.pytorch.callbacks import ModelCheckpoint, StochasticWeightAveraging
 from lightning.pytorch.loggers import TensorBoardLogger
 from torch import Tensor, nn
 from torch.utils.data import Dataset, random_split
@@ -12,7 +14,7 @@ from torchdata.stateful_dataloader import StatefulDataLoader
 
 from .dataset import StaticDataset
 from .models.crossface import CrossFace
-from .types import Batch, Embedding, OptimizerSet
+from .types import Batch, Embedding, OptimizerSet, TrainerPrecision, TrainerStrategy
 
 CONFIG_PARSER = ConfigParser()
 CONFIG_PARSER.read('config.ini')
@@ -67,6 +69,13 @@ class CrossFaceTrainer(LightningModule):
 		return optimizer_set
 
 
+class ModelWithConfigCheckpoint(ModelCheckpoint):
+	def _save_checkpoint(self, trainer : Trainer, checkpoint_path : str) -> None:
+		super()._save_checkpoint(trainer, checkpoint_path)
+		config_path = Path(checkpoint_path).with_suffix('.ini')
+		shutil.copy('config.ini', config_path)
+
+
 def create_loaders(dataset : Dataset[Tensor]) -> Tuple[StatefulDataLoader[Tensor], StatefulDataLoader[Tensor]]:
 	config_batch_size = CONFIG_PARSER.getint('training.loader', 'batch_size')
 	config_num_workers = CONFIG_PARSER.getint('training.loader', 'num_workers')
@@ -89,8 +98,8 @@ def split_dataset(dataset : Dataset[Tensor]) -> Tuple[Dataset[Tensor], Dataset[T
 
 def create_trainer() -> Trainer:
 	config_max_epochs = CONFIG_PARSER.getint('training.trainer', 'max_epochs')
-	config_strategy = CONFIG_PARSER.get('training.trainer', 'strategy')
-	config_precision = CONFIG_PARSER.get('training.trainer', 'precision')
+	config_strategy = cast(TrainerStrategy, CONFIG_PARSER.get('training.trainer', 'strategy'))
+	config_precision = cast(TrainerPrecision, CONFIG_PARSER.get('training.trainer', 'precision'))
 	config_logger_path = CONFIG_PARSER.get('training.logger', 'logger_path')
 	config_logger_name = CONFIG_PARSER.get('training.logger', 'logger_name')
 	config_directory_path = CONFIG_PARSER.get('training.output', 'directory_path')
@@ -105,15 +114,17 @@ def create_trainer() -> Trainer:
 		precision = config_precision,
 		callbacks =
 		[
-			ModelCheckpoint(
+			ModelWithConfigCheckpoint(
 				monitor = 'training_loss',
 				dirpath = config_directory_path,
 				filename = config_file_pattern,
-				every_n_epochs = 1,
+				every_n_epochs = 1000,
 				save_top_k = 5,
 				save_last = True
-			)
-		]
+			),
+			StochasticWeightAveraging(swa_lrs = 1e-2)
+		],
+		val_check_interval = 1000
 	)
 
 

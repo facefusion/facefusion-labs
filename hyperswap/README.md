@@ -54,7 +54,6 @@ face_masker_path = .models/face_masker.pt
 ```
 [training.model.generator]
 source_channels = 512
-output_channels = 4096
 output_size = 256
 num_blocks = 2
 ```
@@ -89,10 +88,12 @@ mask_weight = 5.0
 ```
 [training.trainer]
 accumulate_size = 4
+discriminator_ratio = 0.4
 gradient_clip = 20.0
 max_epochs = 50
 strategy = auto
 precision = 16-mixed
+sync_batchnorm = false
 preview_frequency = 100
 ```
 
@@ -164,7 +165,7 @@ python train.py
 Launch the TensorBoard to monitor the training.
 
 ```
-tensorboard --logdir=.logs
+tensorboard --logdir .logs
 ```
 
 

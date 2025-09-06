@@ -11,10 +11,9 @@ class AAD(nn.Module):
 	def __init__(self, config_parser : ConfigParser) -> None:
 		super().__init__()
 		self.config_source_channels = config_parser.getint('training.model.generator', 'source_channels')
-		self.config_output_channels = config_parser.getint('training.model.generator', 'output_channels')
 		self.config_output_size = config_parser.getint('training.model.generator', 'output_size')
 		self.config_num_blocks = config_parser.getint('training.model.generator', 'num_blocks')
-		self.pixel_shuffle_up_sample = PixelShuffleUpSample(self.config_source_channels, self.config_output_channels)
+		self.pixel_shuffle_up_sample = PixelShuffleUpSample(self.config_source_channels, 4096)
 		self.layers = self.create_layers()
 
 	def create_layers(self) -> nn.ModuleList:
@@ -23,9 +22,9 @@ class AAD(nn.Module):
 		if self.config_output_size == 128:
 			layers.extend(
 			[
-				AdaptiveFeatureModulation(512, 512, 512, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(512, 512, 1024, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(512, 512, 512, self.config_source_channels, self.config_num_blocks)
+				AdaptiveFeatureModulation(1024, 1024, 512, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(1024, 1024, 1024, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(1024, 512, 512, self.config_source_channels, self.config_num_blocks)
 			])
 
 		if self.config_output_size == 256:
@@ -40,21 +39,21 @@ class AAD(nn.Module):
 		if self.config_output_size == 512:
 			layers.extend(
 			[
-				AdaptiveFeatureModulation(2048, 2048, 2048, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(2048, 2048, 4096, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(2048, 2048, 2048, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(2048, 1024, 1024, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(1024, 1024, 1024, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(1024, 1024, 2048, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(1024, 1024, 1536, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(1024, 1024, 768, self.config_source_channels, self.config_num_blocks),
 				AdaptiveFeatureModulation(1024, 512, 512, self.config_source_channels, self.config_num_blocks)
 			])
 
 		if self.config_output_size == 1024:
 			layers.extend(
 			[
-				AdaptiveFeatureModulation(4096, 4096, 4096, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(4096, 4096, 8192, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(4096, 4096, 4096, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(4096, 2048, 2048, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(2048, 1024, 1024, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(1024, 1024, 2048, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(1024, 1024, 4096, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(1024, 1024, 3072, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(1024, 1024, 1536, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(1024, 1024, 768, self.config_source_channels, self.config_num_blocks),
 				AdaptiveFeatureModulation(1024, 512, 512, self.config_source_channels, self.config_num_blocks)
 			])
 
@@ -100,7 +99,7 @@ class AdaptiveFeatureModulation(nn.Module):
 			primary_layers.extend(
 			[
 				FeatureModulation(self.context_input_channels, self.context_target_channels, self.context_source_channels),
-				nn.ReLU(inplace = True)
+				nn.ReLU()
 			])
 
 			if index < self.context_num_blocks - 1:
@@ -117,7 +116,7 @@ class AdaptiveFeatureModulation(nn.Module):
 			shortcut_layers.extend(
 			[
 				FeatureModulation(self.context_input_channels, self.context_target_channels, self.context_source_channels),
-				nn.ReLU(inplace = True),
+				nn.ReLU(),
 				nn.Conv2d(self.context_input_channels, self.context_output_channels, kernel_size = 3, padding = 1, bias = False)
 			])
 

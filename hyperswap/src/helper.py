@@ -34,7 +34,7 @@ def convert_tensor(input_tensor : Tensor, convert_template : ConvertTemplate) ->
 	return output_tensor
 
 
-def calculate_embedding(embedder : EmbedderModule, input_tensor : Tensor, padding : Padding) -> Embedding:
+def calculate_face_embedding(embedder : EmbedderModule, input_tensor : Tensor, padding : Padding) -> Embedding:
 	crop_tensor = convert_tensor(input_tensor, 'arcface_128_to_arcface_112_v2')
 	crop_tensor = nn.functional.interpolate(crop_tensor, size = 112, mode = 'area')
 	crop_tensor[:, :, :padding[0], :] = 0
@@ -42,9 +42,9 @@ def calculate_embedding(embedder : EmbedderModule, input_tensor : Tensor, paddin
 	crop_tensor[:, :, :, :padding[2]] = 0
 	crop_tensor[:, :, :, 112 - padding[3]:] = 0
 
-	embedding = embedder(crop_tensor)
-	embedding = nn.functional.normalize(embedding, p = 2)
-	return embedding
+	face_embedding = embedder(crop_tensor)
+	face_embedding = nn.functional.normalize(face_embedding, p = 2)
+	return face_embedding
 
 
 def overlay_mask(input_tensor : Tensor, input_mask : Mask) -> Tensor:
@@ -56,7 +56,7 @@ def overlay_mask(input_tensor : Tensor, input_mask : Mask) -> Tensor:
 
 
 def dilate_mask(input_tensor : Tensor, factor : float) -> Tensor:
-	padding = round(input_tensor.shape[2] * factor)
+	padding = int(input_tensor.shape[2] * factor + 0.5)
 	kernel_size = 1 + 2 * padding
 	temp_tensor = nn.functional.pad(input_tensor, (padding, padding, padding, padding), mode = 'replicate')
 	output_tensor = nn.functional.max_pool2d(temp_tensor, kernel_size = kernel_size, stride = 1, padding = 0)
@@ -64,7 +64,7 @@ def dilate_mask(input_tensor : Tensor, factor : float) -> Tensor:
 
 
 def erode_mask(input_tensor : Tensor, factor : float) -> Tensor:
-	padding = round(input_tensor.shape[2] * factor)
+	padding = int(input_tensor.shape[2] * factor + 0.5)
 	kernel_size = 1 + 2 * padding
 	temp_tensor = 1 - nn.functional.pad(input_tensor, (padding, padding, padding, padding), mode = 'replicate')
 	output_tensor = 1 - nn.functional.max_pool2d(temp_tensor, kernel_size = kernel_size, stride = 1, padding = 0)

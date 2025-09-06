@@ -32,7 +32,7 @@ file_pattern = .datasets/megaface/**/*.jpg
 
 ```
 [training.loader]
-batch_size = 256
+batch_size = 128
 num_workers = 8
 split_ratio = 0.95
 ```
@@ -90,7 +90,7 @@ python train.py
 Launch the TensorBoard to monitor the training.
 
 ```
-tensorboard --logdir=.logs
+tensorboard --logdir .logs
 ```
 
 
