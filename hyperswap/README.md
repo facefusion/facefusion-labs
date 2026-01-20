@@ -51,6 +51,13 @@ gazer_path = .models/gazer.pt
 face_masker_path = .models/face_masker.pt
 ```
 
+### Note on dependencies
+To train HyperSwap, you'll have to provide checkpoints for the above models. Consider using these files:
+- blendface: [https://huggingface.co/bluefoxcreation/Models/blob/main/ff_blendface.pt](https://huggingface.co/bluefoxcreation/Models/blob/main/ff_blendface.pt)
+- arcface: [https://huggingface.co/bluefoxcreation/Models/blob/main/ff_arcface.pt](https://huggingface.co/bluefoxcreation/Models/blob/main/ff_arcface.pt)
+- gazer: [https://huggingface.co/bluefoxcreation/Models/blob/main/ff_gaze_resnet34.pt](https://huggingface.co/bluefoxcreation/Models/blob/main/ff_gaze_resnet34.pt)
+- face_masker: [https://huggingface.co/bluefoxcreation/Models/blob/main/ff_masker_v2.pt](https://huggingface.co/bluefoxcreation/Models/blob/main/ff_masker_v2.pt)
+
 ```
 [training.model.generator]
 source_channels = 512
