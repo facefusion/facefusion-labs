@@ -47,7 +47,6 @@ split_ratio = 0.9995
 [training.model]
 generator_embedder_path = .models/blendface.pt
 loss_embedder_path = .models/arcface.pt
-gazer_path = .models/gazer.pt
 face_masker_path = .models/face_masker.pt
 ```
 
@@ -77,11 +76,9 @@ num_filters = 16
 ```
 [training.losses]
 adversarial_weight = 1.0
-cycle_weight = 1.0
 feature_weight = 10.0
 reconstruction_weight = 10.0
 identity_weight = 20.0
-gaze_weight = 0.05
 mask_weight = 5.0
 ```
 
