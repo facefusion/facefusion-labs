@@ -4,10 +4,9 @@ from typing import List, Tuple
 import torch
 from pytorch_msssim import ssim
 from torch import Tensor, nn
-from torchvision import transforms
 
 from ..helper import calculate_face_embedding, dilate_mask
-from ..types import EmbedderModule, FaceMaskerModule, Feature, GazerModule, Loss, Mask
+from ..types import EmbedderModule, FaceMaskerModule, Feature, Loss, Mask
 
 
 class DiscriminatorLoss(nn.Module):
@@ -47,27 +46,6 @@ class AdversarialLoss(nn.Module):
 		adversarial_loss = torch.stack(temp_tensors).mean()
 		weighted_adversarial_loss = adversarial_loss * self.config_adversarial_weight
 		return adversarial_loss, weighted_adversarial_loss
-
-
-class CycleLoss(nn.Module):
-	def __init__(self, config_parser : ConfigParser) -> None:
-		super().__init__()
-		self.config_batch_size = config_parser.getint('training.loader', 'batch_size')
-		self.config_cycle_weight = config_parser.getfloat('training.losses', 'cycle_weight')
-		self.l1_loss = nn.L1Loss()
-
-	def forward(self, target_tensor : Tensor, cycle_tensor : Tensor, target_features : Tuple[Feature, ...], cycle_features : Tuple[Feature, ...]) -> Tuple[Loss, Loss]:
-		temp_tensors = []
-
-		for target_feature, output_feature in zip(target_features, cycle_features):
-			temp_tensor = torch.mean(torch.pow(output_feature - target_feature, 2).reshape(self.config_batch_size, -1), dim = 1).mean()
-			temp_tensors.append(temp_tensor)
-
-		feature_loss = torch.stack(temp_tensors).mean()
-		reconstruction_loss = self.l1_loss(target_tensor, cycle_tensor)
-		cycle_loss = (feature_loss + reconstruction_loss) * 0.5
-		weighted_feature_loss = cycle_loss * self.config_cycle_weight
-		return cycle_loss, weighted_feature_loss
 
 
 class FeatureLoss(nn.Module):
@@ -125,38 +103,6 @@ class IdentityLoss(nn.Module):
 		identity_loss = (1 - torch.cosine_similarity(source_embedding, output_embedding)).mean()
 		weighted_identity_loss = identity_loss * self.config_identity_weight
 		return identity_loss, weighted_identity_loss
-
-
-class GazeLoss(nn.Module):
-	def __init__(self, config_parser : ConfigParser, gazer : GazerModule) -> None:
-		super().__init__()
-		self.config_gaze_weight = config_parser.getfloat('training.losses', 'gaze_weight')
-		self.config_output_size = config_parser.getint('training.model.generator', 'output_size')
-		self.gazer = gazer
-		self.l1_loss = nn.L1Loss()
-
-	def forward(self, target_tensor : Tensor, output_tensor : Tensor) -> Tuple[Loss, Loss]:
-		output_pitch, output_yaw = self.detect_gaze(output_tensor)
-		target_pitch, target_yaw = self.detect_gaze(target_tensor)
-
-		pitch_loss = self.l1_loss(output_pitch, target_pitch)
-		yaw_loss = self.l1_loss(output_yaw, target_yaw)
-
-		gaze_loss = (pitch_loss + yaw_loss) * 0.5
-		weighted_gaze_loss = gaze_loss * self.config_gaze_weight
-		return gaze_loss, weighted_gaze_loss
-
-	def detect_gaze(self, input_tensor : Tensor) -> Tuple[Tensor, Tensor]:
-		crop_sizes = (torch.tensor([ 0.235, 0.875, 0.0625, 0.8 ]) * self.config_output_size).int()
-		crop_tensor = input_tensor[:, :, crop_sizes[0]:crop_sizes[1], crop_sizes[2]:crop_sizes[3]]
-		crop_tensor = (crop_tensor + 1) * 0.5
-		crop_tensor = transforms.Normalize(mean = [ 0.485, 0.456, 0.406 ], std = [ 0.229, 0.224, 0.225 ])(crop_tensor)
-		crop_tensor = nn.functional.interpolate(crop_tensor, size = 448, mode = 'bicubic')
-
-		with torch.no_grad():
-			pitch, yaw = self.gazer(crop_tensor)
-
-		return pitch, yaw
 
 
 class MaskLoss(nn.Module):
