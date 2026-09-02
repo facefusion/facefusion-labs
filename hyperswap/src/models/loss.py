@@ -80,13 +80,13 @@ class ReconstructionLoss(nn.Module):
 
 		has_similar_identity = torch.cosine_similarity(source_embedding, target_embedding) > 0.8
 
-		reconstruction_loss = torch.mean((source_tensor - target_tensor) ** 2, dim = (1, 2, 3))
-		reconstruction_loss = (reconstruction_loss * has_similar_identity).mean() * 0.5
+		pixel_loss = torch.mean((output_tensor - target_tensor) ** 2, dim = (1, 2, 3))
+		pixel_loss = (pixel_loss * has_similar_identity).mean()
 
 		visual_loss = 1 - ssim(output_tensor, target_tensor, data_range = 2.0)
 		visual_loss = (visual_loss * has_similar_identity).mean()
 
-		reconstruction_loss = (reconstruction_loss + visual_loss) * 0.5
+		reconstruction_loss = (pixel_loss + visual_loss) * 0.5
 		weighted_reconstruction_loss = reconstruction_loss * self.config_reconstruction_weight
 		return reconstruction_loss, weighted_reconstruction_loss
 
