@@ -5,7 +5,7 @@ import torch
 from pytorch_msssim import ssim
 from torch import Tensor, nn
 
-from ..helper import calculate_face_embedding, calculate_ssim_size, dilate_mask
+from ..helper import calculate_face_embedding, dilate_mask, oddify_size
 from ..types import EmbedderModule, FaceMaskerModule, Feature, Loss, Mask
 
 
@@ -71,8 +71,8 @@ class ReconstructionLoss(nn.Module):
 		super().__init__()
 		self.config_reconstruction_weight = config_parser.getfloat('training.losses', 'reconstruction_weight')
 		self.config_output_size = config_parser.getint('training.model.generator', 'output_size')
-		self.config_reconstruction_coarse_size = calculate_ssim_size(self.config_output_size / 11)
-		self.config_reconstruction_fine_size = calculate_ssim_size(self.config_output_size / 22)
+		self.config_reconstruction_coarse_size = oddify_size(self.config_output_size / 11)
+		self.config_reconstruction_fine_size = oddify_size(self.config_output_size / 22)
 		self.embedder = embedder
 		self.mse_loss = nn.MSELoss()
 

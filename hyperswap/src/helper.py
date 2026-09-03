@@ -47,13 +47,13 @@ def calculate_face_embedding(embedder : EmbedderModule, input_tensor : Tensor, p
 	return face_embedding
 
 
-def calculate_ssim_size(size : float) -> int:
-	ssim_size = int(round(size))
+def oddify_size(size : float) -> int:
+	temp_size = int(round(size))
 
-	if ssim_size % 2 == 0:
-		ssim_size = ssim_size + 1
+	if temp_size % 2 == 0:
+		temp_size = temp_size + 1
 
-	return ssim_size
+	return temp_size
 
 
 def overlay_mask(input_tensor : Tensor, input_mask : Mask) -> Tensor:
