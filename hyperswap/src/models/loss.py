@@ -5,8 +5,8 @@ import torch
 from pytorch_msssim import ssim
 from torch import Tensor, nn
 
-from ..helper import calculate_face_embedding, dilate_mask, oddify_size
-from ..types import EmbedderModule, FaceMaskerModule, Feature, Loss, Mask
+from ..helper import blur_tensor, calculate_face_embedding, dilate_mask, oddify_size
+from ..types import EmbedderModule, FaceAlignerModule, FaceMaskerModule, Feature, Loss, Mask
 
 
 class DiscriminatorLoss(nn.Module):
@@ -140,3 +140,30 @@ class MaskLoss(nn.Module):
 			output_tensor = torch.nn.functional.interpolate(output_tensor, (self.config_output_size, self.config_output_size), mode = 'bilinear')
 
 		return output_tensor
+
+
+class PoseLoss(nn.Module):
+	def __init__(self, config_parser : ConfigParser, face_aligner : FaceAlignerModule) -> None:
+		super().__init__()
+		self.config_pose_weight = config_parser.getfloat('training.losses', 'pose_weight')
+		self.face_aligner = face_aligner
+		self.mse_loss = nn.MSELoss()
+
+	def forward(self, target_tensor : Tensor, output_tensor : Tensor) -> Tuple[Loss, Loss]:
+		with torch.no_grad():
+			target_pose = self.calculate_pose(target_tensor)
+
+		output_pose = self.calculate_pose(output_tensor)
+		pose_loss = self.mse_loss(output_pose, target_pose)
+		weighted_pose_loss = pose_loss * self.config_pose_weight
+		return pose_loss, weighted_pose_loss
+
+	def calculate_pose(self, input_tensor : Tensor) -> Tensor:
+		temp_tensor = torch.nn.functional.interpolate(input_tensor, (256, 256), mode = 'area')
+		temp_tensor = (temp_tensor.clip(-1, 1) + 1) * 0.5
+		temp_tensor = blur_tensor(temp_tensor, 9, 1.7)
+
+		_, pose_tensor, _ = self.face_aligner(temp_tensor)
+		yaw_tensor = nn.functional.normalize(pose_tensor[:, 0:2], p = 2)
+		pitch_tensor = nn.functional.normalize(pose_tensor[:, 2:4], p = 2)
+		return torch.cat([ yaw_tensor, pitch_tensor ], dim = 1)
