@@ -5,7 +5,7 @@ import torch
 from pytorch_msssim import ssim
 from torch import Tensor, nn
 
-from ..helper import calculate_face_embedding, dilate_mask
+from ..helper import calculate_face_embedding, dilate_mask, oddify_size
 from ..types import EmbedderModule, FaceMaskerModule, Feature, Loss, Mask
 
 
@@ -70,6 +70,9 @@ class ReconstructionLoss(nn.Module):
 	def __init__(self, config_parser : ConfigParser, embedder : EmbedderModule) -> None:
 		super().__init__()
 		self.config_reconstruction_weight = config_parser.getfloat('training.losses', 'reconstruction_weight')
+		self.config_output_size = config_parser.getint('training.model.generator', 'output_size')
+		self.config_reconstruction_coarse_size = oddify_size(self.config_output_size / 11)
+		self.config_reconstruction_fine_size = oddify_size(self.config_output_size / 22)
 		self.embedder = embedder
 		self.mse_loss = nn.MSELoss()
 
@@ -80,13 +83,14 @@ class ReconstructionLoss(nn.Module):
 
 		has_similar_identity = torch.cosine_similarity(source_embedding, target_embedding) > 0.8
 
-		reconstruction_loss = torch.mean((source_tensor - target_tensor) ** 2, dim = (1, 2, 3))
-		reconstruction_loss = (reconstruction_loss * has_similar_identity).mean() * 0.5
+		pixel_loss = torch.mean((output_tensor - target_tensor) ** 2, dim = (1, 2, 3))
+		pixel_loss = (pixel_loss * has_similar_identity).mean()
 
-		visual_loss = 1 - ssim(output_tensor, target_tensor, data_range = 2.0)
-		visual_loss = (visual_loss * has_similar_identity).mean()
+		coarse_loss = 1 - ssim(output_tensor, target_tensor, data_range = 2.0, win_size = self.config_reconstruction_coarse_size)
+		fine_loss = 1 - ssim(output_tensor, target_tensor, data_range = 2.0, win_size = self.config_reconstruction_fine_size)
+		visual_loss = ((coarse_loss + fine_loss) * 0.5 * has_similar_identity).mean()
 
-		reconstruction_loss = (reconstruction_loss + visual_loss) * 0.5
+		reconstruction_loss = (pixel_loss + visual_loss) * 0.5
 		weighted_reconstruction_loss = reconstruction_loss * self.config_reconstruction_weight
 		return reconstruction_loss, weighted_reconstruction_loss
 

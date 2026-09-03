@@ -47,6 +47,15 @@ def calculate_face_embedding(embedder : EmbedderModule, input_tensor : Tensor, p
 	return face_embedding
 
 
+def oddify_size(size : float) -> int:
+	temp_size = int(round(size))
+
+	if temp_size % 2 == 0:
+		temp_size = temp_size + 1
+
+	return temp_size
+
+
 def overlay_mask(input_tensor : Tensor, input_mask : Mask) -> Tensor:
 	overlay_tensor = torch.zeros(*input_tensor.shape, dtype = input_tensor.dtype, device = input_tensor.device)
 	overlay_tensor[:, 2, :, :] = 1
