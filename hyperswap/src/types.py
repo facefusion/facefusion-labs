@@ -20,6 +20,7 @@ Padding : TypeAlias = Tuple[int, int, int, int]
 GeneratorModule : TypeAlias = Module
 EmbedderModule : TypeAlias = Module
 FaceMaskerModule : TypeAlias = Module
+FaceAlignerModule : TypeAlias = Module
 
 OptimizerSet : TypeAlias = Any
 

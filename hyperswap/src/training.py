@@ -19,7 +19,7 @@ from .dataset import DynamicDataset
 from .helper import apply_noise, calculate_face_embedding, erode_mask, overlay_mask
 from .models.discriminator import Discriminator
 from .models.generator import Generator
-from .models.loss import AdversarialLoss, DiscriminatorLoss, FeatureLoss, IdentityLoss, MaskLoss, ReconstructionLoss
+from .models.loss import AdversarialLoss, DiscriminatorLoss, FeatureLoss, IdentityLoss, MaskLoss, PoseLoss, ReconstructionLoss
 from .types import Batch, Embedding, Mask, OptimizerSet, TrainerPrecision, TrainerStrategy
 
 warnings.filterwarnings('ignore', category = UserWarning, module = 'torch')
@@ -34,6 +34,7 @@ class HyperSwapTrainer(LightningModule):
 		self.config_generator_embedder_path = config_parser.get('training.model', 'generator_embedder_path')
 		self.config_loss_embedder_path = config_parser.get('training.model', 'loss_embedder_path')
 		self.config_face_masker_path = config_parser.get('training.model', 'face_masker_path')
+		self.config_face_aligner_path = config_parser.get('training.model', 'face_aligner_path')
 		self.config_accumulate_size = config_parser.getfloat('training.trainer', 'accumulate_size')
 		self.config_discriminator_ratio = config_parser.getfloat('training.trainer', 'discriminator_ratio')
 		self.config_gradient_clip = config_parser.getfloat('training.trainer', 'gradient_clip')
@@ -51,6 +52,7 @@ class HyperSwapTrainer(LightningModule):
 		self.generator_embedder = torch.jit.load(self.config_generator_embedder_path, map_location = 'cpu').eval()
 		self.loss_embedder = torch.jit.load(self.config_loss_embedder_path, map_location = 'cpu').eval()
 		self.face_masker = torch.jit.load(self.config_face_masker_path, map_location ='cpu').eval()
+		self.face_aligner = torch.jit.load(self.config_face_aligner_path, map_location = 'cpu').eval()
 		self.generator = Generator(config_parser)
 		self.discriminator = Discriminator(config_parser)
 		self.discriminator_loss = DiscriminatorLoss()
@@ -59,6 +61,7 @@ class HyperSwapTrainer(LightningModule):
 		self.reconstruction_loss = ReconstructionLoss(config_parser, self.loss_embedder)
 		self.identity_loss = IdentityLoss(config_parser, self.loss_embedder)
 		self.mask_loss = MaskLoss(config_parser, self.face_masker)
+		self.pose_loss = PoseLoss(config_parser, self.face_aligner)
 		self.automatic_optimization = False
 
 	def forward(self, source_embedding : Embedding, target_tensor : Tensor) -> Tuple[Tensor, Mask]:
@@ -115,7 +118,8 @@ class HyperSwapTrainer(LightningModule):
 		reconstruction_loss, weighted_reconstruction_loss = self.reconstruction_loss(source_tensor, target_tensor, generator_output_tensor)
 		identity_loss, weighted_identity_loss = self.identity_loss(generator_output_tensor, source_tensor)
 		mask_loss, weighted_mask_loss = self.mask_loss(target_tensor, generator_output_mask)
-		generator_loss = weighted_adversarial_loss + weighted_feature_loss + weighted_reconstruction_loss + weighted_identity_loss + weighted_mask_loss
+		pose_loss, weighted_pose_loss = self.pose_loss(target_tensor, generator_output_tensor)
+		generator_loss = weighted_adversarial_loss + weighted_feature_loss + weighted_reconstruction_loss + weighted_identity_loss + weighted_mask_loss + weighted_pose_loss
 
 		if torch.randn(1).item() < self.config_discriminator_ratio:
 			discriminator_real_tensors = self.discriminator(source_tensor)
@@ -162,6 +166,7 @@ class HyperSwapTrainer(LightningModule):
 		self.log('reconstruction_loss', reconstruction_loss)
 		self.log('identity_loss', identity_loss)
 		self.log('mask_loss', mask_loss)
+		self.log('pose_loss', pose_loss)
 
 		if do_update:
 			generator_scheduler.step(generator_loss)

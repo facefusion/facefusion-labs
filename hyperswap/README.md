@@ -48,6 +48,7 @@ split_ratio = 0.9995
 generator_embedder_path = .models/blendface.pt
 loss_embedder_path = .models/arcface.pt
 face_masker_path = .models/face_masker.pt
+face_aligner_path = .models/face_aligner.pt
 ```
 
 ```
@@ -80,6 +81,7 @@ feature_weight = 10.0
 reconstruction_weight = 10.0
 identity_weight = 20.0
 mask_weight = 5.0
+pose_weight = 25.0
 ```
 
 ```
