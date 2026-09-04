@@ -2,10 +2,11 @@ from configparser import ConfigParser
 from typing import List, Tuple
 
 import torch
+from kornia import filters
 from pytorch_msssim import ssim
 from torch import Tensor, nn
 
-from ..helper import blur_tensor, calculate_face_embedding, dilate_mask, oddify_size
+from ..helper import calculate_face_embedding, dilate_mask, oddify_size
 from ..types import EmbedderModule, FaceAlignerModule, FaceMaskerModule, Feature, Loss, Mask
 
 
@@ -161,7 +162,7 @@ class PoseLoss(nn.Module):
 	def calculate_pose(self, input_tensor : Tensor) -> Tensor:
 		temp_tensor = torch.nn.functional.interpolate(input_tensor, (256, 256), mode = 'area')
 		temp_tensor = (temp_tensor.clip(-1, 1) + 1) * 0.5
-		temp_tensor = blur_tensor(temp_tensor, 9, 1.7)
+		temp_tensor = filters.gaussian_blur2d(temp_tensor, (9, 9), (1.7, 1.7))
 
 		_, pose_tensor, _ = self.face_aligner(temp_tensor)
 		yaw_tensor = nn.functional.normalize(pose_tensor[:, 0:2], p = 2)

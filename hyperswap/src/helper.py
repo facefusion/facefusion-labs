@@ -64,19 +64,6 @@ def overlay_mask(input_tensor : Tensor, input_mask : Mask) -> Tensor:
 	return output_tensor
 
 
-def blur_tensor(input_tensor : Tensor, kernel_size : int, sigma : float) -> Tensor:
-	coordinate_tensor = torch.arange(kernel_size, dtype = input_tensor.dtype, device = input_tensor.device) - (kernel_size - 1) * 0.5
-	kernel_tensor = torch.exp(-coordinate_tensor ** 2 / (2 * sigma ** 2))
-	kernel_tensor = kernel_tensor / kernel_tensor.sum()
-	horizontal_kernel = kernel_tensor.view(1, 1, 1, kernel_size).repeat(input_tensor.shape[1], 1, 1, 1)
-	vertical_kernel = kernel_tensor.view(1, 1, kernel_size, 1).repeat(input_tensor.shape[1], 1, 1, 1)
-	padding = kernel_size // 2
-	temp_tensor = nn.functional.pad(input_tensor, (padding, padding, padding, padding), mode = 'reflect')
-	temp_tensor = nn.functional.conv2d(temp_tensor, horizontal_kernel, groups = input_tensor.shape[1])
-	output_tensor = nn.functional.conv2d(temp_tensor, vertical_kernel, groups = input_tensor.shape[1])
-	return output_tensor
-
-
 def dilate_mask(input_tensor : Tensor, factor : float) -> Tensor:
 	padding = int(input_tensor.shape[2] * factor + 0.5)
 	kernel_size = 1 + 2 * padding
