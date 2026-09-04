@@ -3,7 +3,8 @@ import random
 from configparser import ConfigParser
 from typing import cast
 
-import albumentations
+import torch
+from kornia import augmentation
 from torch import Tensor
 from torch.utils.data import Dataset
 from torchvision import io, transforms
@@ -76,9 +77,8 @@ class DynamicDataset(Dataset[Tensor]):
 		return transforms.Compose(
 		[
 			AugmentTransform(),
-			transforms.ToPILImage(),
 			transforms.Resize((self.config_transform_size, self.config_transform_size), interpolation = transforms.InterpolationMode.BICUBIC),
-			transforms.ToTensor(),
+			transforms.ConvertImageDtype(torch.float32),
 			transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 		])
 
@@ -119,36 +119,38 @@ class AugmentTransform:
 		self.transforms = self.compose_transforms()
 
 	def __call__(self, input_tensor : Tensor) -> Tensor:
-		temp_tensor = input_tensor.numpy().transpose(1, 2, 0)
-		return self.transforms(image = temp_tensor).get('image')
+		temp_tensor = transforms.functional.convert_image_dtype(input_tensor, torch.float32).unsqueeze(0)
+		temp_tensor = self.transforms(temp_tensor).squeeze(0).clamp(0, 1)
+		return transforms.functional.convert_image_dtype(temp_tensor, torch.uint8)
 
 	@staticmethod
-	def compose_transforms() -> albumentations.Compose:
-		return albumentations.Compose(
-		[
-			albumentations.HorizontalFlip(p = 0.5),
-			albumentations.OneOf(
-			[
-				albumentations.MotionBlur(),
-				albumentations.ZoomBlur(max_factor = (1.0, 1.2))
-			], p = 0.1),
-			albumentations.OneOf(
-			[
-				albumentations.RandomGamma(),
-				albumentations.RandomBrightnessContrast(),
-				albumentations.Illumination()
-			], p = 0.2),
-			albumentations.OneOf(
-			[
-				albumentations.ColorJitter(),
-				albumentations.RGBShift(),
-				albumentations.HueSaturationValue()
-			], p = 0.2),
-			albumentations.Affine(
-				translate_percent = (-0.05, 0.05),
+	def compose_transforms() -> augmentation.AugmentationSequential:
+		return augmentation.AugmentationSequential(
+			augmentation.RandomHorizontalFlip(p = 0.5),
+			augmentation.ImageSequential(
+				augmentation.RandomMotionBlur(kernel_size = (3, 7), angle = (-90, 90), direction = (-1, 1), p = 0.1),
+				augmentation.RandomGaussianBlur(kernel_size = (5, 5), sigma = (0.1, 2.0), p = 0.1),
+				random_apply = 1
+			),
+			augmentation.ImageSequential(
+				augmentation.RandomGamma(gamma = (0.8, 1.2), p = 0.2),
+				augmentation.RandomBrightness(brightness = (0.8, 1.2), p = 0.2),
+				augmentation.RandomContrast(contrast = (0.8, 1.2), p = 0.2),
+				augmentation.RandomLinearIllumination(gain = (0.01, 0.2), p = 0.2),
+				random_apply = 1
+			),
+			augmentation.ImageSequential(
+				augmentation.ColorJitter(brightness = 0.2, contrast = 0.2, saturation = 0.2, hue = 0.1, p = 0.2),
+				augmentation.RandomRGBShift(r_shift_limit = 0.08, g_shift_limit = 0.08, b_shift_limit = 0.08, p = 0.2),
+				augmentation.RandomHue(hue = (-0.1, 0.1), p = 0.2),
+				augmentation.RandomSaturation(saturation = (0.8, 1.2), p = 0.2),
+				random_apply = 1
+			),
+			augmentation.RandomAffine(
+				degrees = (-2, 2),
+				translate = (0.05, 0.05),
 				scale = (0.95, 1.05),
-				rotate = (-2, 2),
-				border_mode = 1,
+				padding_mode = 'border',
 				p = 0.2
 			)
-		])
+		)

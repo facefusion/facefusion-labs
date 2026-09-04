@@ -1,5 +1,5 @@
 --extra-index-url https://download.pytorch.org/whl/cu128
-albumentations==2.0.8
+kornia==0.8.3
 lightning==2.5.5
 onnx==1.18.0
 onnxruntime==1.22.0
