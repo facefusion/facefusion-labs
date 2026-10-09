@@ -49,6 +49,7 @@ generator_embedder_path = .models/blendface.pt
 loss_embedder_path = .models/arcface.pt
 face_masker_path = .models/face_masker.pt
 face_aligner_path = .models/face_aligner.pt
+initial_path =
 ```
 
 ```
