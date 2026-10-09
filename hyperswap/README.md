@@ -162,8 +162,6 @@ Train the model.
 python train.py
 ```
 
-To train a higher resolution model from a lower resolution checkpoint, set the `output_size` and point the `initial_path` to that checkpoint. The `resume_path` takes precedence.
-
 Launch the TensorBoard to monitor the training.
 
 ```

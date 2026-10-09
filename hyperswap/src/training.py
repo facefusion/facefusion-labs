@@ -288,10 +288,10 @@ def train() -> None:
 	hyperswap_trainer = HyperSwapTrainer(CONFIG_PARSER)
 	trainer = create_trainer()
 
-	if os.path.isfile(config_resume_path):
+	if os.path.isfile(config_initial_path):
+		hyperswap_trainer = HyperSwapTrainer.load_from_checkpoint(config_initial_path, config_parser = CONFIG_PARSER, strict = False)
+		trainer.fit(hyperswap_trainer, training_loader, validation_loader)
+	elif os.path.isfile(config_resume_path):
 		trainer.fit(hyperswap_trainer, training_loader, validation_loader, ckpt_path = config_resume_path)
 	else:
-		if os.path.isfile(config_initial_path):
-			hyperswap_trainer = HyperSwapTrainer.load_from_checkpoint(config_initial_path, config_parser = CONFIG_PARSER, strict = False)
-
 		trainer.fit(hyperswap_trainer, training_loader, validation_loader)
