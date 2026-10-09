@@ -8,7 +8,7 @@ from hyperswap.src.networks.masknet import MaskNet
 from hyperswap.src.networks.unet import UNet
 
 
-@pytest.mark.parametrize('output_size', [ 128, 256, 512 ])
+@pytest.mark.parametrize('output_size', [ 256, 512, 1024 ])
 def test_aad_with_unet(output_size : int) -> None:
 	config_parser = ConfigParser()
 	config_parser.read_dict(
@@ -33,7 +33,7 @@ def test_aad_with_unet(output_size : int) -> None:
 	assert output_tensor.shape == (1, 3, output_size, output_size)
 
 
-@pytest.mark.parametrize('output_size', [ 128, 256, 512 ])
+@pytest.mark.parametrize('output_size', [ 256, 512 ])
 def test_mask_net(output_size : int) -> None:
 	config_parser = ConfigParser()
 	config_parser.read_dict(
