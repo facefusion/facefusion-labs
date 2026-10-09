@@ -19,7 +19,6 @@ class UNet(nn.Module):
 	def create_base_down_samples(self) -> nn.ModuleList:
 		base_down_samples = nn.ModuleList(
 		[
-			DownSample(3, 32),
 			DownSample(32, 64),
 			DownSample(64, 128),
 			DownSample(128, 256),
@@ -44,7 +43,10 @@ class UNet(nn.Module):
 		return base_up_samples
 
 	def create_scale_down_samples(self) -> nn.ModuleList:
-		scale_down_samples = nn.ModuleList()
+		scale_down_samples = nn.ModuleList(
+		[
+			DownSample(3, 32)
+		])
 
 		if self.config_output_size == 512:
 			scale_down_samples.extend(
@@ -82,14 +84,13 @@ class UNet(nn.Module):
 	def forward(self, target_tensor : Tensor) -> Tuple[Feature, ...]:
 		down_features = []
 		up_features = []
-		temp_feature = self.base_down_samples[0](target_tensor)
-		down_features.append(temp_feature)
+		temp_feature = target_tensor
 
 		for down_sample in self.scale_down_samples:
 			temp_feature = down_sample(temp_feature)
 			down_features.append(temp_feature)
 
-		for down_sample in self.base_down_samples[1:]:
+		for down_sample in self.base_down_samples:
 			temp_feature = down_sample(temp_feature)
 			down_features.append(temp_feature)
 
