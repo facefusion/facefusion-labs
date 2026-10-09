@@ -11,110 +11,92 @@ class UNet(nn.Module):
 	def __init__(self, config_parser : ConfigParser) -> None:
 		super().__init__()
 		self.config_output_size = config_parser.getint('training.model.generator', 'output_size')
-		self.down_samples = self.create_down_samples()
-		self.up_samples = self.create_up_samples()
+		self.base_down_samples = self.create_base_down_samples()
+		self.base_up_samples = self.create_base_up_samples()
+		self.scale_down_samples = self.create_scale_down_samples()
+		self.scale_up_samples = self.create_scale_up_samples()
 
-	def create_down_samples(self) -> nn.ModuleList:
-		down_samples = nn.ModuleList(
+	def create_base_down_samples(self) -> nn.ModuleList:
+		base_down_samples = nn.ModuleList(
 		[
 			DownSample(3, 32),
 			DownSample(32, 64),
 			DownSample(64, 128),
 			DownSample(128, 256),
-			DownSample(256, 512)
+			DownSample(256, 512),
+			DownSample(512, 1024),
+			DownSample(1024, 1024)
 		])
 
-		if self.config_output_size == 128:
-			down_samples.extend(
-			[
-				DownSample(512, 512)
-			])
+		return base_down_samples
 
-		if self.config_output_size == 256:
-			down_samples.extend(
-			[
-				DownSample(512, 1024),
-				DownSample(1024, 1024)
-			])
-
-		if self.config_output_size == 512:
-			down_samples.extend(
-			[
-				DownSample(512, 1024),
-				DownSample(1024, 1024),
-				DownSample(1024, 1024)
-			])
-
-		if self.config_output_size == 1024:
-			down_samples.extend(
-			[
-				DownSample(512, 1024),
-				DownSample(1024, 2048),
-				DownSample(2048, 2048),
-				DownSample(2048, 2048)
-			])
-
-		return down_samples
-
-	def create_up_samples(self) -> nn.ModuleList:
-		up_samples = nn.ModuleList()
-
-		if self.config_output_size == 128:
-			up_samples.extend(
-			[
-				UpSample(512, 512),
-				UpSample(1024, 256)
-			])
-
-		if self.config_output_size == 256:
-			up_samples.extend(
-			[
-				UpSample(1024, 1024),
-				UpSample(2048, 512),
-				UpSample(1024, 256)
-			])
-
-		if self.config_output_size == 512:
-			up_samples.extend(
-			[
-				UpSample(1024, 1024),
-				UpSample(2048, 512),
-				UpSample(1536, 256),
-				UpSample(768, 256)
-			])
-
-		if self.config_output_size == 1024:
-			up_samples.extend(
-			[
-				UpSample(2048, 2048),
-				UpSample(4096, 1024),
-				UpSample(3072, 512),
-				UpSample(1536, 256),
-				UpSample(768, 256)
-			])
-
-		up_samples.extend(
+	def create_base_up_samples(self) -> nn.ModuleList:
+		base_up_samples = nn.ModuleList(
 		[
+			UpSample(1024, 1024),
+			UpSample(2048, 512),
+			UpSample(1024, 256),
 			UpSample(512, 128),
 			UpSample(256, 64),
 			UpSample(128, 32)
 		])
 
-		return up_samples
+		return base_up_samples
+
+	def create_scale_down_samples(self) -> nn.ModuleList:
+		scale_down_samples = nn.ModuleList()
+
+		if self.config_output_size == 512:
+			scale_down_samples.extend(
+			[
+				DownSample(32, 32)
+			])
+
+		if self.config_output_size == 1024:
+			scale_down_samples.extend(
+			[
+				DownSample(32, 32),
+				DownSample(32, 32)
+			])
+
+		return scale_down_samples
+
+	def create_scale_up_samples(self) -> nn.ModuleList:
+		scale_up_samples = nn.ModuleList()
+
+		if self.config_output_size == 512:
+			scale_up_samples.extend(
+			[
+				UpSample(64, 32)
+			])
+
+		if self.config_output_size == 1024:
+			scale_up_samples.extend(
+			[
+				UpSample(64, 32),
+				UpSample(64, 32)
+			])
+
+		return scale_up_samples
 
 	def forward(self, target_tensor : Tensor) -> Tuple[Feature, ...]:
 		down_features = []
 		up_features = []
-		temp_feature = target_tensor
+		temp_feature = self.base_down_samples[0](target_tensor)
+		down_features.append(temp_feature)
 
-		for down_sample in self.down_samples:
+		for down_sample in self.scale_down_samples:
+			temp_feature = down_sample(temp_feature)
+			down_features.append(temp_feature)
+
+		for down_sample in self.base_down_samples[1:]:
 			temp_feature = down_sample(temp_feature)
 			down_features.append(temp_feature)
 
 		bottleneck_feature = down_features[-1]
 		temp_feature = bottleneck_feature
 
-		for index, up_sample in enumerate(self.up_samples):
+		for index, up_sample in enumerate(self.base_up_samples + self.scale_up_samples):
 			skip_tensor = down_features[-(index + 2)]
 			temp_feature = up_sample(temp_feature, skip_tensor)
 			up_features.append(temp_feature)

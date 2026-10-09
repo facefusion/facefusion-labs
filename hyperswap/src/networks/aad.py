@@ -14,70 +14,53 @@ class AAD(nn.Module):
 		self.config_output_size = config_parser.getint('training.model.generator', 'output_size')
 		self.config_num_blocks = config_parser.getint('training.model.generator', 'num_blocks')
 		self.pixel_shuffle_up_sample = PixelShuffleUpSample(self.config_source_channels, 4096)
-		self.layers = self.create_layers()
+		self.base_layers = self.create_base_layers()
+		self.scale_layers = self.create_scale_layers()
+		self.output_layer = AdaptiveFeatureModulation(64, 3, 64, self.config_source_channels, self.config_num_blocks)
 
-	def create_layers(self) -> nn.ModuleList:
-		layers = nn.ModuleList()
+	def create_base_layers(self) -> nn.ModuleList:
+		base_layers = nn.ModuleList(
+		[
+			AdaptiveFeatureModulation(1024, 1024, 1024, self.config_source_channels, self.config_num_blocks),
+			AdaptiveFeatureModulation(1024, 1024, 2048, self.config_source_channels, self.config_num_blocks),
+			AdaptiveFeatureModulation(1024, 1024, 1024, self.config_source_channels, self.config_num_blocks),
+			AdaptiveFeatureModulation(1024, 512, 512, self.config_source_channels, self.config_num_blocks),
+			AdaptiveFeatureModulation(512, 256, 256, self.config_source_channels, self.config_num_blocks),
+			AdaptiveFeatureModulation(256, 128, 128, self.config_source_channels, self.config_num_blocks),
+			AdaptiveFeatureModulation(128, 64, 64, self.config_source_channels, self.config_num_blocks)
+		])
 
-		if self.config_output_size == 128:
-			layers.extend(
-			[
-				AdaptiveFeatureModulation(1024, 1024, 512, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(1024, 1024, 1024, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(1024, 512, 512, self.config_source_channels, self.config_num_blocks)
-			])
+		return base_layers
 
-		if self.config_output_size == 256:
-			layers.extend(
-			[
-				AdaptiveFeatureModulation(1024, 1024, 1024, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(1024, 1024, 2048, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(1024, 1024, 1024, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(1024, 512, 512, self.config_source_channels, self.config_num_blocks)
-			])
+	def create_scale_layers(self) -> nn.ModuleList:
+		scale_layers = nn.ModuleList()
 
 		if self.config_output_size == 512:
-			layers.extend(
+			scale_layers.extend(
 			[
-				AdaptiveFeatureModulation(1024, 1024, 1024, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(1024, 1024, 2048, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(1024, 1024, 1536, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(1024, 1024, 768, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(1024, 512, 512, self.config_source_channels, self.config_num_blocks)
+				AdaptiveFeatureModulation(64, 64, 64, self.config_source_channels, self.config_num_blocks)
 			])
 
 		if self.config_output_size == 1024:
-			layers.extend(
+			scale_layers.extend(
 			[
-				AdaptiveFeatureModulation(1024, 1024, 2048, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(1024, 1024, 4096, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(1024, 1024, 3072, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(1024, 1024, 1536, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(1024, 1024, 768, self.config_source_channels, self.config_num_blocks),
-				AdaptiveFeatureModulation(1024, 512, 512, self.config_source_channels, self.config_num_blocks)
+				AdaptiveFeatureModulation(64, 64, 64, self.config_source_channels, self.config_num_blocks),
+				AdaptiveFeatureModulation(64, 64, 64, self.config_source_channels, self.config_num_blocks)
 			])
 
-		layers.extend(
-		[
-			AdaptiveFeatureModulation(512, 256, 256, self.config_source_channels, self.config_num_blocks),
-			AdaptiveFeatureModulation(256, 128, 128, self.config_source_channels, self.config_num_blocks),
-			AdaptiveFeatureModulation(128, 64, 64, self.config_source_channels, self.config_num_blocks),
-			AdaptiveFeatureModulation(64, 3, 64, self.config_source_channels, self.config_num_blocks)
-		])
-
-		return layers
+		return scale_layers
 
 	def forward(self, source_embedding : Embedding, target_features : Tuple[Feature, ...]) -> Tensor:
-		temp_tensors = self.pixel_shuffle_up_sample(source_embedding)
+		temp_tensor = self.pixel_shuffle_up_sample(source_embedding)
 
-		for index, layer in enumerate(self.layers[:-1]):
+		for index, layer in enumerate(self.base_layers + self.scale_layers):
 			target_feature = target_features[index]
-			temp_tensor = layer(temp_tensors, source_embedding, target_feature)
-			temp_tensors = nn.functional.interpolate(temp_tensor, scale_factor = 2, mode = 'bilinear', align_corners = False)
+			temp_tensor = layer(temp_tensor, source_embedding, target_feature)
+			temp_tensor = nn.functional.interpolate(temp_tensor, scale_factor = 2, mode = 'bilinear', align_corners = False)
 
 		target_feature = target_features[-1]
-		temp_tensors = self.layers[-1](temp_tensors, source_embedding, target_feature)
-		output_tensor = torch.tanh(temp_tensors)
+		temp_tensor = self.output_layer(temp_tensor, source_embedding, target_feature)
+		output_tensor = torch.tanh(temp_tensor)
 		return output_tensor
 
 
