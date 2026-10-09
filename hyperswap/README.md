@@ -128,6 +128,7 @@ logger_name = hyperswap
 [training.output]
 directory_path = .outputs
 file_pattern = hyperswap_{epoch}_{step}
+initial_path = .outputs/hyperswap_256.ckpt
 resume_path = .outputs/last.ckpt
 ```
 
