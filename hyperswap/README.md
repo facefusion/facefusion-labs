@@ -49,7 +49,6 @@ generator_embedder_path = .models/blendface.pt
 loss_embedder_path = .models/arcface.pt
 face_masker_path = .models/face_masker.pt
 face_aligner_path = .models/face_aligner.pt
-initial_path =
 ```
 
 ```
@@ -130,6 +129,7 @@ logger_name = hyperswap
 directory_path = .outputs
 file_pattern = hyperswap_{epoch}_{step}
 resume_path = .outputs/last.ckpt
+initial_path = .outputs/hyperswap_256.ckpt
 ```
 
 ```
@@ -161,6 +161,8 @@ Train the model.
 ```
 python train.py
 ```
+
+To train a higher resolution model from a lower resolution checkpoint, set the `output_size` and point the `initial_path` to that checkpoint. The `resume_path` takes precedence.
 
 Launch the TensorBoard to monitor the training.
 

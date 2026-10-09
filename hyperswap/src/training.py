@@ -276,22 +276,9 @@ def create_trainer() -> Trainer:
 	)
 
 
-def load_initial_weights(hyperswap_trainer : HyperSwapTrainer, initial_path : str) -> None:
-	source_state = torch.load(initial_path, map_location = 'cpu').get('state_dict')
-	target_state = hyperswap_trainer.state_dict()
-	initial_state = {}
-
-	for state_key, state_value in source_state.items():
-		if state_key.startswith('generator.') and state_key in target_state:
-			if state_value.shape == target_state.get(state_key).shape:
-				initial_state[state_key] = state_value
-
-	hyperswap_trainer.load_state_dict(initial_state, strict = False)
-
-
 def train() -> None:
 	config_resume_path = CONFIG_PARSER.get('training.output', 'resume_path')
-	config_initial_path = CONFIG_PARSER.get('training.model', 'initial_path')
+	config_initial_path = CONFIG_PARSER.get('training.output', 'initial_path')
 
 	if torch.cuda.is_available():
 		torch.set_float32_matmul_precision('high')
@@ -305,6 +292,6 @@ def train() -> None:
 		trainer.fit(hyperswap_trainer, training_loader, validation_loader, ckpt_path = config_resume_path)
 	else:
 		if os.path.isfile(config_initial_path):
-			load_initial_weights(hyperswap_trainer, config_initial_path)
+			hyperswap_trainer = HyperSwapTrainer.load_from_checkpoint(config_initial_path, config_parser = CONFIG_PARSER, strict = False)
 
 		trainer.fit(hyperswap_trainer, training_loader, validation_loader)
