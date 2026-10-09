@@ -277,8 +277,8 @@ def create_trainer() -> Trainer:
 
 
 def train() -> None:
-	config_resume_path = CONFIG_PARSER.get('training.output', 'resume_path')
 	config_initial_path = CONFIG_PARSER.get('training.output', 'initial_path')
+	config_resume_path = CONFIG_PARSER.get('training.output', 'resume_path')
 
 	if torch.cuda.is_available():
 		torch.set_float32_matmul_precision('high')
